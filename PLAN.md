@@ -77,7 +77,13 @@ coverage and accuracy conflict, accuracy wins.
 * **Printed totals (V3):** each part's cover table and last-page summary are
   read; a reading is used only if Male + Female + Third gender = Total. Read
   on 28 of 28 sample parts, and equal to the cards read on all 28.
-* **End to end on Actions:** see §5 item I.
+* **End to end on Actions (2026-10-10):** 11 sample parts from 9 ACs (7 in
+  Bengaluru), cut and shipped from home in ~1 min; OCR, verify and publish
+  green for every AC. 7,457 of 7,466 cards published, 0 disputed, printed
+  totals matched on all 11 parts. V4: 1,338 of AC 177's 1,353 records are in
+  the draft roll; the prototype reader confirmed the other 15. V5: AC 177's
+  English part agreed 576 of 576. Search checked on the live site at phone
+  width (390 and 360 px, light and dark).
 * **Site:** Kannada and English, dark mode, binary hash buckets (~400 MB
   statewide). Each result links to the official ECI PDF. A constituency shows
   as "processing" until verified and "under review" if held. Until ≥ 99% of
@@ -156,7 +162,7 @@ review". It never shows as "not found".
 | F | Ground truth for accuracy | Done — English-roll witness and eye checks (§2) instead of tuning on a hand-labelled set |
 | G | Printed totals (V3) | Done |
 | H | Publish gate in `build.mjs`; per-AC status in the manifest and on the site | Done |
-| I | End-to-end on Actions | Done on sample parts from 11 ACs (§2). Full-size AC: the release-day pilot |
+| I | End-to-end on Actions | Done on 11 sample parts from 9 ACs (§2). A full-size AC runs as the release-day pilot |
 | J | Phone-width check of the site. Keep `gouthamganeshm/eci-cdn-probe` | Done |
 
 Also done: home now uploads each AC while the next one downloads, and the cut
@@ -222,8 +228,8 @@ re-running the previous `publish.yml` run. ECI throttling or errors: lower
 * Home cut: ~1.5 s of CPU per part; 4 workers cut ~2.5 parts/s, 8× what the
   line delivers.
 * Upload of crops: 15% of PDF bytes (~80 GB statewide), now overlapped with
-  the next AC's download. Needs ≥ ~4 Mbps up to keep pace with the current
-  line.
+  the next AC's download. Measured 15 Mbps up to GitHub, ~4.5× what the
+  current line needs.
 * Actions OCR: ~38 s per part per core. 20 parallel jobs × 4 cores ≈ 2.1
   parts/s, which keeps pace with a home line up to ~150 Mbps.
 * **The only big lever is a faster line.** At ~150 Mbps the whole state takes
