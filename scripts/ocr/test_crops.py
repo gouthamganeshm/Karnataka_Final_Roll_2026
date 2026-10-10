@@ -11,6 +11,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+os.environ.setdefault('ROLL_EPIC_MODE', 'legacy')  # compare like with like
 import crops as C
 import roll_ocr as R
 
@@ -29,7 +30,7 @@ for path in sys.argv[1:]:
 
     t = time.perf_counter()
     _, pages = C.read_bundle(bundle)
-    got = C.ocr_pages(pages)
+    got = [row for row, _ in C.ocr_pages(pages)]
     t_ocr = time.perf_counter() - t
 
     same = [(r.serial, r.epic, r.ok) for r in ref] == [(r.serial, r.epic, r.ok) for r in got]

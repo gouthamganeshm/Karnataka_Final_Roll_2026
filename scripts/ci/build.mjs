@@ -21,8 +21,8 @@
  * number the visitor typed. 4.4 crore electors at 9 bytes is ~400 MB, inside
  * GitHub Pages' 1 GB site limit, where the draft site's JSON would not be.
  *
- * Acceptance is the draft project's rule: a row needs a well-formed EPIC;
- * `ok` only decides the approximate-serial flag.
+ * A row is published when its EPIC is well-formed and the independent readings
+ * agreed on it (`epicOk`); `ok` then only decides the approximate-serial flag.
  */
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -72,7 +72,9 @@ for (const f of rowFiles) {
   for await (const line of rl) {
     if (!line) continue;
     const r = JSON.parse(line);
-    if (!EPIC_RE.test(r.epic)) { stat.unreadable++; continue; }
+    // An EPIC the readings did not agree on is withheld, never published on a
+    // guess. (Rows from before epicOk existed count as agreed.)
+    if (!EPIC_RE.test(r.epic) || r.epicOk === false) { stat.unreadable++; continue; }
     const h = createHash('sha256').update(r.epic, 'utf8').digest();
     rec[0] = h[1];
     h.copy(rec, 1, 2, 6);
@@ -125,7 +127,7 @@ const acs = [...meta.values()]
   .map((c) => {
     const s = perAc.get(c.acNumber);
     return {
-      ac: c.acNumber, name: c.name, nameKn: c.nameKn, district: c.district,
+      ac: c.acNumber, name: c.name, nameKn: c.nameKn, district: c.district, districtKn: c.districtKn,
       parts: c.parts, partsRead: s?.partsRead ?? 0,
       electors: s?.electors ?? 0, approx: s?.approx ?? 0, unreadable: s?.unreadable ?? 0
     };

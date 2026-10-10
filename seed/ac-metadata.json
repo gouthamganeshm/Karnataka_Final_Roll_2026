@@ -7,1568 +7,1792 @@
       "name": "Yelahanka",
       "nameKn": "ಯಲಹಂಕ",
       "district": "BANGALORE URBAN",
-      "parts": 418
+      "parts": 418,
+      "districtKn": "ಬೆಂಗಳೂರು ನಗರ"
     },
     {
       "acNumber": 152,
       "name": "Byatarayanapura",
       "nameKn": "ಬ್ಯಾಟರಾಯನಪುರ",
       "district": "BANGALORE URBAN",
-      "parts": 442
+      "parts": 442,
+      "districtKn": "ಬೆಂಗಳೂರು ನಗರ"
     },
     {
       "acNumber": 153,
       "name": "Yeshwanthapura",
       "nameKn": "ಯಶವಂತಪುರ",
       "district": "BANGALORE URBAN",
-      "parts": 553
+      "parts": 553,
+      "districtKn": "ಬೆಂಗಳೂರು ನಗರ"
     },
     {
       "acNumber": 155,
       "name": "Dasarahalli",
       "nameKn": "ದಾಸರಹಳ್ಳಿ",
       "district": "BANGALORE URBAN",
-      "parts": 419
+      "parts": 419,
+      "districtKn": "ಬೆಂಗಳೂರು ನಗರ"
     },
     {
       "acNumber": 174,
       "name": "Mahadevapura",
       "nameKn": "ಮಹದೇವಪುರ",
       "district": "BANGALORE URBAN",
-      "parts": 533
+      "parts": 533,
+      "districtKn": "ಬೆಂಗಳೂರು ನಗರ"
     },
     {
       "acNumber": 176,
       "name": "Bangalore South",
       "nameKn": "ಬೆಂಗಳೂರು ದಕ್ಷಿಣ",
       "district": "BANGALORE URBAN",
-      "parts": 605
+      "parts": 605,
+      "districtKn": "ಬೆಂಗಳೂರು ನಗರ"
     },
     {
       "acNumber": 177,
       "name": "Anekal",
       "nameKn": "ಆನೇಕಲ್‌",
       "district": "BANGALORE URBAN",
-      "parts": 384
+      "parts": 384,
+      "districtKn": "ಬೆಂಗಳೂರು ನಗರ"
     },
     {
       "acNumber": 168,
       "name": "Chamrajapet",
       "nameKn": "ಚಾಮರಾಜಪೇಟೆ",
       "district": "B.B.M.P(CENTRAL)",
-      "parts": 216
+      "parts": 216,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಸೆಂಟ್ರಲ್ )"
     },
     {
       "acNumber": 169,
       "name": "Chickpet",
       "nameKn": "ಚಿಕ್ಕಪೇಟೆ",
       "district": "B.B.M.P(CENTRAL)",
-      "parts": 222
+      "parts": 222,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಸೆಂಟ್ರಲ್ )"
     },
     {
       "acNumber": 164,
       "name": "Gandhinagar",
       "nameKn": "ಗಾಂಧಿನಗರ",
       "district": "B.B.M.P(CENTRAL)",
-      "parts": 220
+      "parts": 220,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಸೆಂಟ್ರಲ್ )"
     },
     {
       "acNumber": 165,
       "name": "Rajajinagar",
       "nameKn": "ರಾಜಾಜಿನಗರ",
       "district": "B.B.M.P(CENTRAL)",
-      "parts": 194
+      "parts": 194,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಸೆಂಟ್ರಲ್ )"
     },
     {
       "acNumber": 154,
       "name": "Rajarajeshwarinagar",
       "nameKn": "ರಾಜರಾಜೇಶ್ವರಿನಗರ",
       "district": "B.B.M.P(CENTRAL)",
-      "parts": 437
+      "parts": 437,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಸೆಂಟ್ರಲ್ )"
     },
     {
       "acNumber": 163,
       "name": "Shantinagar",
       "nameKn": "ಶಾಂತಿನಗರ",
       "district": "B.B.M.P(CENTRAL)",
-      "parts": 193
+      "parts": 193,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಸೆಂಟ್ರಲ್ )"
     },
     {
       "acNumber": 162,
       "name": "Shivajinagar",
       "nameKn": "ಶಿವಾಜಿನಗರ",
       "district": "B.B.M.P(CENTRAL)",
-      "parts": 191
+      "parts": 191,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಸೆಂಟ್ರಲ್ )"
     },
     {
       "acNumber": 161,
       "name": "C.V. RamannNagar",
       "nameKn": "ಸಿ.ವಿ. ರಾಮನ್‌ ನಗರ",
       "district": "B.B.M.P(NORTH)",
-      "parts": 244
+      "parts": 244,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಉತ್ತರ )"
     },
     {
       "acNumber": 158,
       "name": "Hebbal",
       "nameKn": "ಹೆಬ್ಬಾಳ",
       "district": "B.B.M.P(NORTH)",
-      "parts": 285
+      "parts": 285,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಉತ್ತರ )"
     },
     {
       "acNumber": 151,
       "name": "K.R. Pura",
       "nameKn": "ಕೆ.ಆರ್‌.ಪುರ",
       "district": "B.B.M.P(NORTH)",
-      "parts": 509
+      "parts": 509,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಉತ್ತರ )"
     },
     {
       "acNumber": 156,
       "name": "Mahalakshmi Layout",
       "nameKn": "ಮಹಾಲಕ್ಷ್ಮಿ ಬಡಾವಣೆ",
       "district": "B.B.M.P(NORTH)",
-      "parts": 276
+      "parts": 276,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಉತ್ತರ )"
     },
     {
       "acNumber": 157,
       "name": "Malleshwaram",
       "nameKn": "ಮಲ್ಲೇಶ್ವರಂ",
       "district": "B.B.M.P(NORTH)",
-      "parts": 207
+      "parts": 207,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಉತ್ತರ )"
     },
     {
       "acNumber": 159,
       "name": "Pulakeshinagar",
       "nameKn": "ಪುಲಕೇಶಿನಗರ",
       "district": "B.B.M.P(NORTH)",
-      "parts": 228
+      "parts": 228,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಉತ್ತರ )"
     },
     {
       "acNumber": 160,
       "name": "Sarvagnanagar",
       "nameKn": "ಸರ್ವಜ್ಞ ನಗರ",
       "district": "B.B.M.P(NORTH)",
-      "parts": 337
+      "parts": 337,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ಉತ್ತರ )"
     },
     {
       "acNumber": 172,
       "name": "B.T.M Layout",
       "nameKn": "ಬಿ.ಟಿ.ಎಂ ಲೇಔಟ್",
       "district": "B.B.M.P(SOUTH)",
-      "parts": 243
+      "parts": 243,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ದಕ್ಷಿಣ )"
     },
     {
       "acNumber": 170,
       "name": "Basavanagudi",
       "nameKn": "ಬಸವನಗುಡಿ",
       "district": "B.B.M.P(SOUTH)",
-      "parts": 220
+      "parts": 220,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ದಕ್ಷಿಣ )"
     },
     {
       "acNumber": 175,
       "name": "Bommanahalli",
       "nameKn": "ಬೊಮ್ಮನಹಳ್ಳಿ",
       "district": "B.B.M.P(SOUTH)",
-      "parts": 390
+      "parts": 390,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ದಕ್ಷಿಣ )"
     },
     {
       "acNumber": 166,
       "name": "Govindarajanagar",
       "nameKn": "ಗೋವಿಂದರಾಜ ನಗರ",
       "district": "B.B.M.P(SOUTH)",
-      "parts": 269
+      "parts": 269,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ದಕ್ಷಿಣ )"
     },
     {
       "acNumber": 173,
       "name": "Jayanagar",
       "nameKn": "ಜಯನಗರ",
       "district": "B.B.M.P(SOUTH)",
-      "parts": 210
+      "parts": 210,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ದಕ್ಷಿಣ )"
     },
     {
       "acNumber": 171,
       "name": "Padmanabanagar",
       "nameKn": "ಪದ್ಮನಾಭನಗರ",
       "district": "B.B.M.P(SOUTH)",
-      "parts": 279
+      "parts": 279,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ದಕ್ಷಿಣ )"
     },
     {
       "acNumber": 167,
       "name": "Vijayanagar",
       "nameKn": "ವಿಜಯನಗರ",
       "district": "B.B.M.P(SOUTH)",
-      "parts": 284
+      "parts": 284,
+      "districtKn": "ಬಿ.ಬಿ.ಎಂ.ಪಿ ( ದಕ್ಷಿಣ )"
     },
     {
       "acNumber": 179,
       "name": "Devanahalli",
       "nameKn": "ದೇವನಹಳ್ಳಿ",
       "district": "BANGALORE RURAL",
-      "parts": 296
+      "parts": 296,
+      "districtKn": "ಬೆಂಗಳೂರು ಗ್ರಾಮಾಂತರ"
     },
     {
       "acNumber": 180,
       "name": "Doddaballapur",
       "nameKn": "ದೊಡ್ಡಬಳ್ಳಾಪುರ",
       "district": "BANGALORE RURAL",
-      "parts": 279
+      "parts": 279,
+      "districtKn": "ಬೆಂಗಳೂರು ಗ್ರಾಮಾಂತರ"
     },
     {
       "acNumber": 178,
       "name": "Hosakote",
       "nameKn": "ಹೊಸಕೋಟೆ",
       "district": "BANGALORE RURAL",
-      "parts": 298
+      "parts": 298,
+      "districtKn": "ಬೆಂಗಳೂರು ಗ್ರಾಮಾಂತರ"
     },
     {
       "acNumber": 181,
       "name": "Nelamangala",
       "nameKn": "ನೆಲಮಂಗಲ",
       "district": "BANGALORE RURAL",
-      "parts": 281
+      "parts": 281,
+      "districtKn": "ಬೆಂಗಳೂರು ಗ್ರಾಮಾಂತರ"
     },
     {
       "acNumber": 198,
       "name": "Arakalgud",
       "nameKn": "ಅರಕಲಗೂಡು",
       "district": "HASSAN",
-      "parts": 292
+      "parts": 292,
+      "districtKn": "ಹಾಸನ"
     },
     {
       "acNumber": 194,
       "name": "Arsikere",
       "nameKn": "ಅರಸೀಕೆರೆ",
       "district": "HASSAN",
-      "parts": 281
+      "parts": 281,
+      "districtKn": "ಹಾಸನ"
     },
     {
       "acNumber": 195,
       "name": "Belur",
       "nameKn": "ಬೇಲೂರು",
       "district": "HASSAN",
-      "parts": 276
+      "parts": 276,
+      "districtKn": "ಹಾಸನ"
     },
     {
       "acNumber": 196,
       "name": "Hassan",
       "nameKn": "ಹಾಸನ",
       "district": "HASSAN",
-      "parts": 282
+      "parts": 282,
+      "districtKn": "ಹಾಸನ"
     },
     {
       "acNumber": 197,
       "name": "Holenarasipur",
       "nameKn": "ಹೊಳೇನರಸೀಪುರ",
       "district": "HASSAN",
-      "parts": 330
+      "parts": 330,
+      "districtKn": "ಹಾಸನ"
     },
     {
       "acNumber": 199,
       "name": "Sakaleshpur",
       "nameKn": "ಸಕಲೇಶಪುರ",
       "district": "HASSAN",
-      "parts": 295
+      "parts": 295,
+      "districtKn": "ಹಾಸನ"
     },
     {
       "acNumber": 193,
       "name": "Shravanabelagola",
       "nameKn": "ಶ್ರವಣಬೆಳಗೊಳ",
       "district": "HASSAN",
-      "parts": 272
+      "parts": 272,
+      "districtKn": "ಹಾಸನ"
     },
     {
       "acNumber": 208,
       "name": "Madikeri",
       "nameKn": "ಮಡಿಕೇರಿ",
       "district": "KODAGU",
-      "parts": 285
+      "parts": 285,
+      "districtKn": "ಕೊಡಗು"
     },
     {
       "acNumber": 209,
       "name": "Virajpet",
       "nameKn": "ವೀರಾಜಪೇಟೆ",
       "district": "KODAGU",
-      "parts": 282
+      "parts": 282,
+      "districtKn": "ಕೊಡಗು"
     },
     {
       "acNumber": 66,
       "name": "Gadag",
       "nameKn": "ಗದಗ",
       "district": "GADAG",
-      "parts": 227
+      "parts": 227,
+      "districtKn": "ಗದಗ"
     },
     {
       "acNumber": 68,
       "name": "Nargund",
       "nameKn": "ನರಗುಂದ",
       "district": "GADAG",
-      "parts": 226
+      "parts": 226,
+      "districtKn": "ಗದಗ"
     },
     {
       "acNumber": 67,
       "name": "Ron",
       "nameKn": "ರೋಣ",
       "district": "GADAG",
-      "parts": 271
+      "parts": 271,
+      "districtKn": "ಗದಗ"
     },
     {
       "acNumber": 65,
       "name": "Shirahatti",
       "nameKn": "ಶಿರಹಟ್ಟಿ",
       "district": "GADAG",
-      "parts": 259
+      "parts": 259,
+      "districtKn": "ಗದಗ"
     },
     {
       "acNumber": 223,
       "name": "Chamarajanagar",
       "nameKn": "ಚಾಮರಾಜನಗರ",
       "district": "CHAMARAJNAGAR",
-      "parts": 259
+      "parts": 259,
+      "districtKn": "ಚಾಮರಾಜನಗರ"
     },
     {
       "acNumber": 224,
       "name": "Gundlupet",
       "nameKn": "ಗುಂಡ್ಲುಪೇಟೆ",
       "district": "CHAMARAJNAGAR",
-      "parts": 257
+      "parts": 257,
+      "districtKn": "ಚಾಮರಾಜನಗರ"
     },
     {
       "acNumber": 221,
       "name": "Hanur",
       "nameKn": "ಹನೂರು",
       "district": "CHAMARAJNAGAR",
-      "parts": 269
+      "parts": 269,
+      "districtKn": "ಚಾಮರಾಜನಗರ"
     },
     {
       "acNumber": 222,
       "name": "Kollegal",
       "nameKn": "ಕೊಳ್ಳೇಗಾಲ",
       "district": "CHAMARAJNAGAR",
-      "parts": 245
+      "parts": 245,
+      "districtKn": "ಚಾಮರಾಜನಗರ"
     },
     {
       "acNumber": 39,
       "name": "Gurmitkal",
       "nameKn": "ಗುರುಮಿಟಕಲ್‌",
       "district": "YADGIR",
-      "parts": 289
+      "parts": 289,
+      "districtKn": "ಯಾದಗಿರಿ"
     },
     {
       "acNumber": 37,
       "name": "Shahapur",
       "nameKn": "ಶಹಾಪೂರ",
       "district": "YADGIR",
-      "parts": 275
+      "parts": 275,
+      "districtKn": "ಯಾದಗಿರಿ"
     },
     {
       "acNumber": 36,
       "name": "Shorapur",
       "nameKn": "ಶೋರಾಪೂರ",
       "district": "YADGIR",
-      "parts": 325
+      "parts": 325,
+      "districtKn": "ಯಾದಗಿರಿ"
     },
     {
       "acNumber": 38,
       "name": "Yadgir",
       "nameKn": "ಯಾದಗಿರಿ",
       "district": "YADGIR",
-      "parts": 273
+      "parts": 273,
+      "districtKn": "ಯಾದಗಿರಿ"
     },
     {
       "acNumber": 185,
       "name": "Channapatna",
       "nameKn": "ಚನ್ನಪಟ್ಟಣ",
       "district": "RAMANAGARAM",
-      "parts": 287
+      "parts": 287,
+      "districtKn": "ರಾಮನಗರಂ"
     },
     {
       "acNumber": 184,
       "name": "Kanakapura",
       "nameKn": "ಕನಕಪುರ",
       "district": "RAMANAGARAM",
-      "parts": 301
+      "parts": 301,
+      "districtKn": "ರಾಮನಗರಂ"
     },
     {
       "acNumber": 182,
       "name": "Magadi",
       "nameKn": "ಮಾಗಡಿ",
       "district": "RAMANAGARAM",
-      "parts": 311
+      "parts": 311,
+      "districtKn": "ರಾಮನಗರಂ"
     },
     {
       "acNumber": 183,
       "name": "Ramanagaram",
       "nameKn": "ರಾಮನಗರಂ",
       "district": "RAMANAGARAM",
-      "parts": 284
+      "parts": 284,
+      "districtKn": "ರಾಮನಗರಂ"
     },
     {
       "acNumber": 118,
       "name": "Baindur",
       "nameKn": "ಬೈಂದೂರು",
       "district": "UDUPI",
-      "parts": 294
+      "parts": 294,
+      "districtKn": "ಉಡುಪಿ"
     },
     {
       "acNumber": 122,
       "name": "Karkala",
       "nameKn": "ಕಾರ್ಕಳ",
       "district": "UDUPI",
-      "parts": 234
+      "parts": 234,
+      "districtKn": "ಉಡುಪಿ"
     },
     {
       "acNumber": 121,
       "name": "Kaup",
       "nameKn": "ಕಾಪು",
       "district": "UDUPI",
-      "parts": 231
+      "parts": 231,
+      "districtKn": "ಉಡುಪಿ"
     },
     {
       "acNumber": 119,
       "name": "Kundapur",
       "nameKn": "ಕುಂದಾಪುರ",
       "district": "UDUPI",
-      "parts": 238
+      "parts": 238,
+      "districtKn": "ಉಡುಪಿ"
     },
     {
       "acNumber": 120,
       "name": "Udupi",
       "nameKn": "ಉಡುಪಿ",
       "district": "UDUPI",
-      "parts": 247
+      "parts": 247,
+      "districtKn": "ಉಡುಪಿ"
     },
     {
       "acNumber": 125,
       "name": "Chickamagalur",
       "nameKn": "ಚಿಕ್ಕಮಗಳೂರು",
       "district": "CHIKKMAGALUR",
-      "parts": 270
+      "parts": 270,
+      "districtKn": "ಚಿಕ್ಕಮಗಳೂರು"
     },
     {
       "acNumber": 127,
       "name": "Kadur",
       "nameKn": "ಕಡೂರು",
       "district": "CHIKKMAGALUR",
-      "parts": 254
+      "parts": 254,
+      "districtKn": "ಚಿಕ್ಕಮಗಳೂರು"
     },
     {
       "acNumber": 124,
       "name": "Mudigere",
       "nameKn": "ಮೂಡಿಗೆರೆ",
       "district": "CHIKKMAGALUR",
-      "parts": 233
+      "parts": 233,
+      "districtKn": "ಚಿಕ್ಕಮಗಳೂರು"
     },
     {
       "acNumber": 123,
       "name": "Sringeri",
       "nameKn": "ಶೃಂಗೇರಿ",
       "district": "CHIKKMAGALUR",
-      "parts": 261
+      "parts": 261,
+      "districtKn": "ಚಿಕ್ಕಮಗಳೂರು"
     },
     {
       "acNumber": 126,
       "name": "Tarikere",
       "nameKn": "ತರೀಕೆರೆ",
       "district": "CHIKKMAGALUR",
-      "parts": 237
+      "parts": 237,
+      "districtKn": "ಚಿಕ್ಕಮಗಳೂರು"
     },
     {
       "acNumber": 93,
       "name": "Bellary",
       "nameKn": "ಬಳ್ಳಾರಿ",
       "district": "BELLARY",
-      "parts": 238
+      "parts": 238,
+      "districtKn": "ಬಳ್ಳಾರಿ"
     },
     {
       "acNumber": 94,
       "name": "Bellary City",
       "nameKn": "ಬಳ್ಳಾರಿ ನಗರ",
       "district": "BELLARY",
-      "parts": 261
+      "parts": 261,
+      "districtKn": "ಬಳ್ಳಾರಿ"
     },
     {
       "acNumber": 91,
       "name": "Kampli",
       "nameKn": "ಕಂಪ್ಲಿ",
       "district": "BELLARY",
-      "parts": 253
+      "parts": 253,
+      "districtKn": "ಬಳ್ಳಾರಿ"
     },
     {
       "acNumber": 95,
       "name": "Sandur",
       "nameKn": "ಸಂಡೂರು",
       "district": "BELLARY",
-      "parts": 264
+      "parts": 264,
+      "districtKn": "ಬಳ್ಳಾರಿ"
     },
     {
       "acNumber": 92,
       "name": "Siraguppa",
       "nameKn": "ಸಿರುಗುಪ್ಪ",
       "district": "BELLARY",
-      "parts": 244
+      "parts": 244,
+      "districtKn": "ಬಳ್ಳಾರಿ"
     },
     {
       "acNumber": 88,
       "name": "Hadagali",
       "nameKn": "ಹಡಗಲಿ",
       "district": "VIJAYANAGARA",
-      "parts": 226
+      "parts": 226,
+      "districtKn": "ವಿಜಯನಗರ"
     },
     {
       "acNumber": 89,
       "name": "Hagaribommanahalli",
       "nameKn": "ಹಗರಿಬೊಮ್ಮನಹಳ್ಳಿ",
       "district": "VIJAYANAGARA",
-      "parts": 275
+      "parts": 275,
+      "districtKn": "ವಿಜಯನಗರ"
     },
     {
       "acNumber": 104,
       "name": "Harapanahalli",
       "nameKn": "ಹರಪನಹಳ್ಳಿ",
       "district": "VIJAYANAGARA",
-      "parts": 265
+      "parts": 265,
+      "districtKn": "ವಿಜಯನಗರ"
     },
     {
       "acNumber": 96,
       "name": "Kudligi",
       "nameKn": "ಕೂಡ್ಲಿಗಿ",
       "district": "VIJAYANAGARA",
-      "parts": 264
+      "parts": 264,
+      "districtKn": "ವಿಜಯನಗರ"
     },
     {
       "acNumber": 90,
       "name": "Vijayanagara",
       "nameKn": "ವಿಜಯನಗರ",
       "district": "VIJAYANAGARA",
-      "parts": 271
+      "parts": 271,
+      "districtKn": "ವಿಜಯನಗರ"
     },
     {
       "acNumber": 62,
       "name": "Gangavathi",
       "nameKn": "ಗಂಗಾವತಿ",
       "district": "KOPPAL",
-      "parts": 240
+      "parts": 240,
+      "districtKn": "ಕೊಪ್ಪಳ"
     },
     {
       "acNumber": 61,
       "name": "Kanakagiri",
       "nameKn": "ಕನಕಗಿರಿ",
       "district": "KOPPAL",
-      "parts": 277
+      "parts": 277,
+      "districtKn": "ಕೊಪ್ಪಳ"
     },
     {
       "acNumber": 64,
       "name": "Koppal",
       "nameKn": "ಕೊಪ್ಪಳ",
       "district": "KOPPAL",
-      "parts": 294
+      "parts": 294,
+      "districtKn": "ಕೊಪ್ಪಳ"
     },
     {
       "acNumber": 60,
       "name": "Kushtagi",
       "nameKn": "ಕುಷ್ಟಗಿ",
       "district": "KOPPAL",
-      "parts": 282
+      "parts": 282,
+      "districtKn": "ಕೊಪ್ಪಳ"
     },
     {
       "acNumber": 63,
       "name": "Yelburga",
       "nameKn": "ಯಲಬುರ್ಗಾ",
       "district": "KOPPAL",
-      "parts": 259
+      "parts": 259,
+      "districtKn": "ಕೊಪ್ಪಳ"
     },
     {
       "acNumber": 140,
       "name": "Bagepalli",
       "nameKn": "ಬಾಗೇಪಲ್ಲಿ",
       "district": "CHIKKABALLAPUR",
-      "parts": 282
+      "parts": 282,
+      "districtKn": "ಚಿಕ್ಕಬಳ್ಳಾಪುರ"
     },
     {
       "acNumber": 141,
       "name": "Chikkaballapur",
       "nameKn": "ಚಿಕ್ಕಬಳ್ಳಾಪುರ",
       "district": "CHIKKABALLAPUR",
-      "parts": 271
+      "parts": 271,
+      "districtKn": "ಚಿಕ್ಕಬಳ್ಳಾಪುರ"
     },
     {
       "acNumber": 143,
       "name": "Chintamani",
       "nameKn": "ಚಿಂತಾಮಣಿ",
       "district": "CHIKKABALLAPUR",
-      "parts": 282
+      "parts": 282,
+      "districtKn": "ಚಿಕ್ಕಬಳ್ಳಾಪುರ"
     },
     {
       "acNumber": 139,
       "name": "Gauribidanur",
       "nameKn": "ಗೌರಿಬಿದನೂರು",
       "district": "CHIKKABALLAPUR",
-      "parts": 271
+      "parts": 271,
+      "districtKn": "ಚಿಕ್ಕಬಳ್ಳಾಪುರ"
     },
     {
       "acNumber": 142,
       "name": "Sidlaghatta",
       "nameKn": "ಶಿಡ್ಲಘಟ್ಟ",
       "district": "CHIKKABALLAPUR",
-      "parts": 255
+      "parts": 255,
+      "districtKn": "ಚಿಕ್ಕಬಳ್ಳಾಪುರ"
     },
     {
       "acNumber": 79,
       "name": "Bhatkal",
       "nameKn": "ಭಟ್ಕಳ",
       "district": "UTTARA KANNADA",
-      "parts": 273
+      "parts": 273,
+      "districtKn": "ಉತ್ತರ ಕನ್ನಡ"
     },
     {
       "acNumber": 76,
       "name": "Haliyal",
       "nameKn": "ಹಳಿಯಾಳ",
       "district": "UTTARA KANNADA",
-      "parts": 234
+      "parts": 234,
+      "districtKn": "ಉತ್ತರ ಕನ್ನಡ"
     },
     {
       "acNumber": 77,
       "name": "Karwar",
       "nameKn": "ಕಾರವಾರ",
       "district": "UTTARA KANNADA",
-      "parts": 265
+      "parts": 265,
+      "districtKn": "ಉತ್ತರ ಕನ್ನಡ"
     },
     {
       "acNumber": 78,
       "name": "Kumta",
       "nameKn": "ಕುಮಟಾ",
       "district": "UTTARA KANNADA",
-      "parts": 227
+      "parts": 227,
+      "districtKn": "ಉತ್ತರ ಕನ್ನಡ"
     },
     {
       "acNumber": 80,
       "name": "Sirsi",
       "nameKn": "ಸಿರ್ಸಿ",
       "district": "UTTARA KANNADA",
-      "parts": 278
+      "parts": 278,
+      "districtKn": "ಉತ್ತರ ಕನ್ನಡ"
     },
     {
       "acNumber": 81,
       "name": "Yellapur",
       "nameKn": "ಯಲ್ಲಾಪುರ",
       "district": "UTTARA KANNADA",
-      "parts": 246
+      "parts": 246,
+      "districtKn": "ಉತ್ತರ ಕನ್ನಡ"
     },
     {
       "acNumber": 85,
       "name": "Byadgi",
       "nameKn": "ಬ್ಯಾಡಗಿ",
       "district": "HAVERI",
-      "parts": 251
+      "parts": 251,
+      "districtKn": "ಹಾವೇರಿ"
     },
     {
       "acNumber": 82,
       "name": "Hangal",
       "nameKn": "ಹಾನಗಲ್",
       "district": "HAVERI",
-      "parts": 256
+      "parts": 256,
+      "districtKn": "ಹಾವೇರಿ"
     },
     {
       "acNumber": 84,
       "name": "Haveri",
       "nameKn": "ಹಾವೇರಿ",
       "district": "HAVERI",
-      "parts": 272
+      "parts": 272,
+      "districtKn": "ಹಾವೇರಿ"
     },
     {
       "acNumber": 86,
       "name": "Hirekerur",
       "nameKn": "ಹಿರೇಕೆರೂರು",
       "district": "HAVERI",
-      "parts": 235
+      "parts": 235,
+      "districtKn": "ಹಾವೇರಿ"
     },
     {
       "acNumber": 87,
       "name": "Ranebennur",
       "nameKn": "ರಾಣೆಬೆನ್ನೂರು",
       "district": "HAVERI",
-      "parts": 269
+      "parts": 269,
+      "districtKn": "ಹಾವೇರಿ"
     },
     {
       "acNumber": 83,
       "name": "Shiggaon",
       "nameKn": "ಶಿಗ್ಗಾಂವ",
       "district": "HAVERI",
-      "parts": 276
+      "parts": 276,
+      "districtKn": "ಹಾವೇರಿ"
     },
     {
       "acNumber": 147,
       "name": "Bangarapet",
       "nameKn": "ಬಂಗಾರಪೇಟೆ",
       "district": "KOLAR",
-      "parts": 259
+      "parts": 259,
+      "districtKn": "ಕೋಲಾರ"
     },
     {
       "acNumber": 148,
       "name": "Kolar",
       "nameKn": "ಕೋಲಾರ",
       "district": "KOLAR",
-      "parts": 284
+      "parts": 284,
+      "districtKn": "ಕೋಲಾರ"
     },
     {
       "acNumber": 146,
       "name": "Kolar Gold Field",
       "nameKn": "ಕೆ.ಜಿ.ಎಫ್‌",
       "district": "KOLAR",
-      "parts": 224
+      "parts": 224,
+      "districtKn": "ಕೋಲಾರ"
     },
     {
       "acNumber": 149,
       "name": "Malur",
       "nameKn": "ಮಾಲೂರು",
       "district": "KOLAR",
-      "parts": 249
+      "parts": 249,
+      "districtKn": "ಕೋಲಾರ"
     },
     {
       "acNumber": 145,
       "name": "Mulbagal",
       "nameKn": "ಮುಳಬಾಗಿಲು",
       "district": "KOLAR",
-      "parts": 274
+      "parts": 274,
+      "districtKn": "ಕೋಲಾರ"
     },
     {
       "acNumber": 144,
       "name": "Srinivasapur",
       "nameKn": "ಶ್ರೀನಿವಾಸಪುರ",
       "district": "KOLAR",
-      "parts": 288
+      "parts": 288,
+      "districtKn": "ಕೋಲಾರ"
     },
     {
       "acNumber": 52,
       "name": "Aurad",
       "nameKn": "ಔರಾದ",
       "district": "BIDAR",
-      "parts": 260
+      "parts": 260,
+      "districtKn": "ಬೀದರ್‌"
     },
     {
       "acNumber": 47,
       "name": "Basavakalyan",
       "nameKn": "ಬಸವಕಲ್ಯಾಣ",
       "district": "BIDAR",
-      "parts": 286
+      "parts": 286,
+      "districtKn": "ಬೀದರ್‌"
     },
     {
       "acNumber": 51,
       "name": "Bhalki",
       "nameKn": "ಭಾಲ್ಕಿ",
       "district": "BIDAR",
-      "parts": 274
+      "parts": 274,
+      "districtKn": "ಬೀದರ್‌"
     },
     {
       "acNumber": 50,
       "name": "Bidar",
       "nameKn": "ಬೀದರ್‌",
       "district": "BIDAR",
-      "parts": 252
+      "parts": 252,
+      "districtKn": "ಬೀದರ್‌"
     },
     {
       "acNumber": 49,
       "name": "Bidar South",
       "nameKn": "ಬೀದರ್‌ ದಕ್ಷಿಣ",
       "district": "BIDAR",
-      "parts": 236
+      "parts": 236,
+      "districtKn": "ಬೀದರ್‌"
     },
     {
       "acNumber": 48,
       "name": "Humnabad",
       "nameKn": "ಹುಮನಾಬಾದ",
       "district": "BIDAR",
-      "parts": 271
+      "parts": 271,
+      "districtKn": "ಬೀದರ್‌"
     },
     {
       "acNumber": 71,
       "name": "Dharwad",
       "nameKn": "ಧಾರವಾಡ",
       "district": "DHARWAD",
-      "parts": 247
+      "parts": 247,
+      "districtKn": "ಧಾರವಾಡ"
     },
     {
       "acNumber": 73,
       "name": "Hubli-Dharwad-Central",
       "nameKn": "ಹುಬ್ಬಳ್ಳಿ-ಧಾರವಾಡ ಕೇಂದ್ರ",
       "district": "DHARWAD",
-      "parts": 267
+      "parts": 267,
+      "districtKn": "ಧಾರವಾಡ"
     },
     {
       "acNumber": 72,
       "name": "Hubli-Dharwad-East",
       "nameKn": "ಹುಬ್ಬಳ್ಳಿ - ಧಾರವಾಡ -ಪೂರ್ವ",
       "district": "DHARWAD",
-      "parts": 227
+      "parts": 227,
+      "districtKn": "ಧಾರವಾಡ"
     },
     {
       "acNumber": 74,
       "name": "Hubli-Dharwad-West",
       "nameKn": "ಹುಬ್ಬಳ್ಳಿ-ಧಾರವಾಡ-ಪಶ್ಚಿಮ",
       "district": "DHARWAD",
-      "parts": 267
+      "parts": 267,
+      "districtKn": "ಧಾರವಾಡ"
     },
     {
       "acNumber": 75,
       "name": "Kalaghatgi",
       "nameKn": "ಕಲಘಟಗಿ",
       "district": "DHARWAD",
-      "parts": 238
+      "parts": 238,
+      "districtKn": "ಧಾರವಾಡ"
     },
     {
       "acNumber": 70,
       "name": "Kundgol",
       "nameKn": "ಕುಂದಗೋಳ",
       "district": "DHARWAD",
-      "parts": 219
+      "parts": 219,
+      "districtKn": "ಧಾರವಾಡ"
     },
     {
       "acNumber": 69,
       "name": "Navalgund",
       "nameKn": "ನವಲಗುಂದ",
       "district": "DHARWAD",
-      "parts": 242
+      "parts": 242,
+      "districtKn": "ಧಾರವಾಡ"
     },
     {
       "acNumber": 98,
       "name": "Challakere",
       "nameKn": "ಚಳ್ಳಕೆರೆ",
       "district": "CHITRADURGA",
-      "parts": 278
+      "parts": 278,
+      "districtKn": "ಚಿತ್ರದುರ್ಗ"
     },
     {
       "acNumber": 99,
       "name": "Chitradurga",
       "nameKn": "ಚಿತ್ರದುರ್ಗ",
       "district": "CHITRADURGA",
-      "parts": 302
+      "parts": 302,
+      "districtKn": "ಚಿತ್ರದುರ್ಗ"
     },
     {
       "acNumber": 100,
       "name": "Hiriyur",
       "nameKn": "ಹಿರಿಯೂರು",
       "district": "CHITRADURGA",
-      "parts": 300
+      "parts": 300,
+      "districtKn": "ಚಿತ್ರದುರ್ಗ"
     },
     {
       "acNumber": 102,
       "name": "Holalkere",
       "nameKn": "ಹೊಳಲ್ಕೆರೆ",
       "district": "CHITRADURGA",
-      "parts": 315
+      "parts": 315,
+      "districtKn": "ಚಿತ್ರದುರ್ಗ"
     },
     {
       "acNumber": 101,
       "name": "Hosadurga",
       "nameKn": "ಹೊಸದುರ್ಗ",
       "district": "CHITRADURGA",
-      "parts": 258
+      "parts": 258,
+      "districtKn": "ಚಿತ್ರದುರ್ಗ"
     },
     {
       "acNumber": 97,
       "name": "Molakalmuru",
       "nameKn": "ಮೊಳಕಾಲ್ಮೂರು",
       "district": "CHITRADURGA",
-      "parts": 311
+      "parts": 311,
+      "districtKn": "ಚಿತ್ರದುರ್ಗ"
     },
     {
       "acNumber": 109,
       "name": "Channagiri",
       "nameKn": "ಚನ್ನಗಿರಿ",
       "district": "DAVANGERE",
-      "parts": 265
+      "parts": 265,
+      "districtKn": "ದಾವಣಗೆರೆ"
     },
     {
       "acNumber": 106,
       "name": "Davanagere North",
       "nameKn": "ದಾವಣಗೆರೆ ಉತ್ತರ",
       "district": "DAVANGERE",
-      "parts": 258
+      "parts": 258,
+      "districtKn": "ದಾವಣಗೆರೆ"
     },
     {
       "acNumber": 107,
       "name": "Davanagere South",
       "nameKn": "ದಾವಣಗೆರೆ ದಕ್ಷಿಣ",
       "district": "DAVANGERE",
-      "parts": 284
+      "parts": 284,
+      "districtKn": "ದಾವಣಗೆರೆ"
     },
     {
       "acNumber": 105,
       "name": "Harihar",
       "nameKn": "ಹರಿಹರ",
       "district": "DAVANGERE",
-      "parts": 236
+      "parts": 236,
+      "districtKn": "ದಾವಣಗೆರೆ"
     },
     {
       "acNumber": 110,
       "name": "Honnali",
       "nameKn": "ಹೊನ್ನಾಳಿ",
       "district": "DAVANGERE",
-      "parts": 248
+      "parts": 248,
+      "districtKn": "ದಾವಣಗೆರೆ"
     },
     {
       "acNumber": 103,
       "name": "Jagalur",
       "nameKn": "ಜಗಳೂರು",
       "district": "DAVANGERE",
-      "parts": 269
+      "parts": 269,
+      "districtKn": "ದಾವಣಗೆರೆ"
     },
     {
       "acNumber": 108,
       "name": "Mayakonda",
       "nameKn": "ಮಾಯಕೊಂಡ",
       "district": "DAVANGERE",
-      "parts": 248
+      "parts": 248,
+      "districtKn": "ದಾವಣಗೆರೆ"
     },
     {
       "acNumber": 23,
       "name": "Badami",
       "nameKn": "ಬಾದಾಮಿ",
       "district": "BAGALKOT",
-      "parts": 271
+      "parts": 271,
+      "districtKn": "ಬಾಗಲಕೋಟೆ"
     },
     {
       "acNumber": 24,
       "name": "Bagalkot",
       "nameKn": "ಬಾಗಲಕೋಟೆ",
       "district": "BAGALKOT",
-      "parts": 319
+      "parts": 319,
+      "districtKn": "ಬಾಗಲಕೋಟೆ"
     },
     {
       "acNumber": 22,
       "name": "Bilgi",
       "nameKn": "ಬೀಳಗಿ",
       "district": "BAGALKOT",
-      "parts": 273
+      "parts": 273,
+      "districtKn": "ಬಾಗಲಕೋಟೆ"
     },
     {
       "acNumber": 25,
       "name": "Hungund",
       "nameKn": "ಹುನಗುಂದ",
       "district": "BAGALKOT",
-      "parts": 264
+      "parts": 264,
+      "districtKn": "ಬಾಗಲಕೋಟೆ"
     },
     {
       "acNumber": 21,
       "name": "Jamkhandi",
       "nameKn": "ಜಮಖಂಡಿ",
       "district": "BAGALKOT",
-      "parts": 253
+      "parts": 253,
+      "districtKn": "ಬಾಗಲಕೋಟೆ"
     },
     {
       "acNumber": 19,
       "name": "Mudhol",
       "nameKn": "ಮುಧೋಳ",
       "district": "BAGALKOT",
-      "parts": 222
+      "parts": 222,
+      "districtKn": "ಬಾಗಲಕೋಟೆ"
     },
     {
       "acNumber": 20,
       "name": "Terdal",
       "nameKn": "ತೇರದಾಳ",
       "district": "BAGALKOT",
-      "parts": 253
+      "parts": 253,
+      "districtKn": "ಬಾಗಲಕೋಟೆ"
     },
     {
       "acNumber": 112,
       "name": "Bhadravathi",
       "nameKn": "ಭದ್ರಾವತಿ",
       "district": "SHIMOGA",
-      "parts": 257
+      "parts": 257,
+      "districtKn": "ಶಿವಮೊಗ್ಗ"
     },
     {
       "acNumber": 117,
       "name": "Sagar",
       "nameKn": "ಸಾಗರ",
       "district": "SHIMOGA",
-      "parts": 289
+      "parts": 289,
+      "districtKn": "ಶಿವಮೊಗ್ಗ"
     },
     {
       "acNumber": 115,
       "name": "Shikaripura",
       "nameKn": "ಶಿಕಾರಿಪುರ",
       "district": "SHIMOGA",
-      "parts": 247
+      "parts": 247,
+      "districtKn": "ಶಿವಮೊಗ್ಗ"
     },
     {
       "acNumber": 113,
       "name": "Shimoga",
       "nameKn": "ಶಿವಮೊಗ್ಗ",
       "district": "SHIMOGA",
-      "parts": 297
+      "parts": 297,
+      "districtKn": "ಶಿವಮೊಗ್ಗ"
     },
     {
       "acNumber": 111,
       "name": "Shimoga Rural",
       "nameKn": "ಶಿವಮೊಗ್ಗ ಗ್ರಾಮಾಂತರ",
       "district": "SHIMOGA",
-      "parts": 270
+      "parts": 270,
+      "districtKn": "ಶಿವಮೊಗ್ಗ"
     },
     {
       "acNumber": 116,
       "name": "Sorab",
       "nameKn": "ಸೊರಬ",
       "district": "SHIMOGA",
-      "parts": 256
+      "parts": 256,
+      "districtKn": "ಶಿವಮೊಗ್ಗ"
     },
     {
       "acNumber": 114,
       "name": "Tirthahalli",
       "nameKn": "ತೀರ್ಥಹಳ್ಳಿ",
       "district": "SHIMOGA",
-      "parts": 270
+      "parts": 270,
+      "districtKn": "ಶಿವಮೊಗ್ಗ"
     },
     {
       "acNumber": 192,
       "name": "Krishnarajpet",
       "nameKn": "ಕೆ.ಆರ್‌ .ಪೇಟೆ",
       "district": "MANDYA",
-      "parts": 276
+      "parts": 276,
+      "districtKn": "ಮಂಡ್ಯ"
     },
     {
       "acNumber": 187,
       "name": "Maddur",
       "nameKn": "ಮದ್ದೂರು",
       "district": "MANDYA",
-      "parts": 262
+      "parts": 262,
+      "districtKn": "ಮಂಡ್ಯ"
     },
     {
       "acNumber": 186,
       "name": "Malavalli",
       "nameKn": "ಮಳವಳ್ಳಿ",
       "district": "MANDYA",
-      "parts": 291
+      "parts": 291,
+      "districtKn": "ಮಂಡ್ಯ"
     },
     {
       "acNumber": 189,
       "name": "Mandya",
       "nameKn": "ಮಂಡ್ಯ",
       "district": "MANDYA",
-      "parts": 265
+      "parts": 265,
+      "districtKn": "ಮಂಡ್ಯ"
     },
     {
       "acNumber": 188,
       "name": "Melukote",
       "nameKn": "ಮೇಲುಕೋಟೆ",
       "district": "MANDYA",
-      "parts": 270
+      "parts": 270,
+      "districtKn": "ಮಂಡ್ಯ"
     },
     {
       "acNumber": 191,
       "name": "Nagamangala",
       "nameKn": "ನಾಗಮಂಗಲ",
       "district": "MANDYA",
-      "parts": 272
+      "parts": 272,
+      "districtKn": "ಮಂಡ್ಯ"
     },
     {
       "acNumber": 190,
       "name": "Shrirangapattana",
       "nameKn": "ಶ್ರೀರಂಗಪಟ್ಟಣ",
       "district": "MANDYA",
-      "parts": 253
+      "parts": 253,
+      "districtKn": "ಮಂಡ್ಯ"
     },
     {
       "acNumber": 56,
       "name": "Devadurga",
       "nameKn": "ದೇವದುರ್ಗ",
       "district": "RAICHUR",
-      "parts": 275
+      "parts": 275,
+      "districtKn": "ರಾಯಚೂರು"
     },
     {
       "acNumber": 57,
       "name": "Lingsugur",
       "nameKn": "ಲಿಂಗಸುಗೂರು",
       "district": "RAICHUR",
-      "parts": 294
+      "parts": 294,
+      "districtKn": "ರಾಯಚೂರು"
     },
     {
       "acNumber": 55,
       "name": "Manvi",
       "nameKn": "ಮಾನ್ವಿ",
       "district": "RAICHUR",
-      "parts": 280
+      "parts": 280,
+      "districtKn": "ರಾಯಚೂರು"
     },
     {
       "acNumber": 59,
       "name": "Maski",
       "nameKn": "ಮಸ್ಕಿ",
       "district": "RAICHUR",
-      "parts": 239
+      "parts": 239,
+      "districtKn": "ರಾಯಚೂರು"
     },
     {
       "acNumber": 54,
       "name": "Raichur",
       "nameKn": "ರಾಯಚೂರು",
       "district": "RAICHUR",
-      "parts": 254
+      "parts": 254,
+      "districtKn": "ರಾಯಚೂರು"
     },
     {
       "acNumber": 53,
       "name": "Raichur Rural",
       "nameKn": "ರಾಯಚೂರು ಗ್ರಾಮಾಂತರ",
       "district": "RAICHUR",
-      "parts": 278
+      "parts": 278,
+      "districtKn": "ರಾಯಚೂರು"
     },
     {
       "acNumber": 58,
       "name": "Sindhanur",
       "nameKn": "ಸಿಂಧನೂರು",
       "district": "RAICHUR",
-      "parts": 272
+      "parts": 272,
+      "districtKn": "ರಾಯಚೂರು"
     },
     {
       "acNumber": 205,
       "name": "Bantwal",
       "nameKn": "ಬಂಟ್ವಾಳ",
       "district": "DAKSHINA KANNADA",
-      "parts": 261
+      "parts": 261,
+      "districtKn": "ದಕ್ಷಿಣ ಕನ್ನಡ"
     },
     {
       "acNumber": 200,
       "name": "Belthangady",
       "nameKn": "ಬೆಳ್ತಂಗಡಿ",
       "district": "DAKSHINA KANNADA",
-      "parts": 268
+      "parts": 268,
+      "districtKn": "ದಕ್ಷಿಣ ಕನ್ನಡ"
     },
     {
       "acNumber": 204,
       "name": "Mangalore",
       "nameKn": "ಮಂಗಳೂರು",
       "district": "DAKSHINA KANNADA",
-      "parts": 235
+      "parts": 235,
+      "districtKn": "ದಕ್ಷಿಣ ಕನ್ನಡ"
     },
     {
       "acNumber": 202,
       "name": "Mangalore City North",
       "nameKn": "ಮಂಗಳೂರು ನಗರ ಉತ್ತರ",
       "district": "DAKSHINA KANNADA",
-      "parts": 267
+      "parts": 267,
+      "districtKn": "ದಕ್ಷಿಣ ಕನ್ನಡ"
     },
     {
       "acNumber": 203,
       "name": "Mangalore City South",
       "nameKn": "ಮಂಗಳೂರು ನಗರ ದಕ್ಷಿಣ",
       "district": "DAKSHINA KANNADA",
-      "parts": 260
+      "parts": 260,
+      "districtKn": "ದಕ್ಷಿಣ ಕನ್ನಡ"
     },
     {
       "acNumber": 201,
       "name": "Moodabidri",
       "nameKn": "ಮೂಡಬಿದ್ರಿ",
       "district": "DAKSHINA KANNADA",
-      "parts": 245
+      "parts": 245,
+      "districtKn": "ದಕ್ಷಿಣ ಕನ್ನಡ"
     },
     {
       "acNumber": 206,
       "name": "Puttur",
       "nameKn": "ಪುತ್ತೂರು",
       "district": "DAKSHINA KANNADA",
-      "parts": 245
+      "parts": 245,
+      "districtKn": "ದಕ್ಷಿಣ ಕನ್ನಡ"
     },
     {
       "acNumber": 207,
       "name": "Sullia",
       "nameKn": "ಸುಳ್ಯ",
       "district": "DAKSHINA KANNADA",
-      "parts": 238
+      "parts": 238,
+      "districtKn": "ದಕ್ಷಿಣ ಕನ್ನಡ"
     },
     {
       "acNumber": 29,
       "name": "Babaleshwar",
       "nameKn": "ಬಬಲೇಶ್ವರ್‌",
       "district": "BIJAPUR",
-      "parts": 259
+      "parts": 259,
+      "districtKn": "ವಿಜಾಪೂರ"
     },
     {
       "acNumber": 28,
       "name": "Basavana  Bagevadi",
       "nameKn": "ಬಸವನ ಬಾಗೇವಾಡಿ",
       "district": "BIJAPUR",
-      "parts": 244
+      "parts": 244,
+      "districtKn": "ವಿಜಾಪೂರ"
     },
     {
       "acNumber": 30,
       "name": "Bijapur City",
       "nameKn": "ಬಿಜಾಪುರ ನಗರ",
       "district": "BIJAPUR",
-      "parts": 287
+      "parts": 287,
+      "districtKn": "ವಿಜಾಪೂರ"
     },
     {
       "acNumber": 27,
       "name": "Devara Hippargi",
       "nameKn": "ದೇವರ ಹಿಪ್ಪರಗಿ",
       "district": "BIJAPUR",
-      "parts": 256
+      "parts": 256,
+      "districtKn": "ವಿಜಾಪೂರ"
     },
     {
       "acNumber": 32,
       "name": "Indi",
       "nameKn": "ಇಂಡಿ",
       "district": "BIJAPUR",
-      "parts": 277
+      "parts": 277,
+      "districtKn": "ವಿಜಾಪೂರ"
     },
     {
       "acNumber": 26,
       "name": "Muddebihal",
       "nameKn": "ಮುದ್ದೇಬಿಹಾಳ",
       "district": "BIJAPUR",
-      "parts": 254
+      "parts": 254,
+      "districtKn": "ವಿಜಾಪೂರ"
     },
     {
       "acNumber": 31,
       "name": "Nagthan",
       "nameKn": "ನಾಗಠಾಣ",
       "district": "BIJAPUR",
-      "parts": 306
+      "parts": 306,
+      "districtKn": "ವಿಜಾಪೂರ"
     },
     {
       "acNumber": 33,
       "name": "Sindgi",
       "nameKn": "ಸಿಂಧಗಿ",
       "district": "BIJAPUR",
-      "parts": 276
+      "parts": 276,
+      "districtKn": "ವಿಜಾಪೂರ"
     },
     {
       "acNumber": 34,
       "name": "Afzalpur",
       "nameKn": "ಅಫಜಲಪೂರ",
       "district": "GULBARGA",
-      "parts": 261
+      "parts": 261,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 46,
       "name": "Aland",
       "nameKn": "ಅಳಂದ",
       "district": "GULBARGA",
-      "parts": 258
+      "parts": 258,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 42,
       "name": "Chincholi",
       "nameKn": "ಚಿಂಚೋಳಿ",
       "district": "GULBARGA",
-      "parts": 253
+      "parts": 253,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 40,
       "name": "Chittapur",
       "nameKn": "ಚಿತ್ತಾಪೂರ",
       "district": "GULBARGA",
-      "parts": 263
+      "parts": 263,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 44,
       "name": "Gulbarga Dakshin",
       "nameKn": "ಗುಲಬರ್ಗಾ ದಕ್ಷಿಣ",
       "district": "GULBARGA",
-      "parts": 265
+      "parts": 265,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 43,
       "name": "Gulbarga Rural",
       "nameKn": "ಗುಲಬರ್ಗಾ ಗ್ರಾಮಾಂತರ",
       "district": "GULBARGA",
-      "parts": 304
+      "parts": 304,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 45,
       "name": "Gulbarga Uttar",
       "nameKn": "ಗುಲಬರ್ಗಾ ಉತ್ತರ",
       "district": "GULBARGA",
-      "parts": 308
+      "parts": 308,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 35,
       "name": "Jevargi",
       "nameKn": "ಜೇವರ್ಗಿ",
       "district": "GULBARGA",
-      "parts": 285
+      "parts": 285,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 41,
       "name": "Sedam",
       "nameKn": "ಸೇಡಂ",
       "district": "GULBARGA",
-      "parts": 264
+      "parts": 264,
+      "districtKn": "ಗುಲಬರ್ಗಾ"
     },
     {
       "acNumber": 128,
       "name": "Chikknayakanhalli",
       "nameKn": "ಚಿಕ್ಕನಾಯಕನಹಳ್ಳಿ",
       "district": "TUMKUR",
-      "parts": 270
+      "parts": 270,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 135,
       "name": "Gubbi",
       "nameKn": "ಗುಬ್ಬಿ",
       "district": "TUMKUR",
-      "parts": 222
+      "parts": 222,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 134,
       "name": "Koratagere",
       "nameKn": "ಕೊರಟಗೆರೆ",
       "district": "TUMKUR",
-      "parts": 256
+      "parts": 256,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 131,
       "name": "Kunigal",
       "nameKn": "ಕುಣಿಗಲ್‌",
       "district": "TUMKUR",
-      "parts": 270
+      "parts": 270,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 138,
       "name": "Madhugiri",
       "nameKn": "ಮಧುಗಿರಿ",
       "district": "TUMKUR",
-      "parts": 248
+      "parts": 248,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 137,
       "name": "Pavagada",
       "nameKn": "ಪಾವಗಡ",
       "district": "TUMKUR",
-      "parts": 251
+      "parts": 251,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 136,
       "name": "Sira",
       "nameKn": "ಶಿರಾ",
       "district": "TUMKUR",
-      "parts": 282
+      "parts": 282,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 129,
       "name": "Tiptur",
       "nameKn": "ತಿಪಟೂರು",
       "district": "TUMKUR",
-      "parts": 232
+      "parts": 232,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 132,
       "name": "Tumkur City",
       "nameKn": "ತುಮಕೂರು ನಗರ",
       "district": "TUMKUR",
-      "parts": 247
+      "parts": 247,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 133,
       "name": "Tumkur Rural",
       "nameKn": "ತುಮಕೂರು ಗ್ರಾಮಾಂತರ",
       "district": "TUMKUR",
-      "parts": 238
+      "parts": 238,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 130,
       "name": "Turuvekere",
       "nameKn": "ತುರುವೇಕೆರೆ",
       "district": "TUMKUR",
-      "parts": 229
+      "parts": 229,
+      "districtKn": "ತುಮಕೂರು"
     },
     {
       "acNumber": 217,
       "name": "Chamaraja",
       "nameKn": "ಚಾಮರಾಜ",
       "district": "MYSORE",
-      "parts": 248
+      "parts": 248,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 215,
       "name": "Chamundeshwari",
       "nameKn": "ಚಾಮುಂಡೇಶ್ವರಿ",
       "district": "MYSORE",
-      "parts": 351
+      "parts": 351,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 213,
       "name": "Heggadadevankote",
       "nameKn": "ಹೆಗ್ಗಡದೇವನಕೋಟೆ",
       "district": "MYSORE",
-      "parts": 288
+      "parts": 288,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 212,
       "name": "Hunsur",
       "nameKn": "ಹುಣಸೂರು",
       "district": "MYSORE",
-      "parts": 285
+      "parts": 285,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 216,
       "name": "Krishnaraja",
       "nameKn": "ಕೃಷ್ಣರಾಜ",
       "district": "MYSORE",
-      "parts": 265
+      "parts": 265,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 211,
       "name": "Krishnarajanagara",
       "nameKn": "ಕೃಷ್ಣರಾಜನಗರ",
       "district": "MYSORE",
-      "parts": 259
+      "parts": 259,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 214,
       "name": "Nanjangud",
       "nameKn": "ನಂಜನಗೂಡು",
       "district": "MYSORE",
-      "parts": 249
+      "parts": 249,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 218,
       "name": "Narasimharaja",
       "nameKn": "ನರಸಿಂಹರಾಜ",
       "district": "MYSORE",
-      "parts": 283
+      "parts": 283,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 210,
       "name": "Piriyapatna",
       "nameKn": "ಪಿರಿಯಾಪಟ್ಟಣ",
       "district": "MYSORE",
-      "parts": 240
+      "parts": 240,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 220,
       "name": "T. Narasipur",
       "nameKn": "ಟಿ.ನರಸೀಪುರ",
       "district": "MYSORE",
-      "parts": 232
+      "parts": 232,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 219,
       "name": "Varuna",
       "nameKn": "ವರುಣ",
       "district": "MYSORE",
-      "parts": 267
+      "parts": 267,
+      "districtKn": "ಮೈಸೂರು"
     },
     {
       "acNumber": 8,
       "name": "Arabhavi",
       "nameKn": "ಅರಭಾವಿ",
       "district": "BELGAUM",
-      "parts": 290
+      "parts": 290,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 3,
       "name": "Athani",
       "nameKn": "ಅಥಣಿ",
       "district": "BELGAUM",
-      "parts": 270
+      "parts": 270,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 16,
       "name": "Bailahongal",
       "nameKn": "ಬೈಲಹೊಂಗಲ",
       "district": "BELGAUM",
-      "parts": 225
+      "parts": 225,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 12,
       "name": "Belgaum Dakshin",
       "nameKn": "ಬೆಳಗಾವಿ  ದಕ್ಷಿಣ",
       "district": "BELGAUM",
-      "parts": 260
+      "parts": 260,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 13,
       "name": "Belgaum Rural",
       "nameKn": "ಬೆಳಗಾವಿ ಗ್ರಾಮಾಂತರ",
       "district": "BELGAUM",
-      "parts": 299
+      "parts": 299,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 11,
       "name": "Belgaum Uttar",
       "nameKn": "ಬೆಳಗಾವಿ ಉತ್ತರ",
       "district": "BELGAUM",
-      "parts": 260
+      "parts": 260,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 2,
       "name": "Chikkodi-Sadalga",
       "nameKn": "ಚಿಕ್ಕೋಡಿ-ಸದಲಗಾ",
       "district": "BELGAUM",
-      "parts": 255
+      "parts": 255,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 9,
       "name": "Gokak",
       "nameKn": "ಗೋಕಾಕ",
       "district": "BELGAUM",
-      "parts": 297
+      "parts": 297,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 7,
       "name": "Hukkeri",
       "nameKn": "ಹುಕ್ಕೇರಿ",
       "district": "BELGAUM",
-      "parts": 234
+      "parts": 234,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 4,
       "name": "Kagwad",
       "nameKn": "ಕಾಗವಾಡ",
       "district": "BELGAUM",
-      "parts": 238
+      "parts": 238,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 14,
       "name": "Khanapur",
       "nameKn": "ಖಾನಾಪೂರ",
       "district": "BELGAUM",
-      "parts": 319
+      "parts": 319,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 15,
       "name": "Kittur",
       "nameKn": "ಕಿತ್ತೂರು",
       "district": "BELGAUM",
-      "parts": 232
+      "parts": 232,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 5,
       "name": "Kudachi",
       "nameKn": "ಕುಡಚಿ",
       "district": "BELGAUM",
-      "parts": 227
+      "parts": 227,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 1,
       "name": "Nippani",
       "nameKn": "ನಿಪ್ಪಾಣಿ",
       "district": "BELGAUM",
-      "parts": 259
+      "parts": 259,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 18,
       "name": "Ramdurg",
       "nameKn": "ರಾಮದುರ್ಗ",
       "district": "BELGAUM",
-      "parts": 252
+      "parts": 252,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 6,
       "name": "Raybag",
       "nameKn": "ರಾಯಭಾಗ",
       "district": "BELGAUM",
-      "parts": 246
+      "parts": 246,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 17,
       "name": "Saundatti Yellamma",
       "nameKn": "ಸವದತ್ತಿ ಯಲ್ಲಮ್ಮ",
       "district": "BELGAUM",
-      "parts": 238
+      "parts": 238,
+      "districtKn": "ಬೆಳಗಾವಿ"
     },
     {
       "acNumber": 10,
       "name": "Yemkanamardi",
       "nameKn": "ಯಮಕನಮರಡಿ",
       "district": "BELGAUM",
-      "parts": 243
+      "parts": 243,
+      "districtKn": "ಬೆಳಗಾವಿ"
     }
   ]
 }

@@ -52,7 +52,7 @@ a { color: inherit; }
 .chip:hover { background: rgba(255,255,255,.16); }
 
 /* hero */
-.hero { background: linear-gradient(180deg, var(--brand) 0%, var(--brand-2) 62%, var(--bg) 62.1%); color: #fff; padding: 44px 0 8px; }
+.hero { background: radial-gradient(1200px 400px at 85% -10%, rgba(255,176,32,.18), transparent 60%), linear-gradient(180deg, var(--brand) 0%, var(--brand-2) 100%); color: #fff; padding: 44px 0 40px; }
 .eyebrow { display: inline-block; margin: 0 0 14px; padding: 4px 12px; border-radius: 999px; background: rgba(255,176,32,.16); color: var(--accent); font-weight: 600; font-size: 13px; letter-spacing: .02em; }
 h1 { margin: 0 0 10px; font-size: clamp(32px, 6vw, 52px); line-height: 1.08; letter-spacing: -.03em; font-weight: 800; }
 .lede { margin: 0 0 26px; max-width: 620px; color: rgba(255,255,255,.82); font-size: 17px; }
@@ -92,7 +92,7 @@ h1 { margin: 0 0 10px; font-size: clamp(32px, 6vw, 52px); line-height: 1.08; let
 .multi + .multi { border-top: 1px dashed var(--line); padding-top: 14px; margin-top: 14px; }
 
 /* stats */
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 30px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: -22px; position: relative; }
 .stat { background: var(--surface); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); }
 .stat .num { display: block; font-size: clamp(20px, 4vw, 28px); font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
 .stat .lbl { color: var(--ink-2); font-size: 13px; }

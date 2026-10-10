@@ -104,7 +104,7 @@
     $('cov-table').tBodies[0].innerHTML = rows.map((a) => {
       const pct = a.parts ? a.partsRead / a.parts : 0;
       return `<tr><td>${a.ac}</td><td>${esc(lang === 'kn' && a.nameKn ? a.nameKn : a.name)}</td>
-        <td>${esc(title(a.district))}</td><td class="r">${fmt(a.electors)}</td>
+        <td>${esc(lang === 'kn' && a.districtKn ? a.districtKn : title(a.district))}</td><td class="r">${fmt(a.electors)}</td>
         <td class="r">${a.partsRead}/${a.parts}<span class="bar"><i style="width:${(pct * 100).toFixed(1)}%"></i></span></td></tr>`;
     }).join('');
   }
@@ -153,7 +153,7 @@
       const name = lang === 'kn' && a.nameKn ? a.nameKn : a.name;
       return `<div class="multi">
         <p class="place">${h.ac} · ${esc(name)}</p>
-        <p class="place-sub">${esc(title(a.district))} ${t('district', 'ಜಿಲ್ಲೆ')}</p>
+        <p class="place-sub">${esc(lang === 'kn' && a.districtKn ? a.districtKn : title(a.district))} ${t('district', 'ಜಿಲ್ಲೆ')}</p>
         <div class="ticket">
           <div class="tk"><span class="k">${t('Constituency', 'ಕ್ಷೇತ್ರ')}</span><span class="v">${h.ac}</span></div>
           <div class="tk"><span class="k">${t('Part', 'ಭಾಗ')}</span><span class="v">${h.part}</span></div>
