@@ -1,10 +1,11 @@
 # OCR one constituency. Dispatched by scripts/home/run.py as soon as that AC's
 # crop tar is uploaded, so OCR runs while home is still downloading the rest.
 #
-# Reads crops-<ac>.tar from the draft release, writes rows-<ac>.jsonl.gz and a
-# summary back to it, deletes the tar, then asks the site to republish.
+# kind=kan  crops-<ac>.tar      -> rows-<ac>.jsonl.gz + summary, then the verifier
+# kind=eng  crops-eng-<ac>.tar  -> eng-<ac>.jsonl.gz + summary (English cross-check
+#                                  part, V5), then a republish
 name: OCR constituency
-run-name: OCR AC ${{ inputs.ac }}
+run-name: OCR AC ${{ inputs.ac }} (${{ inputs.kind || 'kan' }})
 
 on:
   workflow_dispatch:
@@ -15,13 +16,17 @@ on:
       tag:
         description: Draft release carrying the crops (see roll-source.json)
         required: true
+      kind:
+        description: kan (the roll) or eng (the English cross-check part)
+        required: false
+        default: kan
 
 permissions:
   contents: write   # read/write assets on the draft release
-  actions: write    # dispatch the publish workflow
+  actions: write    # dispatch the next workflow
 
 concurrency:
-  group: ocr-${{ inputs.ac }}
+  group: ocr-${{ inputs.ac }}-${{ inputs.kind || 'kan' }}
   cancel-in-progress: false
 
 jobs:
@@ -32,6 +37,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       ROLL_RELEASE: ${{ inputs.tag }}
       AC: ${{ inputs.ac }}
+      KIND: ${{ inputs.kind || 'kan' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,16 +55,29 @@ jobs:
 
       - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
 
+      - name: Name the files
+        run: |
+          if [ "$KIND" = eng ]; then
+            echo "TAR=crops-eng-$AC.tar" >> "$GITHUB_ENV"; echo "OUT=eng-$AC" >> "$GITHUB_ENV"
+          else
+            echo "TAR=crops-$AC.tar" >> "$GITHUB_ENV"; echo "OUT=rows-$AC" >> "$GITHUB_ENV"
+          fi
+
       - name: Fetch crops
-        run: python scripts/release.py download "crops-$AC.tar" work
+        run: python scripts/release.py download "$TAR" work
 
       - name: OCR
-        run: python scripts/ci/ocr_ac.py "work/crops-$AC.tar" "work/rows-$AC.jsonl.gz"
+        run: python scripts/ci/ocr_ac.py "work/$TAR" "work/$OUT.jsonl.gz"
 
       - name: Return rows
-        run: |
-          python scripts/release.py upload "work/rows-$AC.jsonl.gz" "work/rows-$AC.summary.json"
-          python scripts/release.py delete "crops-$AC.tar"
+        run: python scripts/release.py upload "work/$OUT.jsonl.gz" "work/$OUT.summary.json"
 
-      - name: Republish the site
-        run: gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"
+      # The Kannada crops stay for the verifier, which re-reads every card.
+      - name: Hand over
+        run: |
+          if [ "$KIND" = eng ]; then
+            python scripts/release.py delete "$TAR"
+            gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"
+          else
+            gh workflow run verify.yml -R "$GITHUB_REPOSITORY" -f ac="$AC" -f tag="$ROLL_RELEASE"
+          fi

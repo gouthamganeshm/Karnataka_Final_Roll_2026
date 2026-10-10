@@ -10,10 +10,10 @@ rebuilt so a statewide import takes hours, not a week.
 ## How it works
 
 ```
-home PC                         GitHub (draft release, private)        GitHub Actions                 GitHub Pages
-fetch part PDF ─► cut crops ─►  crops-<ac>.tar  ─────────────────────► ocr.yml (1 job per AC) ─┐
-(scripts/home/run.py)                                                    rows-<ac>.jsonl.gz ◄───┘
-                                                                         publish.yml ─► hashed buckets ─► site
+home PC                          GitHub (draft release, private)    GitHub Actions                       GitHub Pages
+fetch part PDF ─► cut crops ─►   crops-<ac>.tar  ─────────────────► ocr.yml    (1 job per AC)
+(scripts/home/run.py)                                                verify.yml (checks every record)
+                                                                     publish.yml ─► hashed buckets ─────► site
 ```
 
 * **Home fetches.** The ECI CDN refuses GitHub's runners (`406` on every runner
@@ -22,9 +22,20 @@ fetch part PDF ─► cut crops ─►  crops-<ac>.tar  ────────
   PDFs are never written to disk.
 * **Actions OCRs.** Tesseract (the expensive ~90%) runs one job per
   constituency, in parallel, as soon as that AC's crops arrive.
-* **Same answers as the draft pipeline.** `scripts/ocr/test_crops.py` checks the
-  split reproduces `roll_ocr.read_part_bytes` row for row. Crops are lossless
-  grayscale; bilevel crops were tried and changed ~60% of readings.
+* **Four readers per EPIC.** Tesseract on a contact sheet, a glyph-template
+  reader for the fixed EPIC font, Tesseract on the crop alone, and a
+  prototype reader with different features. A character is published only
+  when independent readers agree; anything unsettled is withheld, never
+  guessed. Details and measurements in [PLAN.md](PLAN.md).
+* **A verifier before publishing.** `verify.yml` re-reads every record,
+  checks serial order, duplicates and the part's printed elector total, and
+  compares with the draft roll and one English-roll part per AC. A
+  constituency goes public only when it passes; otherwise it shows as
+  "under review".
+* **Cut stage matches the draft pipeline.** `scripts/ocr/test_crops.py`
+  checks the split reproduces `roll_ocr.read_part_bytes` row for row. Crops
+  are lossless grayscale; bilevel crops were tried and changed ~60% of
+  readings.
 * **Private transfer.** Crops and rows travel through a *draft* release, which
   only repo collaborators and the repo's workflows can see. Only hashed buckets
   are published.
@@ -33,16 +44,20 @@ fetch part PDF ─► cut crops ─►  crops-<ac>.tar  ────────
 
 ## Release day
 
+The full runbook is in [PLAN.md](PLAN.md) §7. In short:
+
 1. Open one final-roll part PDF in a browser and note its URL. Put it in
    `roll-source.json` as `url` (with `{ac}` and `{part}`), and update
    `rollType`, `label`, `labelKn`, `release`. Commit and push.
-2. `python scripts/home/run.py discover` — part counts per AC (~2 requests per
-   AC when counts are unchanged from the draft).
-3. `python scripts/home/run.py go` — fetch, cut, ship, dispatch. Resumable;
-   re-run after any interruption. `status` shows progress.
-4. Watch Actions. The site updates after every constituency.
+2. `python scripts/home/run.py discover` — part counts per AC.
+3. `python scripts/home/run.py go --ac 162` — the pilot; check it, then
+   `python scripts/home/run.py go` — Bengaluru first, then largest first.
+   Resumable; re-run after any interruption. `status` shows progress.
+4. Watch Actions. The site updates after every verified constituency.
 
-Test run on a few parts: `python scripts/home/run.py go --ac 177,196 --limit 3`.
+If the Kannada roll is out before the English one, nothing changes: the
+Kannada roll is what gets published, and the English part per AC (only a
+cross-check) is skipped and fetched later with `run.py eng-audit`.
 
 ## Lookup
 

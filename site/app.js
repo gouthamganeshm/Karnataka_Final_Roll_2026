@@ -89,7 +89,7 @@
     $('roll-label').textContent = (lang === 'kn' && m.labelKn) ? m.labelKn : m.label;
     $('stats').hidden = false;
     $('s-electors').textContent = fmt(m.electors);
-    $('s-acs').textContent = `${m.acs.filter((a) => a.partsRead).length}/${m.acs.length}`;
+    $('s-acs').textContent = `${m.acs.filter((a) => a.status === 'verified').length}/${m.acs.length}`;
     $('s-cov').textContent = (Math.floor(m.coverage * 1000) / 10) + '%';
     $('built').textContent = t('Data updated ', 'ಮಾಹಿತಿ ನವೀಕರಿಸಲಾಗಿದೆ ') +
       new Date(m.builtAt).toLocaleString(lang === 'kn' ? 'kn-IN' : 'en-IN', { dateStyle: 'medium', timeStyle: 'short' });
@@ -101,12 +101,15 @@
     const q = $('filter').value.trim().toLowerCase();
     const rows = manifest.acs.filter((a) => !q || String(a.ac) === q ||
       a.name?.toLowerCase().includes(q) || a.nameKn?.includes(q) || a.district?.toLowerCase().includes(q));
-    $('cov-table').tBodies[0].innerHTML = rows.map((a) => {
-      const pct = a.parts ? a.partsRead / a.parts : 0;
-      return `<tr><td>${a.ac}</td><td>${esc(lang === 'kn' && a.nameKn ? a.nameKn : a.name)}</td>
-        <td>${esc(lang === 'kn' && a.districtKn ? a.districtKn : title(a.district))}</td><td class="r">${fmt(a.electors)}</td>
-        <td class="r">${a.partsRead}/${a.parts}<span class="bar"><i style="width:${(pct * 100).toFixed(1)}%"></i></span></td></tr>`;
-    }).join('');
+    // Only verified constituencies are searchable; the others say why not yet.
+    const state = (a) => a.status === 'verified'
+      ? `${a.partsRead}/${a.parts}<span class="bar"><i style="width:${((a.parts ? a.partsRead / a.parts : 0) * 100).toFixed(1)}%"></i></span>`
+      : a.status === 'held'
+        ? `<span class="tag hold">${t('under review', 'ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ')}</span>`
+        : `<span class="tag">${t('processing', 'ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ')}</span>`;
+    $('cov-table').tBodies[0].innerHTML = rows.map((a) => `<tr><td>${a.ac}</td><td>${esc(lang === 'kn' && a.nameKn ? a.nameKn : a.name)}</td>
+        <td>${esc(lang === 'kn' && a.districtKn ? a.districtKn : title(a.district))}</td><td class="r">${a.status === 'verified' ? fmt(a.electors) : '—'}</td>
+        <td class="r">${state(a)}</td></tr>`).join('');
   }
   $('filter').addEventListener('input', () => manifest && renderTable());
 

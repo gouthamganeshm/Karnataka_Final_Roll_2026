@@ -1,0 +1,71 @@
+# Verifier worker: checks one constituency's OCR before it may be published
+# (scripts/ci/verify_ac.py — V1 re-read, V2 structure, V3 printed totals,
+# V4 draft-roll corroboration). Dispatched by ocr.yml; dispatches publish.yml.
+name: Verify constituency
+run-name: Verify AC ${{ inputs.ac }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      ac:
+        description: Assembly constituency number
+        required: true
+      tag:
+        description: Draft release carrying the crops and rows
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: verify-${{ inputs.ac }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ROLL_RELEASE: ${{ inputs.tag }}
+      AC: ${{ inputs.ac }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/ocr/requirements.txt
+
+      - name: Install Tesseract
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
+
+      - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
+
+      - name: Fetch crops and rows
+        run: |
+          python scripts/release.py download "crops-$AC.tar" work
+          python scripts/release.py download "rows-$AC.jsonl.gz" work
+          python scripts/release.py download "rows-$AC.summary.json" work
+
+      # The draft roll's hash keys for this AC (built once by draft-keys.yml).
+      # Without them V4 is skipped and the result says so.
+      - name: Fetch draft-roll keys
+        continue-on-error: true
+        run: ROLL_RELEASE=ref-draft-roll python scripts/release.py download "draft-$AC.npy" work
+
+      - name: Verify
+        run: |
+          python scripts/ci/verify_ac.py "$AC" "work/crops-$AC.tar" "work/rows-$AC.jsonl.gz" \
+            "work/rows-$AC.summary.json" out --draft-keys "work/draft-$AC.npy"
+
+      - name: Return the verdict
+        run: |
+          shopt -s nullglob
+          python scripts/release.py upload out/verify-$AC.json out/*.png
+          python scripts/release.py delete "crops-$AC.tar"
+          gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"

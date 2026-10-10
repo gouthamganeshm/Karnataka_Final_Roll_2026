@@ -152,6 +152,20 @@ def find_grid(dark: np.ndarray) -> Grid | None:
     min_band = h // 18
     bands = [(rows[i], rows[i + 1]) for i in range(len(rows) - 1)
              if rows[i + 1] - rows[i] > min_band]
+    # A final band holding a single card (the last card of a part, or of a
+    # section that ends mid-page) has a bottom rule only one card wide, ~31% of
+    # the page, so the 60% test above never sees it and that card used to be
+    # silently dropped — found 2026-10-10 by comparing card counts with each
+    # part's printed elector total (verifier check V3). Its top rule is one
+    # card wide too, so both are looked for below the last full rule: the
+    # first one-card-wide rule, and the next one at least a card's height on.
+    if rows:
+        start = rows[-1] + 2 * gap
+        tail = [start + y for y in _mids(np.where(dark[start:].sum(axis=1) > 0.25 * w)[0], gap)]
+        if tail:
+            ends = [y for y in tail[1:] if y - tail[0] > min_band]
+            if ends:
+                bands.append((tail[0], ends[0]))
     if not bands:
         return None
     top, bot = bands[0]

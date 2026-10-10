@@ -46,7 +46,7 @@ jobs:
           ROLL_RELEASE: ${{ inputs.tag }}
         run: |
           [ -n "$ROLL_RELEASE" ] || unset ROLL_RELEASE
-          python scripts/release.py download-all rows rows- manifest.json > /dev/null || true
+          python scripts/release.py download-all rows rows- verify- eng- manifest.json > /dev/null || true
           ls rows 2>/dev/null | grep -c 'jsonl.gz' || echo 0
 
       - name: Build buckets

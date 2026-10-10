@@ -136,3 +136,5 @@ body.kn { line-height: 1.7; }
   .search { flex-direction: column; }
   .search button { padding: 12px; }
 }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font-size: 12px; font-weight: 600; }
+.tag.hold { background: var(--warn-bg); color: var(--warn); }

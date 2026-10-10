@@ -5,14 +5,24 @@ refuses GitHub's runners (406, re-checked 2026-10-10 on every runner type). It
 does only the cheap half of the work — download, and cutting each card's serial
 box and EPIC to ink (`ocr/crops.py`). Tesseract runs on Actions.
 
-Per constituency: every part becomes one crop bundle, the bundles go into
-`crops-<ac>.tar`, the tar is uploaded to the draft release, and the OCR workflow
-is dispatched for that AC. PDFs are never written to disk.
+Per constituency: every part becomes one crop bundle (crops, the cover and
+summary pages for the printed totals, any PDF text layer), the bundles go into
+`crops-<ac>.tar`, the tar is uploaded to the draft release, and the OCR
+workflow is dispatched for that AC. PDFs are never written to disk.
+
+English cross-check (verifier check V5): for one part per AC, chosen at random
+but reproducibly, the *English* roll's PDF is fetched too and shipped as
+`crops-eng-<ac>.tar`. If the English roll is not published yet (the Kannada one
+may come first) this is skipped and can be run later with `eng-audit`.
 
     python scripts/home/run.py discover                   # part counts -> cache/manifest.json
-    python scripts/home/run.py go                         # everything not yet shipped
+    python scripts/home/run.py go                         # Bengaluru first, then largest first
+    python scripts/home/run.py go --tranche blr           # only Bengaluru's 28 ACs
+    python scripts/home/run.py go --tranche rest          # everything else
     python scripts/home/run.py go --ac 177,196 --limit 3  # a small test
     python scripts/home/run.py go --local pdf-dir         # PDFs already on disk, named <ac>-<part>.pdf
+    python scripts/home/run.py eng-audit                  # English cross-check parts, if skipped earlier
+    python scripts/home/run.py order                      # print the run order and stop
     python scripts/home/run.py status
 
 Resumable: shipped ACs are recorded in cache/shipped.json and skipped.
@@ -20,12 +30,13 @@ Resumable: shipped ACs are recorded in cache/shipped.json and skipped.
 from __future__ import annotations
 
 import argparse
+import io
 import json
-import os
+import random
 import sys
 import tarfile
+import threading
 import time
-import io
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 from urllib.error import HTTPError
@@ -44,9 +55,16 @@ SHIPPED = CACHE / 'shipped.json'
 UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')
 
+# Bengaluru city: the three BBMP districts and Bangalore Urban — 28 ACs.
+BENGALURU = {'B.B.M.P(CENTRAL)', 'B.B.M.P(NORTH)', 'B.B.M.P(SOUTH)', 'BANGALORE URBAN'}
 
-def url(ac: int, part: int) -> str:
-    return SOURCE['url'].format(ac=ac, part=part)
+
+def url(ac: int, part: int, lang: str = 'kan') -> str:
+    if lang == 'eng':
+        tpl = SOURCE.get('urlEng') or SOURCE['url'].replace('-KAN-', '-ENG-')
+    else:
+        tpl = SOURCE['url']
+    return tpl.format(ac=ac, part=part)
 
 
 def fetch(u: str, tries: int = 4) -> bytes | None:
@@ -64,10 +82,10 @@ def fetch(u: str, tries: int = 4) -> bytes | None:
     return None
 
 
-def exists(ac: int, part: int) -> bool:
+def exists(ac: int, part: int, lang: str = 'kan') -> bool:
     for attempt in range(4):
         try:
-            req = Request(url(ac, part), method='HEAD', headers={'User-Agent': UA})
+            req = Request(url(ac, part, lang), method='HEAD', headers={'User-Agent': UA})
             with urlopen(req, timeout=60) as r:
                 return r.status == 200
         except HTTPError as e:
@@ -120,65 +138,113 @@ def discover(acs: list[int] | None) -> dict:
     return manifest
 
 
-def cut(job: tuple[int, int, str]) -> tuple[int, bytes | None, float]:
+def run_order(parts_by_ac: dict[int, list[int]], tranche: str) -> list[int]:
+    """Bengaluru's ACs first, then everything else; largest first within each."""
+    district = {c['acNumber']: c['district'] for c in SEED['constituencies']}
+    blr = sorted((a for a in parts_by_ac if district.get(a) in BENGALURU), key=lambda a: -len(parts_by_ac[a]))
+    rest = sorted((a for a in parts_by_ac if district.get(a) not in BENGALURU), key=lambda a: -len(parts_by_ac[a]))
+    return {'blr': blr, 'rest': rest}.get(tranche, blr + rest)
+
+
+def audit_part(ac: int, n_parts: int) -> int:
+    """The English cross-check part for an AC: random, but the same on every run."""
+    return random.Random(f"{SOURCE['rollType']}-{ac}").randint(1, n_parts)
+
+
+def cut(job: tuple) -> tuple[int, bytes | None, float]:
     """Worker process: fetch (or read) one part and cut it into a bundle."""
     import crops
-    ac, part, local = job
+    ac, part, local, lang = job
     t = time.time()
-    data = Path(local).read_bytes() if local else fetch(url(ac, part))
+    data = Path(local).read_bytes() if local else fetch(url(ac, part, lang))
     if not data:
         return part, None, time.time() - t
-    return part, crops.write_bundle(crops.cut_part_bytes(data), ac, part), time.time() - t
+    cp = crops.cut_part(data)
+    return part, crops.write_bundle(cp['pages'], ac, part, cp, lang=lang), time.time() - t
 
 
-def ship_ac(ac: int, parts: list[int], args) -> dict:
+def _add(tar: tarfile.TarFile, name: str, data: bytes) -> None:
+    info = tarfile.TarInfo(name)
+    info.size = len(data)
+    tar.addfile(info, io.BytesIO(data))
+
+
+def dispatch(ac: int, kind: str = 'kan') -> None:
+    release.gh('workflow', 'run', 'ocr.yml', '-R', release.repo(),
+               '-f', f'ac={ac}', '-f', f'tag={release.TAG}', '-f', f'kind={kind}', capture=True)
+
+
+def cut_ac(ac: int, parts: list[int], args, pool) -> tuple[Path, dict]:
+    """Fetch and cut every part of one AC into crops-<ac>.tar (download-bound)."""
     out = CACHE / 'out'
     out.mkdir(parents=True, exist_ok=True)
     tar_path = out / f'crops-{ac}.tar'
     failed, size, t0 = [], 0, time.time()
     local = Path(args.local) if args.local else None
-    jobs = [(ac, p, str(local / f'{ac}-{p}.pdf') if local else '') for p in parts]
+    jobs = [(ac, p, str(local / f'{ac}-{p}.pdf') if local else '', 'kan') for p in parts]
 
-    with tarfile.open(tar_path, 'w') as tar, ProcessPoolExecutor(args.workers) as pool:
+    with tarfile.open(tar_path, 'w') as tar:
         for i, (part, bundle, secs) in enumerate(pool.map(cut, jobs), 1):
             if bundle is None:
                 failed.append(part)
             else:
-                info = tarfile.TarInfo(f'{part}.zip')
-                info.size = len(bundle)
-                tar.addfile(info, io.BytesIO(bundle))
+                _add(tar, f'{part}.zip', bundle)
                 size += len(bundle)
             print(f'\r  AC {ac}: {i}/{len(parts)} parts cut, {size/1e6:.0f} MB, '
                   f'{len(failed)} unreadable', end='', flush=True)
-        meta = json.dumps({'ac': ac, 'parts': parts, 'failed': failed}).encode()
-        info = tarfile.TarInfo('meta.json')
-        info.size = len(meta)
-        tar.addfile(info, io.BytesIO(meta))
+        _add(tar, 'meta.json', json.dumps({'ac': ac, 'parts': parts, 'failed': failed, 'lang': 'kan'}).encode())
     took = time.time() - t0
     print(f'  ({took:.0f}s, {len(parts)/max(took,1)*60:.1f} parts/min)')
+    return tar_path, {'parts': len(parts), 'failed': failed, 'cutSecs': round(took)}
 
+
+def send_ac(ac: int, parts: list[int], tar_path: Path, rec: dict, args) -> dict:
+    """Upload one AC's crops, start its OCR, then ship its English part. Runs
+    on the shipping thread, so the next AC is already downloading meanwhile."""
     t1 = time.time()
+    mb = tar_path.stat().st_size / 1e6
     release.upload(str(tar_path))
     up = time.time() - t1
-    print(f'  AC {ac}: uploaded {tar_path.stat().st_size/1e6:.0f} MB in {up:.0f}s '
-          f'({tar_path.stat().st_size*8/1e6/max(up,1):.1f} Mbps up)')
+    print(f'\n  AC {ac}: uploaded {mb:.0f} MB in {up:.0f}s ({mb * 8 / max(up, 1):.1f} Mbps up)', flush=True)
     tar_path.unlink()
     if not args.no_dispatch:
-        release.gh('workflow', 'run', 'ocr.yml', '-R', release.repo(),
-                   '-f', f'ac={ac}', '-f', f'tag={release.TAG}', capture=True)
-        print(f'  AC {ac}: OCR dispatched')
-    return {'parts': len(parts), 'failed': failed, 'cutSecs': round(took), 'uploadSecs': round(up)}
+        dispatch(ac)
+        print(f'  AC {ac}: OCR dispatched', flush=True)
+    eng = None if args.local or args.no_eng else ship_eng(ac, parts, args)
+    return {**rec, 'uploadSecs': round(up), 'eng': eng}
+
+
+def ship_eng(ac: int, parts: list[int], args) -> dict:
+    """Fetch, cut and ship the English cross-check part for one AC (V5)."""
+    part = audit_part(ac, max(parts))
+    _, bundle, _ = cut((ac, part, '', 'eng'))
+    if bundle is None:
+        print(f'  AC {ac}: English roll part {part} not available — V5 later via eng-audit')
+        return {'part': part, 'ok': False}
+    tar_path = CACHE / 'out' / f'crops-eng-{ac}.tar'
+    with tarfile.open(tar_path, 'w') as tar:
+        _add(tar, f'eng-{part}.zip', bundle)
+        _add(tar, 'meta.json', json.dumps({'ac': ac, 'parts': [part], 'failed': [], 'lang': 'eng'}).encode())
+    release.upload(str(tar_path))
+    tar_path.unlink()
+    if not args.no_dispatch:
+        dispatch(ac, 'eng')
+    print(f'  AC {ac}: English part {part} shipped for the cross-check')
+    return {'part': part, 'ok': True}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['discover', 'go', 'status'])
+    ap.add_argument('cmd', choices=['discover', 'go', 'eng-audit', 'order', 'status'])
     ap.add_argument('--ac', help='comma-separated AC numbers')
+    ap.add_argument('--tranche', choices=['blr', 'rest', 'all'], default='all',
+                    help='blr = the 28 Bengaluru ACs; rest = all others; all = Bengaluru first, then rest')
     ap.add_argument('--limit', type=int, help='parts per AC, for tests')
     ap.add_argument('--local', help='directory of <ac>-<part>.pdf files instead of fetching')
     ap.add_argument('--workers', type=int, default=4,
                     help='parts fetched and cut at once (default 4, as the draft pipeline used)')
     ap.add_argument('--no-dispatch', action='store_true')
+    ap.add_argument('--no-eng', action='store_true', help='skip the English cross-check part')
     ap.add_argument('--force', action='store_true', help='re-ship ACs already shipped')
     args = ap.parse_args()
     acs = [int(a) for a in args.ac.split(',')] if args.ac else None
@@ -190,39 +256,69 @@ def main() -> int:
     shipped = json.loads(SHIPPED.read_text('utf8')) if SHIPPED.exists() else {}
     if args.cmd == 'status':
         names = release.assets()
+        count = lambda pre: sum(n.startswith(pre) for n in names)  # noqa: E731
         print(f'shipped from home: {len(shipped)} ACs')
-        print(f'release {release.TAG}: {sum(n.startswith("crops-") for n in names)} crop tars waiting, '
-              f'{sum(n.startswith("rows-") for n in names)} AC row files done')
+        print(f'release {release.TAG}: crop tars waiting {count("crops-") - count("crops-eng-")} '
+              f'(+{count("crops-eng-")} English), OCR done {count("rows-") // 2}, '
+              f'verified {count("verify-")}, English cross-checks {count("eng-")}')
         return 0
 
     if args.local:
         parts_by_ac: dict[int, list[int]] = {}
         for p in Path(args.local).glob('*-*.pdf'):
-            a, n = p.stem.split('-')
+            a, n = p.stem.split('-')[:2]
             parts_by_ac.setdefault(int(a), []).append(int(n))
-        manifest = json.loads(MANIFEST.read_text('utf8')) if MANIFEST.exists() else {
-            'rollType': SOURCE['rollType'], 'label': SOURCE['label'], 'labelKn': SOURCE.get('labelKn', ''),
-            'url': SOURCE['url'], 'constituencies': []}
     else:
         if not MANIFEST.exists():
             raise SystemExit('run `discover` first')
         manifest = json.loads(MANIFEST.read_text('utf8'))
-        parts_by_ac = {c['acNumber']: list(range(1, c['parts'] + 1)) for c in manifest['constituencies']}
+        parts_by_ac = {c['acNumber']: list(range(1, c['parts'] + 1))
+                       for c in manifest['constituencies'] if c['parts']}
+
+    order = [a for a in run_order(parts_by_ac, args.tranche) if not acs or a in acs]
+    if args.cmd == 'order':
+        for i, a in enumerate(order, 1):
+            print(f'{i:3}. AC {a:3}  {len(parts_by_ac[a]):4} parts')
+        return 0
 
     release.ensure()
-    release.upload(str(MANIFEST)) if MANIFEST.exists() else None
-    # Largest first: the biggest constituencies take longest to OCR, so they
-    # should start on Actions while the small ones are still downloading.
-    order = sorted(parts_by_ac, key=lambda a: -len(parts_by_ac[a]))
-    for ac in order:
-        if acs and ac not in acs:
-            continue
-        if str(ac) in shipped and not args.force:
-            continue
-        parts = sorted(parts_by_ac[ac])[: args.limit] if args.limit else sorted(parts_by_ac[ac])
-        shipped[str(ac)] = ship_ac(ac, parts, args)
-        SHIPPED.write_text(json.dumps(shipped, indent=1), 'utf8')
-    print('done — every requested AC is shipped; OCR and publishing continue on Actions')
+    if MANIFEST.exists():
+        release.upload(str(MANIFEST))
+
+    if args.cmd == 'eng-audit':
+        for ac in order:
+            if shipped.get(str(ac), {}).get('eng', {}).get('ok') and not args.force:
+                continue
+            res = ship_eng(ac, sorted(parts_by_ac[ac]), args)
+            shipped.setdefault(str(ac), {})['eng'] = res
+            SHIPPED.write_text(json.dumps(shipped, indent=1), 'utf8')
+        return 0
+
+    # Downloading and uploading overlap: one thread ships AC k (upload,
+    # dispatch, English part) while the process pool fetches and cuts AC k+1.
+    # At most two finished tars wait for upload, so a slow uplink cannot fill
+    # the disk; it only makes the download pause.
+    def ship(ac, parts, tar_path, rec):
+        res = send_ac(ac, parts, tar_path, rec, args)
+        with lock:
+            shipped[str(ac)] = res
+            SHIPPED.write_text(json.dumps(shipped, indent=1), 'utf8')
+
+    lock = threading.Lock()
+    waiting = []
+    with ProcessPoolExecutor(args.workers) as pool, ThreadPoolExecutor(1) as shipper:
+        for ac in order:
+            if str(ac) in shipped and not args.force:
+                continue
+            parts = sorted(parts_by_ac[ac])[: args.limit] if args.limit else sorted(parts_by_ac[ac])
+            tar_path, rec = cut_ac(ac, parts, args, pool)
+            waiting = [f for f in waiting if not f.done()]
+            while len(waiting) >= 2:
+                waiting.pop(0).result()
+            waiting.append(shipper.submit(ship, ac, parts, tar_path, rec))
+        for f in waiting:
+            f.result()
+    print('done — every requested AC is shipped; OCR, verification and publishing continue on Actions')
     return 0
 
 

@@ -1,12 +1,24 @@
-/* Build the public site: OCR rows -> hashed binary buckets + manifest.
+/* Build the public site: verified OCR rows -> hashed binary buckets + manifest.
  *
  *   node scripts/ci/build.mjs <rows-dir> <out-dir>
  *
- * <rows-dir> holds rows-<ac>.jsonl.gz, rows-<ac>.summary.json and (optionally)
- * manifest.json from the draft release. <out-dir> gets a copy of site/ plus:
+ * <rows-dir> holds, per AC, what the draft release carries: rows-<ac>.jsonl.gz
+ * and its summary (OCR), verify-<ac>.json (verifier worker) and, for the
+ * English cross-check, eng-<ac>.jsonl.gz; plus manifest.json from home.
+ * <out-dir> gets a copy of site/ plus:
  *
- *   data/manifest.json       roll label, coverage, per-AC counts and names
+ *   data/manifest.json       roll label, coverage, per-AC status, counts and names
  *   data/roll/ab/cd.bin      every record whose SHA-256(EPIC) starts with abcd
+ *
+ * Publish gate. An AC is published only when its verifier verdict is "pass";
+ * until then it is "pending", and "held" if the verifier held it. Within a
+ * published AC a record goes out only if its EPIC readers agreed (`epicOk`) and
+ * the verifier did not dispute it. The English cross-check (V5) runs here,
+ * because it needs both the Kannada and English OCR, which finish in either
+ * order: in the cross-check part every record is compared serial by serial with
+ * the English reading where two English readers agreed outright; a
+ * record the English roll contradicts is withheld, and an AC agreeing on fewer
+ * than 99.7% of compared records is held.
  *
  * A record is 9 bytes, sorted by suffix so the browser can binary-search a
  * bucket. The suffix is raw hash bytes (compare big-endian); the rest is
@@ -19,10 +31,7 @@
  *
  * No EPIC is published, only a hash fragment — the browser already knows the
  * number the visitor typed. 4.4 crore electors at 9 bytes is ~400 MB, inside
- * GitHub Pages' 1 GB site limit, where the draft site's JSON would not be.
- *
- * A row is published when its EPIC is well-formed and the independent readings
- * agreed on it (`epicOk`); `ok` then only decides the approximate-serial flag.
+ * GitHub Pages' 1 GB site limit.
  */
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -41,14 +50,19 @@ if (!rowsDir || !outDir) {
 
 const EPIC_RE = /^[A-Z]{3}[0-9]{7}$/;
 const REC = 10; // bucket byte + 9-byte record, while grouping
+const V5_MIN_AGREE = 0.997;
 
 const source = JSON.parse(readFileSync(join(ROOT, 'roll-source.json'), 'utf8'));
 const seed = JSON.parse(readFileSync(join(ROOT, 'seed', 'ac-metadata.json'), 'utf8'));
-const shipped = existsSync(join(rowsDir, 'manifest.json'))
-  ? JSON.parse(readFileSync(join(rowsDir, 'manifest.json'), 'utf8'))
-  : null;
+const readJson = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null);
+const shipped = readJson(join(rowsDir, 'manifest.json'));
 const meta = new Map(seed.constituencies.map((c) => [c.acNumber, c]));
 for (const c of shipped?.constituencies ?? []) meta.set(c.acNumber, { ...meta.get(c.acNumber), ...c });
+
+async function* rowsOf(path) {
+  const rl = createInterface({ input: createReadStream(path).pipe(createGunzip()), crlfDelay: Infinity });
+  for await (const line of rl) if (line) yield JSON.parse(line);
+}
 
 // One growable buffer per first hash byte keeps memory to ~10 bytes a row.
 const groups = Array.from({ length: 256 }, () => ({ buf: Buffer.alloc(1 << 16), n: 0 }));
@@ -62,33 +76,71 @@ function push(g, rec) {
   g.n++;
 }
 
+// -------------------------------------------------------- English cross-check
+async function crossCheck(ac) {
+  const engPath = join(rowsDir, `eng-${ac}.jsonl.gz`);
+  if (!existsSync(engPath)) return null;
+  const eng = new Map();
+  let part = null;
+  for await (const r of rowsOf(engPath)) {
+    part = r.part;
+    // Only the English roll's strongest readings witness: two different readers
+    // agreeing outright (or its text layer), on a confirmed serial. Its fused
+    // readings misread C as O often enough to hold a correct AC.
+    if (r.epicOk && r.ok && (r.how === 'direct' || r.how === 'text')) eng.set(r.serial, r.epic);
+  }
+  return { part, eng };
+}
+
 const perAc = new Map();
 const rowFiles = readdirSync(rowsDir).filter((f) => /^rows-\d+\.jsonl\.gz$/.test(f));
 const rec = Buffer.alloc(REC);
 for (const f of rowFiles) {
   const ac = Number(f.match(/\d+/)[0]);
-  const stat = { electors: 0, approx: 0, unreadable: 0 };
-  const rl = createInterface({ input: createReadStream(join(rowsDir, f)).pipe(createGunzip()), crlfDelay: Infinity });
-  for await (const line of rl) {
-    if (!line) continue;
-    const r = JSON.parse(line);
-    // An EPIC the readings did not agree on is withheld, never published on a
-    // guess. (Rows from before epicOk existed count as agreed.)
-    if (!EPIC_RE.test(r.epic) || r.epicOk === false) { stat.unreadable++; continue; }
-    const h = createHash('sha256').update(r.epic, 'utf8').digest();
-    rec[0] = h[1];
-    h.copy(rec, 1, 2, 6);
-    rec.writeUInt8(r.ac, 5);
-    rec.writeUInt16LE(r.part, 6);
-    rec.writeUInt16LE((r.serial & 0x7fff) | (r.ok ? 0 : 0x8000), 8);
-    push(groups[h[0]], rec);
-    stat.electors++;
-    if (!r.ok) stat.approx++;
+  const sum = readJson(join(rowsDir, f.replace('.jsonl.gz', '.summary.json')));
+  const ver = readJson(join(rowsDir, `verify-${ac}.json`));
+  const xc = await crossCheck(ac);
+  const stat = {
+    status: !ver ? 'pending' : ver.verdict === 'pass' ? 'verified' : 'held',
+    reasons: ver?.reasons ?? [], electors: 0, approx: 0, withheld: 0, disputed: 0,
+    cards: 0, printed: 0, partsRead: sum?.partsRead ?? 0,
+    v5: xc ? { part: xc.part, compared: 0, agree: 0 } : null
+  };
+  for (const p of Object.values(sum?.perPart ?? {})) stat.printed += p.totals?.total ?? 0;
+  const disputed = new Set((ver?.disputed ?? []).map(([p, pg, c]) => `${p}/${pg}/${c}`));
+  const pending = [];
+  for await (const r of rowsOf(join(rowsDir, f))) {
+    stat.cards++;
+    if (!EPIC_RE.test(r.epic) || r.epicOk === false) { stat.withheld++; continue; }
+    if (disputed.has(`${r.part}/${r.page}/${r.cell}`)) { stat.disputed++; continue; }
+    if (xc && r.ok && r.part === xc.part && xc.eng.has(r.serial)) {
+      stat.v5.compared++;
+      if (xc.eng.get(r.serial) === r.epic) stat.v5.agree++;
+      else { stat.disputed++; continue; }        // the English roll contradicts it
+    }
+    pending.push(r);
   }
-  const sumPath = join(rowsDir, f.replace('.jsonl.gz', '.summary.json'));
-  const sum = existsSync(sumPath) ? JSON.parse(readFileSync(sumPath, 'utf8')) : null;
-  perAc.set(ac, { ...stat, partsRead: sum?.partsRead ?? 0, unread: sum?.unread ?? [] });
-  console.log(`AC ${ac}: ${stat.electors} electors (${stat.approx} approximate serial, ${stat.unreadable} unreadable)`);
+  if (stat.v5 && stat.v5.compared >= 50 && stat.v5.agree / stat.v5.compared < V5_MIN_AGREE && stat.status === 'verified') {
+    stat.status = 'held';
+    stat.reasons.push(`English cross-check ${stat.v5.agree}/${stat.v5.compared} < ${V5_MIN_AGREE * 100}%`);
+  }
+  if (stat.status === 'verified') {
+    for (const r of pending) {
+      const h = createHash('sha256').update(r.epic, 'utf8').digest();
+      rec[0] = h[1];
+      h.copy(rec, 1, 2, 6);
+      rec.writeUInt8(r.ac, 5);
+      rec.writeUInt16LE(r.part, 6);
+      rec.writeUInt16LE((r.serial & 0x7fff) | (r.ok ? 0 : 0x8000), 8);
+      push(groups[h[0]], rec);
+      stat.electors++;
+      if (!r.ok) stat.approx++;
+    }
+  }
+  perAc.set(ac, stat);
+  console.log(`AC ${ac}: ${stat.status}${stat.reasons.length ? ' (' + stat.reasons.join('; ') + ')' : ''} — ` +
+    `${stat.electors} published, ${stat.withheld} unreadable, ${stat.disputed} disputed, ` +
+    `${stat.cards}/${stat.printed || '?'} cards` + (stat.v5 ? `, English ${stat.v5.agree}/${stat.v5.compared}` : ''));
 }
 
 // ------------------------------------------------------------------ write
@@ -126,10 +178,14 @@ const acs = [...meta.values()]
   .sort((x, y) => x.acNumber - y.acNumber)
   .map((c) => {
     const s = perAc.get(c.acNumber);
+    const live = s?.status === 'verified';
     return {
       ac: c.acNumber, name: c.name, nameKn: c.nameKn, district: c.district, districtKn: c.districtKn,
-      parts: c.parts, partsRead: s?.partsRead ?? 0,
-      electors: s?.electors ?? 0, approx: s?.approx ?? 0, unreadable: s?.unreadable ?? 0
+      parts: c.parts, status: s?.status ?? 'pending',
+      partsRead: live ? s.partsRead : 0,
+      electors: live ? s.electors : 0, approx: live ? s.approx : 0,
+      withheld: live ? s.withheld + s.disputed : 0,
+      printed: s?.printed ?? 0
     };
   });
 const parts = acs.reduce((n, a) => n + a.parts, 0);
@@ -146,5 +202,6 @@ writeFileSync(join(dataDir, 'manifest.json'), JSON.stringify({
   coverage: parts ? partsRead / parts : 0,
   acs
 }));
+const n = (s) => acs.filter((a) => a.status === s).length;
 console.log(`\n${records} records in ${files} buckets (${dupes} exact duplicates dropped); ` +
-  `coverage ${partsRead}/${parts} parts`);
+  `ACs verified ${n('verified')}, held ${n('held')}, pending ${n('pending')}; coverage ${partsRead}/${parts} parts`);

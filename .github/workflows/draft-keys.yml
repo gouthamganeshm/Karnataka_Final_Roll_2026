@@ -1,0 +1,41 @@
+# One-off: export the draft roll site's records as per-AC hash-key sets for the
+# verifier's corroboration check (V4). Reads the archived draft repo's
+# published buckets (hash fragments only — no EPIC is in them) and uploads
+# draft-<ac>.npy to the draft release `ref-draft-roll`.
+name: Draft-roll keys
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keys:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ROLL_RELEASE: ref-draft-roll
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --disable-pip-version-check numpy
+
+      - name: Sparse-clone the draft site's buckets
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse \
+            https://github.com/gouthamganeshm/Karnataka_Draft_Roll_2026 draft
+          git -C draft sparse-checkout set docs/data/roll
+          du -sh draft/docs/data/roll
+
+      - name: Export keys
+        run: python scripts/ci/draft_keys.py draft/docs/data/roll keys
+
+      - name: Upload
+        run: |
+          python scripts/release.py ensure
+          ls keys/*.npy | xargs -n 50 python scripts/release.py upload
+          python scripts/release.py list | tail -3

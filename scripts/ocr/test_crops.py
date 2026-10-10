@@ -30,7 +30,7 @@ for path in sys.argv[1:]:
 
     t = time.perf_counter()
     _, pages = C.read_bundle(bundle)
-    got = [row for row, _ in C.ocr_pages(pages)]
+    got = [t[0] for t in C.ocr_pages(pages)]
     t_ocr = time.perf_counter() - t
 
     same = [(r.serial, r.epic, r.ok) for r in ref] == [(r.serial, r.epic, r.ok) for r in got]
