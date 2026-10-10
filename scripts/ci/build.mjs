@@ -93,6 +93,7 @@ for (const f of rowFiles) {
 rmSync(outDir, { recursive: true, force: true });
 cpSync(join(ROOT, 'site'), outDir, { recursive: true });
 const dataDir = join(outDir, 'data');
+mkdirSync(join(dataDir, 'roll'), { recursive: true });
 let records = 0, files = 0, dupes = 0;
 for (let a = 0; a < 256; a++) {
   const g = groups[a];
