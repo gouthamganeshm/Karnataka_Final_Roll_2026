@@ -67,11 +67,12 @@ def ensure() -> dict:
         if not rel['draft']:
             raise SystemExit(f'release {TAG} is published, not a draft — refusing to put EPIC data in it')
         return rel
-    gh('api', '-X', 'POST', f'repos/{repo()}/releases',
-       '-f', f'tag_name={TAG}', '-f', f'name={TAG} (private transfer, do not publish)',
-       '-F', 'draft=true', '-f', 'body=Crops and OCR rows in transit between home and Actions. '
-       'Draft on purpose: never publish this release.')
-    return find()
+    # The listing can lag a just-created release by a few seconds, so use the
+    # creation response itself.
+    return json.loads(gh('api', '-X', 'POST', f'repos/{repo()}/releases',
+                         '-f', f'tag_name={TAG}', '-f', f'name={TAG} (private transfer, do not publish)',
+                         '-F', 'draft=true', '-f', 'body=Crops and OCR rows in transit between home and Actions. '
+                         'Draft on purpose: never publish this release.'))
 
 
 def assets() -> dict[str, dict]:
