@@ -1,0 +1,64 @@
+# OCR one constituency. Dispatched by scripts/home/run.py as soon as that AC's
+# crop tar is uploaded, so OCR runs while home is still downloading the rest.
+#
+# Reads crops-<ac>.tar from the draft release, writes rows-<ac>.jsonl.gz and a
+# summary back to it, deletes the tar, then asks the site to republish.
+name: OCR constituency
+run-name: OCR AC ${{ inputs.ac }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      ac:
+        description: Assembly constituency number
+        required: true
+      tag:
+        description: Draft release carrying the crops (see roll-source.json)
+        required: true
+
+permissions:
+  contents: write   # read/write assets on the draft release
+  actions: write    # dispatch the publish workflow
+
+concurrency:
+  group: ocr-${{ inputs.ac }}
+  cancel-in-progress: false
+
+jobs:
+  ocr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ROLL_RELEASE: ${{ inputs.tag }}
+      AC: ${{ inputs.ac }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/ocr/requirements.txt
+
+      - name: Install Tesseract
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
+          tesseract --version | head -1
+
+      - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
+
+      - name: Fetch crops
+        run: python scripts/release.py download "crops-$AC.tar" work
+
+      - name: OCR
+        run: python scripts/ci/ocr_ac.py "work/crops-$AC.tar" "work/rows-$AC.jsonl.gz"
+
+      - name: Return rows
+        run: |
+          python scripts/release.py upload "work/rows-$AC.jsonl.gz" "work/rows-$AC.summary.json"
+          python scripts/release.py delete "crops-$AC.tar"
+
+      - name: Republish the site
+        run: gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"

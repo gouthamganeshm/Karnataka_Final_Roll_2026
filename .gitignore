@@ -1,0 +1,7 @@
+cache/
+work/
+rows/
+_site/
+__pycache__/
+*.pyc
+*.pdf

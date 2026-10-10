@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Karnataka Roll Search</title>
+  <meta name="description" content="Type your EPIC (voter ID) number and find your constituency, part and serial number on the Karnataka electoral roll. Your number never leaves your phone.">
+  <meta name="theme-color" content="#0f1b3d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230f1b3d'/%3E%3Cpath d='M18 33l9 9 19-20' stroke='%23ffb020' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Kannada:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <a class="brand" href="./">
+        <span class="brand-mark" aria-hidden="true">✓</span>
+        <span data-en="Karnataka Roll Search" data-kn="ಕರ್ನಾಟಕ ಮತದಾರರ ಪಟ್ಟಿ ಹುಡುಕಾಟ">Karnataka Roll Search</span>
+      </a>
+      <div class="top-actions">
+        <button class="chip" id="lang" type="button" aria-label="Switch language">ಕನ್ನಡ</button>
+        <button class="chip icon" id="theme" type="button" aria-label="Toggle dark mode">◐</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow" id="roll-label">Electoral roll</p>
+        <h1 data-en="Am I on the roll?" data-kn="ನನ್ನ ಹೆಸರು ಪಟ್ಟಿಯಲ್ಲಿದೆಯೇ?">Am I on the roll?</h1>
+        <p class="lede" data-en="Type the EPIC number printed on your voter ID card. You'll get your constituency, part and serial number in a second."
+           data-kn="ನಿಮ್ಮ ಮತದಾರರ ಗುರುತಿನ ಚೀಟಿಯಲ್ಲಿರುವ EPIC ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ. ನಿಮ್ಮ ಕ್ಷೇತ್ರ, ಭಾಗ ಮತ್ತು ಕ್ರಮ ಸಂಖ್ಯೆ ತಕ್ಷಣ ತಿಳಿಯುತ್ತದೆ.">
+          Type the EPIC number printed on your voter ID card. You'll get your constituency, part and serial number in a second.</p>
+
+        <form class="search" id="search" autocomplete="off">
+          <label class="sr" for="epic" data-en="EPIC number" data-kn="EPIC ಸಂಖ್ಯೆ">EPIC number</label>
+          <input id="epic" name="epic" inputmode="text" autocapitalize="characters" spellcheck="false"
+                 maxlength="14" placeholder="ABC1234567" aria-describedby="hint">
+          <button type="submit" id="go" data-en="Search" data-kn="ಹುಡುಕಿ">Search</button>
+        </form>
+        <p class="hint" id="hint" data-en="3 letters + 7 digits, e.g. ABC1234567" data-kn="3 ಅಕ್ಷರಗಳು + 7 ಅಂಕಿಗಳು, ಉದಾ. ABC1234567">3 letters + 7 digits, e.g. ABC1234567</p>
+
+        <div id="result" class="result" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="wrap stats" id="stats" hidden>
+      <div class="stat"><span class="num" id="s-electors">—</span><span class="lbl" data-en="electors indexed" data-kn="ಮತದಾರರು">electors indexed</span></div>
+      <div class="stat"><span class="num" id="s-acs">—</span><span class="lbl" data-en="constituencies" data-kn="ಕ್ಷೇತ್ರಗಳು">constituencies</span></div>
+      <div class="stat"><span class="num" id="s-cov">—</span><span class="lbl" data-en="of booths loaded" data-kn="ಮತಗಟ್ಟೆಗಳು ಲೋಡ್ ಆಗಿವೆ">of booths loaded</span></div>
+    </section>
+
+    <section class="wrap cards">
+      <article class="card">
+        <h2 data-en="Private by design" data-kn="ಗೌಪ್ಯತೆ ಖಚಿತ">Private by design</h2>
+        <p data-en="Your EPIC number never leaves your device. Your phone hashes it and downloads one small file shared by thousands of numbers — the server never learns what you searched."
+           data-kn="ನಿಮ್ಮ EPIC ಸಂಖ್ಯೆ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಗೆ ಹೋಗುವುದಿಲ್ಲ. ಸಾವಿರಾರು ಸಂಖ್ಯೆಗಳಿಗೆ ಸಾಮಾನ್ಯವಾದ ಒಂದು ಸಣ್ಣ ಫೈಲ್ ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತದೆ.">Your EPIC number never leaves your device. Your phone hashes it and downloads one small file shared by thousands of numbers — the server never learns what you searched.</p>
+      </article>
+      <article class="card">
+        <h2 data-en="Check the official copy" data-kn="ಅಧಿಕೃತ ಪ್ರತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ">Check the official copy</h2>
+        <p data-en="Every result links to the exact ECI PDF of your polling part, so you can confirm your name and details at the serial number shown."
+           data-kn="ಪ್ರತಿ ಫಲಿತಾಂಶವು ನಿಮ್ಮ ಮತಗಟ್ಟೆಯ ಅಧಿಕೃತ ECI PDF ಗೆ ಲಿಂಕ್ ನೀಡುತ್ತದೆ — ತೋರಿಸಿದ ಕ್ರಮ ಸಂಖ್ಯೆಯಲ್ಲಿ ನಿಮ್ಮ ವಿವರಗಳನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.">Every result links to the exact ECI PDF of your polling part, so you can confirm your name and details at the serial number shown.</p>
+      </article>
+      <article class="card">
+        <h2 data-en="Not found?" data-kn="ಸಿಗಲಿಲ್ಲವೇ?">Not found?</h2>
+        <p data-en="Double-check the number, then call the Voter Helpline 1950 or visit voters.eci.gov.in. New voters can apply with Form 6."
+           data-kn="ಸಂಖ್ಯೆಯನ್ನು ಮತ್ತೊಮ್ಮೆ ಪರಿಶೀಲಿಸಿ, ನಂತರ ಮತದಾರರ ಸಹಾಯವಾಣಿ 1950 ಗೆ ಕರೆ ಮಾಡಿ ಅಥವಾ voters.eci.gov.in ಗೆ ಭೇಟಿ ನೀಡಿ. ಹೊಸ ಮತದಾರರು ನಮೂನೆ 6 ಮೂಲಕ ಅರ್ಜಿ ಸಲ್ಲಿಸಬಹುದು.">Double-check the number, then call the Voter Helpline 1950 or visit voters.eci.gov.in. New voters can apply with Form 6.</p>
+      </article>
+    </section>
+
+    <section class="wrap" id="coverage-wrap" hidden>
+      <details class="coverage">
+        <summary data-en="Coverage by constituency" data-kn="ಕ್ಷೇತ್ರವಾರು ವ್ಯಾಪ್ತಿ">Coverage by constituency</summary>
+        <input class="filter" id="filter" placeholder="Filter by name or number" aria-label="Filter constituencies">
+        <div class="table-scroll"><table id="cov-table"><thead><tr>
+          <th>AC</th><th data-en="Constituency" data-kn="ಕ್ಷೇತ್ರ">Constituency</th>
+          <th data-en="District" data-kn="ಜಿಲ್ಲೆ">District</th><th class="r" data-en="Electors" data-kn="ಮತದಾರರು">Electors</th>
+          <th class="r" data-en="Booths" data-kn="ಮತಗಟ್ಟೆಗಳು">Booths</th></tr></thead><tbody></tbody></table></div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p data-en="An independent, unofficial index of the electoral roll PDFs published by the Election Commission of India. It reformats public data and is not an official ECI service. Always confirm against the official roll."
+       data-kn="ಇದು ಭಾರತ ಚುನಾವಣಾ ಆಯೋಗ ಪ್ರಕಟಿಸಿದ ಮತದಾರರ ಪಟ್ಟಿಯ ಸ್ವತಂತ್ರ, ಅನಧಿಕೃತ ಸೂಚಿ. ಇದು ಅಧಿಕೃತ ECI ಸೇವೆಯಲ್ಲ. ಯಾವಾಗಲೂ ಅಧಿಕೃತ ಪಟ್ಟಿಯೊಂದಿಗೆ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.">An independent, unofficial index of the electoral roll PDFs published by the Election Commission of India. It reformats public data and is not an official ECI service. Always confirm against the official roll.</p>
+    <p class="built" id="built"></p>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

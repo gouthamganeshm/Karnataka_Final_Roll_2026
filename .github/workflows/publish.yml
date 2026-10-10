@@ -1,0 +1,71 @@
+# Build the hashed buckets from every OCR'd constituency so far and deploy the
+# site to GitHub Pages. Every finished OCR job dispatches this, so the site fills
+# in constituency by constituency instead of waiting for the whole state.
+#
+# The concurrency group keeps one run going and one queued; a newer dispatch
+# replaces the queued one, so a burst of finished ACs costs one extra build,
+# not one per AC — and a running deploy is never cancelled half way.
+name: Publish site
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Draft release carrying the rows (blank = roll-source.json)
+        required: false
+  push:
+    branches: [main]
+    paths: ['site/**', 'scripts/ci/build.mjs']
+
+permissions:
+  contents: write   # the transfer release is a draft, visible only with write access
+  pages: write
+  id-token: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Collect OCR rows
+        env:
+          ROLL_RELEASE: ${{ inputs.tag }}
+        run: |
+          [ -n "$ROLL_RELEASE" ] || unset ROLL_RELEASE
+          python scripts/release.py download-all rows rows- manifest.json > /dev/null || true
+          ls rows 2>/dev/null | grep -c 'jsonl.gz' || echo 0
+
+      - name: Build buckets
+        run: |
+          mkdir -p rows
+          node --max-old-space-size=8192 scripts/ci/build.mjs rows _site
+          du -sh _site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
