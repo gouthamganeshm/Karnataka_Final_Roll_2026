@@ -766,7 +766,7 @@
   const box = document.getElementById('scenes');
   const dots = document.getElementById('dots');
   const toggle = document.getElementById('playpause');
-  const HOLD = 7000;
+  const HOLD = 5000;
   const kn = () => document.documentElement.lang === 'kn';
   const txt = ([en, k]) => `data-en="${en.replace(/"/g, '&quot;')}" data-kn="${k.replace(/"/g, '&quot;')}">${kn() ? k : en}`;
   // Each visit gets a new shuffle, with scenes this browser hasn't shown yet
