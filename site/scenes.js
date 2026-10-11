@@ -105,6 +105,8 @@
     staff: (x, y) => [`<path d="M${x} ${y + 64} V${y - 70}" stroke="${P.wood}" stroke-width="5" stroke-linecap="round"/>`, ''],
     goad: (x, y) => [`<path d="M${x} ${y + 30} V${y - 40} q0 -10 8 -10" stroke="#6b7280" stroke-width="4" fill="none" stroke-linecap="round"/>`, ''],
     drumstick: (x, y) => [`<path d="M${x} ${y} l18 -18" stroke="${P.wood}" stroke-width="4" stroke-linecap="round"/>`, ''],
+    // A Jain monk's peacock-feather whisk.
+    pichhi: (x, y) => [`<path d="M${x} ${y + 8} L${x + 2} ${y - 26}" stroke="${P.wood}" stroke-width="3" stroke-linecap="round"/><path d="M${x - 11} ${y - 24} q13 -32 26 0 q-13 8 -26 0z" fill="#2f7d6a"/><circle cx="${x + 2}" cy="${y - 31}" r="5" fill="#1f4f9a"/><circle cx="${x + 2}" cy="${y - 31}" r="2.2" fill="${P.gold}"/>`, ''],
   };
   const SLEEVE = { robe: 'cloth', coat: 'cloth', monk: 'cloth', soldier: 'cloth', euro: 'cloth' };
 
@@ -205,16 +207,34 @@
       `<ellipse cx="0" cy="-68" rx="62" ry="28" fill="${c}"/><path d="M34 -76 l30 -52 l24 10 l-20 52z" fill="${c}"/><path d="M60 -130 q22 -10 42 8 l6 12 q-4 9 -15 7 l-33 -6z" fill="${c}"/><path d="M66 -130 l4 -14 l8 12z" fill="${c}"/><circle cx="82" cy="-124" r="2.6" fill="#1f1712"/><path d="M58 -128 q-16 22 -26 54 l9 -2 q8 -30 24 -48z" fill="#3b2418"/><path d="M-36 -94 h64 l-6 36 h-52z" fill="${o.cloth || P.red}"/><path d="M-32 -62 h50" stroke="${P.gold}" stroke-width="4"/>`;
     return at(o.x, o.y, o.s || 1, anim(o.gallop ? 'a-gallop' : '', s + (o.rider || '')), o.flip ? -(o.s || 1) : (o.s || 1));
   }
-  const tiger = (x, y, s) => at(x, y, s, anim('a-pounce', `${anim('a-tail', `<path d="M48 -52 q34 -10 30 -44" stroke="#f08a24" stroke-width="8" fill="none" stroke-linecap="round"/>`, '0% 100%')}
-    <path d="M30 -36 l22 28 M14 -34 l14 30" stroke="#e07a18" stroke-width="13" stroke-linecap="round"/>
-    <ellipse cx="0" cy="-48" rx="54" ry="24" fill="#f08a24"/><ellipse cx="-4" cy="-36" rx="36" ry="10" fill="#fde3c0"/>
-    <path d="M-20 -70 q5 12 -2 22 M0 -72 q5 12 -2 24 M20 -70 q5 12 -2 22 M38 -62 q3 10 -2 16" stroke="#3a2418" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <path d="M-40 -44 l-34 -22 M-36 -36 l-38 -8" stroke="#f08a24" stroke-width="13" stroke-linecap="round"/>
-    <circle cx="-70" cy="-70" r="7" fill="#e07a18"/><circle cx="-48" cy="-82" r="7" fill="#e07a18"/>
-    <circle cx="-58" cy="-62" r="23" fill="#f08a24"/><ellipse cx="-66" cy="-52" rx="12" ry="9" fill="#fde3c0"/>
-    <path d="M-62 -76 l-4 8 M-52 -78 l0 8" stroke="#3a2418" stroke-width="3" stroke-linecap="round"/>
-    <path d="M-70 -66 l7 3 M-52 -68 l-7 3" stroke="#3a2418" stroke-width="3" stroke-linecap="round"/><circle cx="-66" cy="-60" r="2.6" fill="#3a2418"/><circle cx="-54" cy="-62" r="2.6" fill="#3a2418"/>
-    <path d="M-76 -48 q10 10 20 0z" fill="#7a2b22"/><path d="M-73 -48 l2 4 l2 -4 M-61 -48 l2 4 l2 -4" fill="#fff"/><circle cx="-68" cy="-56" r="2.6" fill="#3a2418"/>`));
+  // A tiger rearing up on its hind legs, facing left, feet at (0,0).
+  function tiger(x, y, s) {
+    const O = '#f08a24', D = '#cf6a14', K = '#2e1c12', W = '#fff4e2';
+    const tail = 'M30 -38 q46 -4 46 -54 q0 -14 -10 -18';
+    // Stripes start at the back edge of the tilted body and curl inward.
+    const stripes = [-34, -12, 10, 32].map((t) => {
+      const w = 30 * Math.sqrt(1 - (t / 62) ** 2) - 1;
+      return `M${(10 - t * 0.423 + w * 0.906).toFixed(1)} ${(-80 - t * 0.906 - w * 0.423).toFixed(1)} q-8 -2 -17 7`;
+    }).join(' ');
+    return at(x, y, s, anim('a-pounce', `${anim('a-tail', `<path d="${tail}" stroke="${O}" stroke-width="11" fill="none" stroke-linecap="round"/><path d="${tail}" stroke="${K}" stroke-width="11" fill="none" stroke-dasharray="4 11"/>`, '0% 100%')}
+    <path d="M18 -40 q10 18 9 36" stroke="${D}" stroke-width="18" stroke-linecap="round" fill="none"/><ellipse cx="29" cy="-3" rx="12" ry="5.5" fill="${D}"/>
+    <path d="M-4 -116 q-30 -14 -54 -22" stroke="${D}" stroke-width="15" stroke-linecap="round" fill="none"/><circle cx="-60" cy="-139" r="10" fill="${D}"/>
+    <ellipse cx="10" cy="-80" rx="30" ry="62" fill="${O}" transform="rotate(-25 10 -80)"/><ellipse cx="-4" cy="-76" rx="14" ry="48" fill="${W}" transform="rotate(-25 -4 -76)"/>
+    <path d="${stripes}" stroke="${K}" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+    <path d="M-2 -42 q-4 20 -8 38" stroke="${O}" stroke-width="20" stroke-linecap="round" fill="none"/><ellipse cx="-14" cy="-3" rx="13" ry="6" fill="${O}"/>
+    <path d="M-15 -28 h10 M-16 -16 h10" stroke="${K}" stroke-width="4" stroke-linecap="round"/>
+    <path d="M-2 -104 q-30 4 -54 0" stroke="${O}" stroke-width="16" stroke-linecap="round" fill="none"/><circle cx="-57" cy="-104" r="10.5" fill="${O}"/>
+    <path d="M-24 -111 v13 M-37 -110 v12" stroke="${K}" stroke-width="4" stroke-linecap="round"/>
+    <path d="M-66 -110 l-6 -3 M-68 -104 h-6 M-66 -98 l-6 3 M-68 -144 l-6 -2 M-69 -137 h-6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="-16" cy="-172" r="9" fill="${O}"/><circle cx="-16" cy="-172" r="4.5" fill="${K}"/><circle cx="-43" cy="-174" r="9" fill="${O}"/><circle cx="-43" cy="-174" r="4.5" fill="${K}"/>
+    <circle cx="-30" cy="-150" r="27" fill="${O}"/>
+    <ellipse cx="-19" cy="-135" rx="11" ry="9" fill="${W}"/><ellipse cx="-45" cy="-138" rx="16" ry="12" fill="${W}"/>
+    <path d="M-30 -176 v10 M-38 -175 l2 8 M-22 -175 l-2 8 M-4 -157 h-8 M-4 -147 h-8" stroke="${K}" stroke-width="3.4" stroke-linecap="round"/>
+    <ellipse cx="-43" cy="-153" rx="4.6" ry="3.8" fill="#f6e04b"/><ellipse cx="-24" cy="-153" rx="4.6" ry="3.8" fill="#f6e04b"/><circle cx="-44" cy="-153" r="2.2" fill="${K}"/><circle cx="-25" cy="-153" r="2.2" fill="${K}"/>
+    <path d="M-50 -161 l11 4 M-17 -161 l-11 4" stroke="${K}" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M-55 -146 h11 l-5.5 7z" fill="${K}"/>
+    <path d="M-60 -135 q11 16 24 2z" fill="#7a2b22"/><path d="M-56 -134 l2.2 6 l2.2 -6 M-43 -134 l2.2 6 l2.2 -6" fill="#fff"/>`));
+  }
   const hound = (x, y, s, delay) => at(x, y, s, anim('a-run', `<g class="a-legf"><rect x="-22" y="-24" width="6" height="24" rx="3" fill="#8a5a33"/></g><g class="a-legb"><rect x="14" y="-24" width="6" height="24" rx="3" fill="#8a5a33"/></g>
     <path d="M26 -34 q12 -6 12 -20" stroke="#a0703f" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="0" cy="-32" rx="30" ry="12" fill="#a0703f"/>
     <g class="a-legb"><rect x="-14" y="-24" width="6" height="24" rx="3" fill="#a0703f"/></g><g class="a-legf"><rect x="20" y="-24" width="6" height="24" rx="3" fill="#a0703f"/></g>
@@ -246,7 +266,7 @@
         ${tree(80, 330, 1.15, '#5f9e4f', [[-20, -118], [10, -126], [26, -98], [-40, -88], [0, -92], [36, -76], [-18, -70]])}
         ${banner(300, 120, 200, '#f2b632', 'lion')}
         ${anim('a-tumble', `<g transform="translate(118 300)"><rect x="-22" y="-6" width="44" height="12" rx="3" fill="#e8d7a3" stroke="#bfa86e"/><path d="M-16 0 h32" stroke="#9c8650"/></g>`)}
-        ${figure({ x: 210, y: 392, s: 1.05, attire: 'commoner', thread: true, hair: 'shikha', mark: 'tilak', brows: 'fierce', mouth: 'grin', armR: 'up', holdR: 'sword', animR: 'a-swing', armL: 'out', move: 'a-bob' })}`,
+        ${figure({ x: 210, y: 392, s: 1.05, attire: 'king', lower: P.white, sash: P.red, wear: 'crown', skin: P.skin.brown, stache: 'handlebar', brows: 'fierce', mouth: 'grin', armR: 'up', holdR: 'sword', animR: 'a-swing', armL: 'out', move: 'a-bob' })}`,
       small: () => stoneSlab([64, 56, 64, 48, 60], 'HALMIDI · c. 450'),
     },
     {
@@ -300,7 +320,7 @@
       title: ['Gommateshwara rises at Shravanabelagola', 'ಶ್ರವಣಬೆಳಗೊಳದಲ್ಲಿ ಗೊಮ್ಮಟೇಶ್ವರ'],
       sub: ['Ganga minister Chavundaraya carves the 57-ft monolith, c. 981 CE', 'ಗಂಗರ ಮಂತ್ರಿ ಚಾವುಂಡರಾಯನ 57 ಅಡಿ ಏಕಶಿಲಾ ಮೂರ್ತಿ, ಸು. ಕ್ರಿ.ಶ. 981'],
       bubbles: [['For my mother\'s wish!', 'ಅಮ್ಮನ ಆಸೆಯಂತೆ!', 'left:-4%;top:56%']],
-      big: () => `${rect(0, 0, 400, 400, '#e6eef8')}${cloud(40, 60, 0.8)}${cloud(300, 110, 0.7, 1)}
+      big: () => `${rect(0, 0, 400, 400, '#e6eef8')}${cloud(40, 60, 0.8)}${cloud(330, 170, 0.6, 1)}
         <path d="M110 400 v-130 q90 -44 180 0 v130z" fill="#c9c3b5"/>
         <path d="M120 290 q-6 50 4 110 M280 290 q6 50 -4 110" stroke="#b5ae9f" stroke-width="22" stroke-linecap="round" fill="none"/>
         <g fill="none" stroke="#5f9e4f" stroke-width="3"><path d="M118 300 q14 20 0 40 q-14 20 2 40"/><path d="M282 300 q-14 20 0 40 q14 20 -2 40"/></g>
@@ -310,10 +330,12 @@
         <circle cx="200" cy="168" r="54" fill="#d3cdbf"/>
         <g fill="#a39c8d">${[[170, 128], [186, 120], [202, 118], [218, 121], [232, 128], [160, 140], [176, 133], [192, 129], [208, 129], [224, 133], [240, 141]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7"/>`).join('')}</g>
         <path d="M178 172 q8 5 16 0 M206 172 q8 5 16 0" stroke="#7d766a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M198 180 q4 8 0 14" stroke="#a39c8d" stroke-width="2.5" fill="none"/><path d="M190 202 q10 6 20 0" stroke="#7d766a" stroke-width="3" fill="none" stroke-linecap="round"/>
-        <path class="a-pour" d="M300 112 q-50 0 -92 14" stroke="#f6c544" stroke-width="7" fill="none" stroke-linecap="round" pathLength="1"/>
-        <g class="a-drip"><circle cx="160" cy="150" r="4" fill="#f6c544"/><circle cx="240" cy="156" r="4" fill="#f6c544"/></g>
-        <g stroke="#9c7a4a" stroke-width="4"><path d="M296 400 V128 M352 400 V128 M296 128 H352 M296 214 H352 M296 300 H352"/></g>
-        ${figure({ x: 326, y: 128, s: 0.42, attire: 'commoner', skin: P.skin.brown, armR: 'fwd', holdR: 'kalasha', armL: 'fwd', flip: true })}
+        <g stroke="#9c7a4a" stroke-width="4"><path d="M300 400 V106 M352 400 V106 M300 200 H352 M300 300 H352"/></g>${rect(244, 100, 116, 7, '#8a6a3e', 2)}
+        ${figure({ x: 290, y: 101, s: 0.42, attire: 'commoner', thread: true, skin: P.skin.brown, armR: 'raise', armL: 'hip', mouth: 'talk', flip: true })}
+        <g fill="none" stroke-linecap="round"><path d="M245 44 q-12 22 -23 74" stroke="#9fb3c9" stroke-width="12" opacity=".45"/><path d="M245 44 q-12 22 -23 74" stroke="#fff" stroke-width="8"/><path class="a-pour" d="M245 44 q-12 22 -23 74" stroke="#cfdbe8" stroke-width="2.5" pathLength="1"/></g>
+        <g transform="translate(262 38) rotate(-110)"><path d="M-13 -4 q0 16 13 16 q13 0 13 -16 q0 -8 -6 -10 h-14 q-6 2 -6 10z" fill="#c8892e" stroke="#9a6418" stroke-width="1.5"/>${rect(-5, -17, 10, 5, '#c8892e')}${rect(-8, -20, 16, 4, '#9a6418', 2)}</g>
+        <g fill="none" stroke-linecap="round">${['M224 118 q26 6 28 34 q2 30 -8 62', 'M218 118 q-44 -4 -60 30 q-8 30 -2 66', 'M221 121 q-5 14 -2 28'].map((d) => `<path d="${d}" stroke="#a8a091" stroke-width="10" opacity=".35"/><path d="${d}" stroke="#fff" stroke-width="7"/><path class="a-pour" d="${d}" stroke="#dcd6ca" stroke-width="2" pathLength="1"/>`).join('')}</g>
+        <path d="M186 124 q34 -18 66 2 q-8 10 -30 6 q-22 -2 -36 -8z" fill="#fff" opacity=".92"/><ellipse class="a-pulse" cx="222" cy="118" rx="13" ry="5" fill="#fff"/>
         ${figure({ x: 70, y: 404, s: 0.78, attire: 'robe', cloth: '#f7f1e3', sash: P.maroon, wear: 'turban', wearColor: '#f4efe2', stache: 'thin', armR: 'chest', armL: 'chest', nod: true })}`,
       small: () => `${rect(0, 0, 200, 200, '#e9f0e3')}<path d="M0 150 q100 -20 200 0 v50 h-200z" fill="#a9cc77"/>${elephant({ x: 92, y: 168, s: 0.62, walk: true, cloth: P.red })}
         <text x="100" y="40" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#5c7a3c">TALAKAD</text>`,
@@ -321,12 +343,12 @@
     {
       era: ['Hoysalas', 'ಹೊಯ್ಸಳರು'],
       title: ['"Hoy, Sala!" The Hoysala legend', '"ಹೊಯ್ ಸಳ!" ಹೊಯ್ಸಳರ ದಂತಕಥೆ'],
-      sub: ['Sala strikes the tiger, and a dynasty gets its name, c. 11th century', 'ಸಳನು ಹುಲಿಯನ್ನು ಹೊಡೆದ ಕಥೆಯಿಂದ ಹೊಯ್ಸಳ ಹೆಸರು, ಸು. 11ನೇ ಶತಮಾನ'],
-      bubbles: [['Hoy, Sala! (Strike, Sala!)', 'ಹೊಯ್ ಸಳ!', 'right:-4%;top:18%', 1]],
-      big: () => `${rect(0, 0, 400, 400, '#e3efd9')}${tree(40, 300, 1.2, '#4f8c44')}${tree(380, 290, 1.1, '#4f8c44')}
-        ${dravida(320, 270, 0.6, '#cfc8b4', '#b5ad97')}
+      sub: ['His teacher cries "Strike, Sala!" and a dynasty gets its name, c. 11th century', 'ಗುರುವಿನ "ಹೊಯ್ ಸಳ!" ಎಂಬ ಕೂಗಿನಿಂದ ಹೊಯ್ಸಳ ಹೆಸರು, ಸು. 11ನೇ ಶತಮಾನ'],
+      bubbles: [['Hoy, Sala!', 'ಹೊಯ್ ಸಳ!', 'left:-3%;top:27%']],
+      big: () => `${rect(0, 0, 400, 400, '#e3efd9')}${tree(24, 300, 1.2, '#4f8c44')}${tree(386, 290, 1.1, '#4f8c44')}
         ${ground(290, '#9cc46a', '#88b558')}
-        ${tiger(300, 372, 1.15)}
+        ${figure({ x: 42, y: 290, s: 0.5, attire: 'robe', cloth: P.white, sash: P.white, hair: 'bald', studs: false, brows: 'up', mouth: 'open', armR: 'point', armL: 'raise', holdL: 'pichhi' })}
+        ${tiger(292, 384, 1.05)}
         ${figure({ x: 118, y: 396, s: 1, attire: 'king', lower: '#f7f1e3', sash: P.saffron, hair: 'short', stache: 'thin', brows: 'fierce', mouth: 'open', armR: 'up', holdR: 'sword', animR: 'a-strike', armL: 'out', skin: P.skin.brown })}`,
       small: () => `${rect(0, 0, 200, 200, '#dcd7c6')}<rect x="30" y="30" width="140" height="132" rx="10" fill="#a9a48f"/><rect x="38" y="38" width="124" height="116" rx="7" fill="#bdb8a3"/>
         <g fill="#8a8572"><ellipse cx="124" cy="112" rx="28" ry="14" transform="rotate(-30 124 112)"/><circle cx="106" cy="86" r="13"/><path d="M144 118 q16 -10 12 -30" stroke="#8a8572" stroke-width="6" fill="none"/>
