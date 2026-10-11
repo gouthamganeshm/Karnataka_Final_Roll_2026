@@ -493,7 +493,7 @@
         <text x="100" y="188" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#8a3a2b">VARAHA</text>`,
     },
     {
-      era: ['Vijayanagara · Tuluva', 'ವಿಜಯನಗರ · ತುಳುವ'],
+      era: ['Vijayanagara', 'ವಿಜಯನಗರ'],
       title: ['Krishnadevaraya\'s Vijayanagara', 'ಶ್ರೀಕೃಷ್ಣದೇವರಾಯನ ವಿಜಯನಗರ'],
       sub: ['Hampi at its height, early 1500s', 'ವೈಭವದ ಉತ್ತುಂಗದಲ್ಲಿ ಹಂಪಿ, 16ನೇ ಶತಮಾನ'],
       bubbles: [['Welcome to Vijayanagara!', 'ವಿಜಯನಗರಕ್ಕೆ ಸ್ವಾಗತ!', 'left:-6%;top:28%'], ['Diamonds sold by the heap!', 'ವಜ್ರಗಳು ರಾಶಿ ರಾಶಿ!', 'right:-2%;top:14%', 1]],
