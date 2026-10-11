@@ -274,6 +274,14 @@ body.kn h1 { letter-spacing: -.01em; line-height: 1.25; font-size: clamp(30px, 5
 .a-pour { stroke-dasharray: .12 .06; animation: pour .6s linear infinite; }
 @keyframes pour { to { stroke-dashoffset: -.18; } }
 .a-drip { animation: drip 1.6s ease-in infinite; }
+.a-rocket { animation: rocket 1.6s ease-in infinite; }
+@keyframes rocket { 0% { transform: translate(0, 0); opacity: 0; } 12%, 80% { opacity: 1; } 100% { transform: translate(var(--dx, 150px), var(--dy, 0px)); opacity: 0; } }
+.a-shuttle { animation: shuttle 1.3s ease-in-out infinite alternate; }
+@keyframes shuttle { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(var(--dx, 150px), var(--dy, 0px)) rotate(160deg); } }
+.a-rove { animation: rove 3s ease-in-out infinite alternate; }
+@keyframes rove { to { transform: translateX(26px); } }
+.a-land { animation: land 3.6s ease-out infinite; }
+@keyframes land { 0% { transform: translateY(-46px); } 60%, 100% { transform: translateY(0); } }
 @keyframes drip { from { transform: translateY(0); opacity: 1; } to { transform: translateY(60px); opacity: 0; } }
 /* arms: turn about the shoulder, which is their local origin */
 .stage svg .o0 { transform-box: view-box; transform-origin: 0 0; }
