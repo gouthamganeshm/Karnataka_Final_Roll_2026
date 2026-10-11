@@ -9,7 +9,7 @@
   const EPIC_RE = /^[A-Z]{3}[0-9]{7}$/;
   const $ = (id) => document.getElementById(id);
   let manifest = null;
-  let lang = 'en';
+  let lang = 'kn';
 
   // ------------------------------------------------------------ preferences
   const store = {
@@ -215,7 +215,7 @@
 
   // ---------------------------------------------------------------- boot
   const saved = store.get('lang');
-  applyLang(saved || (navigator.language?.startsWith('kn') ? 'kn' : 'en'));
+  applyLang(saved || 'kn'); // Kannada first; the toggle remembers a switch to English
   loadManifest().catch((err) => console.error(err));
   $('epic').focus({ preventScroll: true });
 })();

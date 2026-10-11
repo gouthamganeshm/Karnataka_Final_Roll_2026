@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="kn">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Karnataka Roll Search</title>
+  <title>ಕರ್ನಾಟಕ ಮತದಾರರ ಪಟ್ಟಿ ಹುಡುಕಾಟ · Karnataka Roll Search</title>
   <meta name="description" content="Type your EPIC (voter ID) number and find your constituency, part and serial number on the Karnataka electoral roll. Your number never leaves your phone.">
   <meta name="theme-color" content="#f8f5ef" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0e1020" media="(prefers-color-scheme: dark)">
@@ -13,17 +13,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Kannada:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="kn">
   <div class="backdrop" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
 
   <header class="top">
     <div class="wrap top-row">
       <a class="brand" href="./">
         <span class="brand-mark" aria-hidden="true">✓</span>
-        <span data-en="Karnataka Roll Search" data-kn="ಕರ್ನಾಟಕ ಮತದಾರರ ಪಟ್ಟಿ ಹುಡುಕಾಟ">Karnataka Roll Search</span>
+        <span data-en="Karnataka Roll Search" data-kn="ಕರ್ನಾಟಕ ಮತದಾರರ ಪಟ್ಟಿ ಹುಡುಕಾಟ">ಕರ್ನಾಟಕ ಮತದಾರರ ಪಟ್ಟಿ ಹುಡುಕಾಟ</span>
       </a>
       <div class="top-actions">
-        <button class="chip" id="lang" type="button" aria-label="Switch language">ಕನ್ನಡ</button>
+        <button class="chip" id="lang" type="button" aria-label="Switch language">English</button>
         <button class="chip icon" id="theme" type="button" aria-label="Toggle dark mode">◐</button>
       </div>
     </div>
@@ -34,18 +34,17 @@
       <div class="wrap hero-grid">
         <div class="hero-copy">
           <p class="eyebrow" id="roll-label">Electoral roll</p>
-          <h1 data-en="Am I on the roll?" data-kn="ನನ್ನ ಹೆಸರು ಪಟ್ಟಿಯಲ್ಲಿದೆಯೇ?">Am I on the roll?</h1>
+          <h1 data-en="Am I on the roll?" data-kn="ನನ್ನ ಹೆಸರು ಪಟ್ಟಿಯಲ್ಲಿದೆಯೇ?">ನನ್ನ ಹೆಸರು ಪಟ್ಟಿಯಲ್ಲಿದೆಯೇ?</h1>
           <p class="lede" data-en="Type the EPIC number printed on your voter ID card. You'll get your constituency, part and serial number in a second."
-             data-kn="ನಿಮ್ಮ ಮತದಾರರ ಗುರುತಿನ ಚೀಟಿಯಲ್ಲಿರುವ EPIC ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ. ನಿಮ್ಮ ಕ್ಷೇತ್ರ, ಭಾಗ ಮತ್ತು ಕ್ರಮ ಸಂಖ್ಯೆ ತಕ್ಷಣ ತಿಳಿಯುತ್ತದೆ.">
-            Type the EPIC number printed on your voter ID card. You'll get your constituency, part and serial number in a second.</p>
+             data-kn="ನಿಮ್ಮ ಮತದಾರರ ಗುರುತಿನ ಚೀಟಿಯಲ್ಲಿರುವ EPIC ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ. ನಿಮ್ಮ ಕ್ಷೇತ್ರ, ಭಾಗ ಮತ್ತು ಕ್ರಮ ಸಂಖ್ಯೆ ತಕ್ಷಣ ತಿಳಿಯುತ್ತದೆ.">ನಿಮ್ಮ ಮತದಾರರ ಗುರುತಿನ ಚೀಟಿಯಲ್ಲಿರುವ EPIC ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ. ನಿಮ್ಮ ಕ್ಷೇತ್ರ, ಭಾಗ ಮತ್ತು ಕ್ರಮ ಸಂಖ್ಯೆ ತಕ್ಷಣ ತಿಳಿಯುತ್ತದೆ.</p>
 
           <form class="search" id="search" autocomplete="off">
-            <label class="sr" for="epic" data-en="EPIC number" data-kn="EPIC ಸಂಖ್ಯೆ">EPIC number</label>
+            <label class="sr" for="epic" data-en="EPIC number" data-kn="EPIC ಸಂಖ್ಯೆ">EPIC ಸಂಖ್ಯೆ</label>
             <input id="epic" name="epic" inputmode="text" autocapitalize="characters" spellcheck="false"
                    maxlength="14" placeholder="ABC1234567" aria-describedby="hint">
-            <button type="submit" id="go" data-en="Search" data-kn="ಹುಡುಕಿ">Search</button>
+            <button type="submit" id="go" data-en="Search" data-kn="ಹುಡುಕಿ">ಹುಡುಕಿ</button>
           </form>
-          <p class="hint" id="hint" data-en="3 letters + 7 digits, e.g. ABC1234567" data-kn="3 ಅಕ್ಷರಗಳು + 7 ಅಂಕಿಗಳು, ಉದಾ. ABC1234567">3 letters + 7 digits, e.g. ABC1234567</p>
+          <p class="hint" id="hint" data-en="3 letters + 7 digits, e.g. ABC1234567" data-kn="3 ಅಕ್ಷರಗಳು + 7 ಅಂಕಿಗಳು, ಉದಾ. ABC1234567">3 ಅಕ್ಷರಗಳು + 7 ಅಂಕಿಗಳು, ಉದಾ. ABC1234567</p>
 
           <div id="result" class="result" aria-live="polite"></div>
         </div>
@@ -62,47 +61,47 @@
     </section>
 
     <section class="wrap stats" id="stats" hidden>
-      <div class="stat"><span class="num" id="s-electors">—</span><span class="lbl" data-en="electors indexed" data-kn="ಮತದಾರರು">electors indexed</span></div>
-      <div class="stat"><span class="num" id="s-acs">—</span><span class="lbl" data-en="constituencies" data-kn="ಕ್ಷೇತ್ರಗಳು">constituencies</span></div>
-      <div class="stat"><span class="num" id="s-cov">—</span><span class="lbl" data-en="of booths loaded" data-kn="ಮತಗಟ್ಟೆಗಳು ಲೋಡ್ ಆಗಿವೆ">of booths loaded</span></div>
+      <div class="stat"><span class="num" id="s-electors">—</span><span class="lbl" data-en="electors indexed" data-kn="ಮತದಾರರು">ಮತದಾರರು</span></div>
+      <div class="stat"><span class="num" id="s-acs">—</span><span class="lbl" data-en="constituencies" data-kn="ಕ್ಷೇತ್ರಗಳು">ಕ್ಷೇತ್ರಗಳು</span></div>
+      <div class="stat"><span class="num" id="s-cov">—</span><span class="lbl" data-en="of booths loaded" data-kn="ಮತಗಟ್ಟೆಗಳು ಲೋಡ್ ಆಗಿವೆ">ಮತಗಟ್ಟೆಗಳು ಲೋಡ್ ಆಗಿವೆ</span></div>
     </section>
 
     <section class="wrap cards">
       <article class="card">
         <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-        <h2 data-en="Private by design" data-kn="ಗೌಪ್ಯತೆ ಖಚಿತ">Private by design</h2>
+        <h2 data-en="Private by design" data-kn="ಗೌಪ್ಯತೆ ಖಚಿತ">ಗೌಪ್ಯತೆ ಖಚಿತ</h2>
         <p data-en="Your EPIC number never leaves your device. Your phone hashes it and downloads one small file shared by thousands of numbers — the server never learns what you searched."
-           data-kn="ನಿಮ್ಮ EPIC ಸಂಖ್ಯೆ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಗೆ ಹೋಗುವುದಿಲ್ಲ. ಸಾವಿರಾರು ಸಂಖ್ಯೆಗಳಿಗೆ ಸಾಮಾನ್ಯವಾದ ಒಂದು ಸಣ್ಣ ಫೈಲ್ ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತದೆ.">Your EPIC number never leaves your device. Your phone hashes it and downloads one small file shared by thousands of numbers — the server never learns what you searched.</p>
+           data-kn="ನಿಮ್ಮ EPIC ಸಂಖ್ಯೆ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಗೆ ಹೋಗುವುದಿಲ್ಲ. ಸಾವಿರಾರು ಸಂಖ್ಯೆಗಳಿಗೆ ಸಾಮಾನ್ಯವಾದ ಒಂದು ಸಣ್ಣ ಫೈಲ್ ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತದೆ.">ನಿಮ್ಮ EPIC ಸಂಖ್ಯೆ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಗೆ ಹೋಗುವುದಿಲ್ಲ. ಸಾವಿರಾರು ಸಂಖ್ಯೆಗಳಿಗೆ ಸಾಮಾನ್ಯವಾದ ಒಂದು ಸಣ್ಣ ಫೈಲ್ ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತದೆ.</p>
       </article>
       <article class="card">
         <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg></span>
-        <h2 data-en="Check the official copy" data-kn="ಅಧಿಕೃತ ಪ್ರತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ">Check the official copy</h2>
+        <h2 data-en="Check the official copy" data-kn="ಅಧಿಕೃತ ಪ್ರತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ">ಅಧಿಕೃತ ಪ್ರತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ</h2>
         <p data-en="Every result links to the exact ECI PDF of your polling part, so you can confirm your name and details at the serial number shown."
-           data-kn="ಪ್ರತಿ ಫಲಿತಾಂಶವು ನಿಮ್ಮ ಮತಗಟ್ಟೆಯ ಅಧಿಕೃತ ECI PDF ಗೆ ಲಿಂಕ್ ನೀಡುತ್ತದೆ — ತೋರಿಸಿದ ಕ್ರಮ ಸಂಖ್ಯೆಯಲ್ಲಿ ನಿಮ್ಮ ವಿವರಗಳನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.">Every result links to the exact ECI PDF of your polling part, so you can confirm your name and details at the serial number shown.</p>
+           data-kn="ಪ್ರತಿ ಫಲಿತಾಂಶವು ನಿಮ್ಮ ಮತಗಟ್ಟೆಯ ಅಧಿಕೃತ ECI PDF ಗೆ ಲಿಂಕ್ ನೀಡುತ್ತದೆ — ತೋರಿಸಿದ ಕ್ರಮ ಸಂಖ್ಯೆಯಲ್ಲಿ ನಿಮ್ಮ ವಿವರಗಳನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.">ಪ್ರತಿ ಫಲಿತಾಂಶವು ನಿಮ್ಮ ಮತಗಟ್ಟೆಯ ಅಧಿಕೃತ ECI PDF ಗೆ ಲಿಂಕ್ ನೀಡುತ್ತದೆ — ತೋರಿಸಿದ ಕ್ರಮ ಸಂಖ್ಯೆಯಲ್ಲಿ ನಿಮ್ಮ ವಿವರಗಳನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.</p>
       </article>
       <article class="card">
         <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span>
-        <h2 data-en="Not found?" data-kn="ಸಿಗಲಿಲ್ಲವೇ?">Not found?</h2>
+        <h2 data-en="Not found?" data-kn="ಸಿಗಲಿಲ್ಲವೇ?">ಸಿಗಲಿಲ್ಲವೇ?</h2>
         <p data-en="Double-check the number, then call the Voter Helpline 1950 or visit voters.eci.gov.in. New voters can apply with Form 6."
-           data-kn="ಸಂಖ್ಯೆಯನ್ನು ಮತ್ತೊಮ್ಮೆ ಪರಿಶೀಲಿಸಿ, ನಂತರ ಮತದಾರರ ಸಹಾಯವಾಣಿ 1950 ಗೆ ಕರೆ ಮಾಡಿ ಅಥವಾ voters.eci.gov.in ಗೆ ಭೇಟಿ ನೀಡಿ. ಹೊಸ ಮತದಾರರು ನಮೂನೆ 6 ಮೂಲಕ ಅರ್ಜಿ ಸಲ್ಲಿಸಬಹುದು.">Double-check the number, then call the Voter Helpline 1950 or visit voters.eci.gov.in. New voters can apply with Form 6.</p>
+           data-kn="ಸಂಖ್ಯೆಯನ್ನು ಮತ್ತೊಮ್ಮೆ ಪರಿಶೀಲಿಸಿ, ನಂತರ ಮತದಾರರ ಸಹಾಯವಾಣಿ 1950 ಗೆ ಕರೆ ಮಾಡಿ ಅಥವಾ voters.eci.gov.in ಗೆ ಭೇಟಿ ನೀಡಿ. ಹೊಸ ಮತದಾರರು ನಮೂನೆ 6 ಮೂಲಕ ಅರ್ಜಿ ಸಲ್ಲಿಸಬಹುದು.">ಸಂಖ್ಯೆಯನ್ನು ಮತ್ತೊಮ್ಮೆ ಪರಿಶೀಲಿಸಿ, ನಂತರ ಮತದಾರರ ಸಹಾಯವಾಣಿ 1950 ಗೆ ಕರೆ ಮಾಡಿ ಅಥವಾ voters.eci.gov.in ಗೆ ಭೇಟಿ ನೀಡಿ. ಹೊಸ ಮತದಾರರು ನಮೂನೆ 6 ಮೂಲಕ ಅರ್ಜಿ ಸಲ್ಲಿಸಬಹುದು.</p>
       </article>
     </section>
 
     <section class="wrap" id="coverage-wrap" hidden>
       <details class="coverage">
-        <summary data-en="Coverage by constituency" data-kn="ಕ್ಷೇತ್ರವಾರು ವ್ಯಾಪ್ತಿ">Coverage by constituency</summary>
-        <input class="filter" id="filter" placeholder="Filter by name or number" aria-label="Filter constituencies">
+        <summary data-en="Coverage by constituency" data-kn="ಕ್ಷೇತ್ರವಾರು ವ್ಯಾಪ್ತಿ">ಕ್ಷೇತ್ರವಾರು ವ್ಯಾಪ್ತಿ</summary>
+        <input class="filter" id="filter" placeholder="ಹೆಸರು ಅಥವಾ ಸಂಖ್ಯೆಯಿಂದ ಹುಡುಕಿ" aria-label="Filter constituencies">
         <div class="table-scroll"><table id="cov-table"><thead><tr>
-          <th>AC</th><th data-en="Constituency" data-kn="ಕ್ಷೇತ್ರ">Constituency</th>
-          <th data-en="District" data-kn="ಜಿಲ್ಲೆ">District</th><th class="r" data-en="Electors" data-kn="ಮತದಾರರು">Electors</th>
-          <th class="r" data-en="Booths" data-kn="ಮತಗಟ್ಟೆಗಳು">Booths</th></tr></thead><tbody></tbody></table></div>
+          <th>AC</th><th data-en="Constituency" data-kn="ಕ್ಷೇತ್ರ">ಕ್ಷೇತ್ರ</th>
+          <th data-en="District" data-kn="ಜಿಲ್ಲೆ">ಜಿಲ್ಲೆ</th><th class="r" data-en="Electors" data-kn="ಮತದಾರರು">ಮತದಾರರು</th>
+          <th class="r" data-en="Booths" data-kn="ಮತಗಟ್ಟೆಗಳು">ಮತಗಟ್ಟೆಗಳು</th></tr></thead><tbody></tbody></table></div>
       </details>
     </section>
   </main>
 
   <footer class="wrap foot">
     <p data-en="An independent, unofficial index of the electoral roll PDFs published by the Election Commission of India. It reformats public data and is not an official ECI service. Always confirm against the official roll."
-       data-kn="ಇದು ಭಾರತ ಚುನಾವಣಾ ಆಯೋಗ ಪ್ರಕಟಿಸಿದ ಮತದಾರರ ಪಟ್ಟಿಯ ಸ್ವತಂತ್ರ, ಅನಧಿಕೃತ ಸೂಚಿ. ಇದು ಅಧಿಕೃತ ECI ಸೇವೆಯಲ್ಲ. ಯಾವಾಗಲೂ ಅಧಿಕೃತ ಪಟ್ಟಿಯೊಂದಿಗೆ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.">An independent, unofficial index of the electoral roll PDFs published by the Election Commission of India. It reformats public data and is not an official ECI service. Always confirm against the official roll.</p>
+       data-kn="ಇದು ಭಾರತ ಚುನಾವಣಾ ಆಯೋಗ ಪ್ರಕಟಿಸಿದ ಮತದಾರರ ಪಟ್ಟಿಯ ಸ್ವತಂತ್ರ, ಅನಧಿಕೃತ ಸೂಚಿ. ಇದು ಅಧಿಕೃತ ECI ಸೇವೆಯಲ್ಲ. ಯಾವಾಗಲೂ ಅಧಿಕೃತ ಪಟ್ಟಿಯೊಂದಿಗೆ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.">ಇದು ಭಾರತ ಚುನಾವಣಾ ಆಯೋಗ ಪ್ರಕಟಿಸಿದ ಮತದಾರರ ಪಟ್ಟಿಯ ಸ್ವತಂತ್ರ, ಅನಧಿಕೃತ ಸೂಚಿ. ಇದು ಅಧಿಕೃತ ECI ಸೇವೆಯಲ್ಲ. ಯಾವಾಗಲೂ ಅಧಿಕೃತ ಪಟ್ಟಿಯೊಂದಿಗೆ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.</p>
     <p class="built" id="built"></p>
   </footer>
 
