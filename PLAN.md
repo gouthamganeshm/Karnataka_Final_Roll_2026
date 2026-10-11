@@ -163,7 +163,7 @@ review". It never shows as "not found".
 | G | Printed totals (V3) | Done |
 | H | Publish gate in `build.mjs`; per-AC status in the manifest and on the site | Done |
 | I | End-to-end on Actions | Done on 11 sample parts from 9 ACs (§2). A full-size AC runs as the release-day pilot |
-| J | Phone-width check of the site. Keep `gouthamganeshm/eci-cdn-probe` | Done |
+| J | Phone-width check of the site | Done |
 
 Also done: home now uploads each AC while the next one downloads, and the cut
 takes ~1.5 s of CPU per part (was ~6 s), so home is never the bottleneck
@@ -254,4 +254,3 @@ re-running the previous `publish.yml` run. ECI throttling or errors: lower
 * Accuracy over coverage: withhold rather than guess.
 * Only hashed EPIC fragments are public. Plaintext rows live only in the draft
   release.
-* Keep the `gouthamganeshm/eci-cdn-probe` repo.
