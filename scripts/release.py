@@ -13,7 +13,8 @@ GITHUB_TOKEN on Actions.
     python scripts/release.py upload FILE [FILE...]
     python scripts/release.py download NAME [DEST_DIR]
     python scripts/release.py download-all DEST_DIR [PREFIX...]
-    python scripts/release.py delete NAME
+    python scripts/release.py fetch DEST_DIR NAME [NAME...]
+    python scripts/release.py delete NAME [NAME...]
 """
 from __future__ import annotations
 
@@ -21,6 +22,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -123,7 +125,15 @@ def replace(*paths: str) -> None:
 
 
 def download(name: str, dest: str = '.', asset: dict | None = None) -> Path:
+    # The listing is paged, and an asset deleted by another job mid-listing
+    # shifts the rest down a page, so one can be missed: look again before
+    # concluding it is not there (AC 196's verify failed on exactly that).
     a = asset or assets().get(name)
+    for wait in (3, 10):
+        if a:
+            break
+        time.sleep(wait)
+        a = assets().get(name)
     if not a:
         raise SystemExit(f'no asset {name} in {TAG}')
     out = Path(dest) / name
@@ -141,14 +151,31 @@ def download(name: str, dest: str = '.', asset: dict | None = None) -> Path:
 def download_all(dest: str, prefixes: tuple[str, ...]) -> list[Path]:
     # An asset still being uploaded (state "starter", e.g. rows being replaced)
     # is skipped: the publish build read one half-written and failed on it.
-    return [download(n, dest, a) for n, a in sorted(assets().items())
-            if n.startswith(prefixes) and a.get('state', 'uploaded') == 'uploaded']
+    # Two listings are joined, so an asset one of them missed (see download)
+    # is still fetched. One replaced since (new id) is looked up again.
+    found = {**assets(), **assets()}
+    out = []
+    for n, a in sorted(found.items()):
+        if n.startswith(prefixes) and a.get('state', 'uploaded') == 'uploaded':
+            try:
+                out.append(download(n, dest, a))
+            except RuntimeError:
+                out.append(download(n, dest))
+    return out
 
 
-def delete(name: str) -> None:
-    a = assets().get(name)
-    if a:
-        gh('api', '-X', 'DELETE', f'repos/{repo()}/releases/assets/{a["id"]}')
+def fetch(dest: str, names: list[str]) -> list[Path]:
+    """Download several assets on one listing: Actions' token allows 1,000 API
+    calls an hour per repo, and every listing costs a few."""
+    found = assets()
+    return [download(n, dest, found.get(n)) for n in names]
+
+
+def delete(*names: str) -> None:
+    found = assets()
+    for name in names:
+        if name in found:
+            gh('api', '-X', 'DELETE', f'repos/{repo()}/releases/assets/{found[name]["id"]}')
 
 
 if __name__ == '__main__':
@@ -167,7 +194,10 @@ if __name__ == '__main__':
     elif cmd == 'download-all':
         for p in download_all(rest[0], tuple(rest[1:]) or ('rows-', 'manifest')):
             print(p)
+    elif cmd == 'fetch':
+        for p in fetch(rest[0], rest[1:]):
+            print(p)
     elif cmd == 'delete':
-        delete(rest[0])
+        delete(*rest)
     else:
         raise SystemExit(__doc__)

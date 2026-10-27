@@ -20,8 +20,8 @@ rebuilt so a statewide import takes hours, not a week.
 
 ```
 home PC                            GitHub (draft release, private)   GitHub Actions                          GitHub Pages
-fetch part PDF ─► cut crops ─►     crops-<ac>.tar ─────────────────► ocr.yml    6 shard jobs + merge
-(scripts/home/roll_queue.py                                          verify.yml 6 shard jobs + verdict
+fetch part PDF ─► cut crops ─►     crops-<ac>.tar ─────────────────► ocr.yml    12 shard jobs + merge
+(scripts/home/roll_queue.py                                          verify.yml 12 shard jobs + verdict
  → run.py)                                                           publish.yml ─► hashed buckets ────────► site
 ```
 
@@ -29,19 +29,20 @@ fetch part PDF ─► cut crops ─►     crops-<ac>.tar ───────�
   downloaded at home, Kannada roll only. Home does the cheap half: cutting
   each card's serial box and EPIC. PDFs are never written to disk, and each
   crop tar is deleted once uploaded. Each AC uploads while the next one
-  downloads. The download (~20 parts/min) is the bottleneck: about two days
-  for the state.
-* **Actions OCRs, split six ways.** `ocr.yml` splits an AC's parts over 6
+  downloads. The download (~20 parts/min, an 8 MB PDF each) is the bottleneck:
+  it fills a ~30 Mbps home line, so more workers do not help. About two
+  days for the state.
+* **Actions OCRs, split twelve ways.** `ocr.yml` splits an AC's parts over 12
   parallel jobs (`ocr_ac.py --shard i/N`); a merge job joins them into exactly
-  what one job writes (`ocr_ac.py merge`). A 600-part AC takes ~15 min instead
-  of ~1.5 h.
+  what one job writes (`ocr_ac.py merge`). A 600-part AC takes under 10 min
+  instead of ~1.5 h.
 * **Four readers per EPIC.** Tesseract on a contact sheet, a glyph-template
   reader for the fixed EPIC font, Tesseract on the crop alone, and a
   prototype reader with different features. A character is published only
   when independent readers agree; anything unsettled is withheld, never
   guessed. Details and measurements in [PLAN.md](PLAN.md).
-* **A verifier before publishing, also split six ways.** The per-card checks
-  run on every core in 6 parallel jobs: V1 re-reads every record, V4 confirms
+* **A verifier before publishing, also split twelve ways.** The per-card checks
+  run on every core in 12 parallel jobs: V1 re-reads every record, V4 confirms
   the letters of EPICs the draft roll does not have (keys from
   `draft-keys.yml`, hash fragments only). A verdict job then checks the whole
   AC (V2: serial order, duplicates, missing cards; V3: the part's printed
@@ -103,7 +104,8 @@ AC, which dispatches `verify.yml`, which dispatches `publish.yml`.
 `cache/shipped-<release>.json` and are skipped on re-run. Re-run one AC's OCR
 with `gh workflow run ocr.yml -f ac=N -f tag=<release>` (needs its crop tar on
 the release), or re-ship it with `run.py go --ac N --force`. `shards` is an
-input of both `ocr.yml` and `verify.yml` (default 6). If ECI throttles, lower
+input of both `ocr.yml` and `verify.yml` (default 12, at most 20: GitHub's
+free plan runs 20 jobs at once). If ECI throttles, lower
 `--workers` (never above 8).
 
 ## Privacy

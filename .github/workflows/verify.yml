@@ -2,7 +2,8 @@
 # (scripts/ci/verify_ac.py — V1 re-read, V2 structure, V3 printed totals,
 # V4 draft-roll corroboration). Dispatched by ocr.yml; dispatches publish.yml.
 #
-# The per-card checks (V1, V4) are split over `shards` parallel jobs by part;
+# The per-card checks (V1, V4) are split over `shards` parallel jobs (default
+# 12) by part;
 # each writes check-<ac>.s<i>.json (part, page, cell, reason — no EPICs) to the
 # draft release. `verdict` runs V2/V3 over the whole AC, merges the shards and
 # refuses unless they covered every part; its result equals a single run's.
@@ -21,7 +22,7 @@ on:
       shards:
         description: parallel check jobs for this AC
         required: false
-        default: '6'
+        default: '12'
 
 permissions:
   contents: write
@@ -40,9 +41,9 @@ jobs:
     steps:
       - id: n
         env:
-          WANT: ${{ inputs.shards || '6' }}
+          WANT: ${{ inputs.shards || '12' }}
         run: |
-          n=$(( WANT < 1 ? 1 : (WANT > 12 ? 12 : WANT) ))
+          n=$(( WANT < 1 ? 1 : (WANT > 20 ? 20 : WANT) ))
           echo "shards=$n" >> "$GITHUB_OUTPUT"
           echo "list=$(python3 -c "print(list(range($n)))")" >> "$GITHUB_OUTPUT"
 
@@ -77,10 +78,7 @@ jobs:
       - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
 
       - name: Fetch crops and rows
-        run: |
-          python scripts/release.py download "crops-$AC.tar" work
-          python scripts/release.py download "rows-$AC.jsonl.gz" work
-          python scripts/release.py download "rows-$AC.summary.json" work
+        run: python scripts/release.py fetch work "crops-$AC.tar" "rows-$AC.jsonl.gz" "rows-$AC.summary.json"
 
       # The draft roll's hash keys for this AC (built once by draft-keys.yml).
       # Without them V4 is skipped and the result says so.
@@ -117,12 +115,7 @@ jobs:
 
       - name: Fetch crops, rows and shard checks
         run: |
-          python scripts/release.py download "crops-$AC.tar" work
-          python scripts/release.py download "rows-$AC.jsonl.gz" work
-          python scripts/release.py download "rows-$AC.summary.json" work
-          for i in $(seq 0 $((SHARDS - 1))); do
-            python scripts/release.py download "check-$AC.s$i.json" work
-          done
+          python scripts/release.py fetch work "crops-$AC.tar" "rows-$AC.jsonl.gz" "rows-$AC.summary.json"             $(for i in $(seq 0 $((SHARDS - 1))); do echo "check-$AC.s$i.json"; done)
 
       - name: Verify (V2, V3, verdict)
         run: |
@@ -132,8 +125,7 @@ jobs:
         run: |
           shopt -s nullglob
           python scripts/release.py upload out/verify-$AC.json out/*.png
-          python scripts/release.py delete "crops-$AC.tar"
-          for i in $(seq 0 $((SHARDS - 1))); do python scripts/release.py delete "check-$AC.s$i.json"; done
+          python scripts/release.py delete "crops-$AC.tar" $(for i in $(seq 0 $((SHARDS - 1))); do echo "check-$AC.s$i.json"; done)
 
       # The site is built only from live-* files: what passed verification. A
       # hold, or rows replaced by a re-run, leave the AC's last good version live.

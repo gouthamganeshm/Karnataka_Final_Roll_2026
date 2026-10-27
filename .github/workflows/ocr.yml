@@ -5,8 +5,8 @@
 # kind=eng  crops-eng-<ac>.tar  -> eng-<ac>.jsonl.gz + summary (English cross-check
 #                                  part, V5), then a republish
 #
-# The parts are split over `shards` parallel jobs (one 4-core runner each read a
-# 600-part AC in ~1.5 h); `merge` joins their rows into exactly what one job
+# The parts are split over `shards` parallel jobs (default 12; one 4-core runner
+# alone reads a 600-part AC in ~1.5 h); `merge` joins their rows into exactly what one job
 # writes. Shard rows travel through the draft release, never as Actions
 # artifacts: on a public repo any signed-in user can download those.
 name: OCR constituency
@@ -28,7 +28,7 @@ on:
       shards:
         description: parallel OCR jobs for this AC
         required: false
-        default: '6'
+        default: '12'
 
 permissions:
   contents: write   # read/write assets on the draft release
@@ -47,9 +47,9 @@ jobs:
     steps:
       - id: n
         env:
-          WANT: ${{ inputs.kind == 'eng' && '1' || inputs.shards || '6' }}
+          WANT: ${{ inputs.kind == 'eng' && '1' || inputs.shards || '12' }}
         run: |
-          n=$(( WANT < 1 ? 1 : (WANT > 12 ? 12 : WANT) ))
+          n=$(( WANT < 1 ? 1 : (WANT > 20 ? 20 : WANT) ))
           echo "shards=$n" >> "$GITHUB_OUTPUT"
           echo "list=$(python3 -c "print(list(range($n)))")" >> "$GITHUB_OUTPUT"
 
@@ -129,10 +129,7 @@ jobs:
 
       - name: Fetch shard rows
         run: |
-          for i in $(seq 0 $((SHARDS - 1))); do
-            python scripts/release.py download "$OUT.s$i.jsonl.gz" work
-            python scripts/release.py download "$OUT.s$i.summary.json" work
-          done
+          python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
 
       - name: Merge
         run: python scripts/ci/ocr_ac.py merge "work/$OUT.jsonl.gz" work/$OUT.s*.jsonl.gz
@@ -142,10 +139,7 @@ jobs:
 
       - name: Remove shard rows
         run: |
-          for i in $(seq 0 $((SHARDS - 1))); do
-            python scripts/release.py delete "$OUT.s$i.jsonl.gz"
-            python scripts/release.py delete "$OUT.s$i.summary.json"
-          done
+          python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
 
       # The Kannada crops stay for the verifier, which re-reads every card.
       - name: Hand over
