@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import re
 import random
 import sys
 import tarfile
@@ -260,7 +261,7 @@ def main() -> int:
         count = lambda pre: sum(n.startswith(pre) for n in names)  # noqa: E731
         print(f'shipped from home: {len(shipped)} ACs')
         print(f'release {release.TAG}: crop tars waiting {count("crops-") - count("crops-eng-")} '
-              f'(+{count("crops-eng-")} English), OCR done {count("rows-") // 2}, '
+              f'(+{count("crops-eng-")} English), OCR done {sum(bool(re.fullmatch(r"rows-\d+\.jsonl\.gz", n)) for n in names)}, '
               f'verified {count("verify-")}, English cross-checks {count("eng-")}')
         return 0
 

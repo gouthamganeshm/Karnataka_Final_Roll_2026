@@ -2,6 +2,12 @@
 
     python scripts/ci/ocr_ac.py crops-177.tar rows-177.jsonl.gz
     python scripts/ci/ocr_ac.py crops-eng-177.tar eng-177.jsonl.gz     # the English cross-check part
+    python scripts/ci/ocr_ac.py crops-177.tar rows-177.s2.jsonl.gz --shard 2/6
+    python scripts/ci/ocr_ac.py merge rows-177.jsonl.gz rows-177.s*.jsonl.gz
+
+`--shard i/N` reads only every N-th part (from the i-th), so one AC's OCR can
+run as N parallel jobs; `merge` joins their rows and summaries into exactly
+what a single run writes.
 
 Reads every part bundle in the tar, OCRs it with one process per core
 (`crops.ocr_pages`: the readers must settle every character of each EPIC), and
@@ -56,10 +62,19 @@ def ocr_bundle(item: tuple[str, bytes]):
     return part, style, out, tot, grid, time.time() - t
 
 
-def main(tar_path: str, out_path: str) -> int:
+def summary_path(out_path: str) -> Path:
+    return Path(out_path).with_suffix('').with_suffix('.summary.json')
+
+
+def main(tar_path: str, out_path: str, shard: str | None = None) -> int:
+    i, n = map(int, shard.split('/')) if shard else (0, 1)
     with tarfile.open(tar_path) as tar:
         meta = json.loads(tar.extractfile('meta.json').read())
-        items = [(m.name, tar.extractfile(m).read()) for m in tar.getmembers() if m.name.endswith('.zip')]
+        # Shards split the part list itself, so a part home could not fetch
+        # (no bundle in the tar) is still some shard's to report as unread.
+        mine = set(sorted(meta['parts'])[i::n])
+        items = [(m.name, tar.extractfile(m).read()) for m in tar.getmembers()
+                 if m.name.endswith('.zip') and int(m.name.split('.')[0]) in mine]
 
     ac = meta['ac']
     workers = os.cpu_count() or 4
@@ -79,15 +94,41 @@ def main(tar_path: str, out_path: str) -> int:
                   f'{"" if tot is None else ", printed total " + str(tot.get("total"))} '
                   f'in {secs:.0f}s ({len(parts)}/{len(items)})', flush=True)
 
-    unread = sorted(set(meta['parts']) - {p for p, v in parts.items() if v['cards']})
+    unread = sorted(mine - {p for p, v in parts.items() if v['cards']})
     summary = {'ac': ac, 'lang': meta.get('lang', 'kan'), 'parts': len(meta['parts']),
                'partsRead': sum(1 for v in parts.values() if v['cards']), 'unread': unread,
                'rows': n_rows, 'published': n_pub, 'secs': round(time.time() - t0),
                'perPart': {str(k): v for k, v in sorted(parts.items())}}
-    Path(out_path).with_suffix('').with_suffix('.summary.json').write_text(json.dumps(summary))
+    summary_path(out_path).write_text(json.dumps(summary))
+    print(json.dumps({k: v for k, v in summary.items() if k != 'perPart'}))
+    return 0
+
+
+def merge(out_path: str, shards: list[str]) -> int:
+    """Join shard outputs: rows in part order, summaries summed."""
+    sums = [json.loads(summary_path(s).read_text('utf8')) for s in shards]
+    rows = []
+    for s in shards:
+        with gzip.open(s, 'rt', encoding='utf8') as f:
+            rows += [json.loads(line) for line in f if line.strip()]
+    rows.sort(key=lambda r: (r['part'], r['page'], r['cell']))
+    with gzip.open(out_path, 'wt', encoding='utf8') as out:
+        for r in rows:
+            out.write(json.dumps(r, separators=(',', ':')) + '\n')
+    per_part = {k: v for s in sums for k, v in s['perPart'].items()}
+    summary = {'ac': sums[0]['ac'], 'lang': sums[0]['lang'], 'parts': sums[0]['parts'],
+               'partsRead': sum(s['partsRead'] for s in sums),
+               'unread': sorted(p for s in sums for p in s['unread']),
+               'rows': len(rows), 'published': sum(s['published'] for s in sums),
+               'secs': max(s['secs'] for s in sums), 'shards': len(sums),
+               'perPart': dict(sorted(per_part.items(), key=lambda kv: int(kv[0])))}
+    summary_path(out_path).write_text(json.dumps(summary))
     print(json.dumps({k: v for k, v in summary.items() if k != 'perPart'}))
     return 0
 
 
 if __name__ == '__main__':
-    sys.exit(main(*sys.argv[1:3]))
+    if sys.argv[1] == 'merge':
+        sys.exit(merge(sys.argv[2], sys.argv[3:]))
+    shard = sys.argv[sys.argv.index('--shard') + 1] if '--shard' in sys.argv else None
+    sys.exit(main(*[a for a in sys.argv[1:] if a not in ('--shard', shard)][:2], shard=shard))
