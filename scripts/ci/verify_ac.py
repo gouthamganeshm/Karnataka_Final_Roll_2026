@@ -1,13 +1,16 @@
 """Verifier worker: check one constituency's OCR before it may be published.
 
     python scripts/ci/verify_ac.py AC CROPS_TAR ROWS SUMMARY OUT_DIR [--draft-keys draft-AC.npy]
-        [--shard i/N | --checks check-AC.s*.json]
+        [--shard i/N | --checks check-AC.s*.json | --quick]
 
 The per-card checks (V1, V4) run part by part on every core. With `--shard i/N`
 they run for every N-th part only and write OUT_DIR/check-<ac>.s<i>.json (no
 EPICs: part, page, cell and reason); a run given those files with `--checks`
 skips V1/V4, refuses unless the shards covered every part, and does the rest
 as a single run would, with the same result.
+`--quick` skips the per-card checks altogether (paused to publish sooner;
+`vars.VERIFY == 'paused'` in ocr.yml): V2/V3 still run, from the rows alone,
+and the result says `"checks": "quick"` so a full run can follow later.
 
 Runs after `ocr_ac.py`, on the same crops, and writes OUT_DIR/verify-<ac>.json:
 
@@ -241,6 +244,8 @@ def main() -> int:
     ap.add_argument('--draft-keys')
     ap.add_argument('--shard', help='i/N: V1/V4 for every N-th part only, written to a check file')
     ap.add_argument('--checks', nargs='+', help='shard check files: use them instead of running V1/V4')
+    ap.add_argument('--quick', action='store_true',
+                    help='V2/V3 only (per-card checks paused): no crops needed, pass "-" for them')
     args = ap.parse_args()
     t0 = time.time()
     out = Path(args.out)
@@ -264,7 +269,9 @@ def main() -> int:
         print(f'AC {args.ac} shard {i}/{n}: {len(mine)} parts, {len(found)} disputed, {dict(st)}')
         return 0
 
-    if args.checks:
+    if args.quick:
+        found, st = {}, collections.Counter({'perCardChecks': 0})
+    elif args.checks:
         found, st, covered = {}, collections.Counter(), set()
         for f in args.checks:
             c = json.loads(Path(f).read_text('utf8'))
@@ -278,7 +285,7 @@ def main() -> int:
         found, st = run_checks(rows_by_part, sorted(rows_by_part), args.crops, keys_path)
 
     summary = json.loads(Path(args.summary).read_text('utf8'))
-    pages_by_part = card_crops(args.crops)
+    pages_by_part = {} if args.quick else card_crops(args.crops)
 
     def crop_of(r):
         pages = pages_by_part.get(r['part'])
@@ -310,9 +317,12 @@ def main() -> int:
                   **dict(stats), 'secs': round(time.time() - t0)},
         'disputed': [[p, pg, c, why] for (p, pg, c), why in sorted(disputed.items())],
         'parts': {str(p): f for p, f in sorted(part_flags.items()) if f},
+        'checks': 'quick' if args.quick else 'full',
     }
     (out / f'verify-{args.ac}.json').write_text(json.dumps(result))
     print(json.dumps({k: v for k, v in result.items() if k not in ('disputed', 'parts')}))
+    if args.quick:
+        return 0
 
     rnd = random.Random(f'audit-{args.ac}')
     ok = [r for r in published if (r['part'], r['page'], r['cell']) not in disputed]

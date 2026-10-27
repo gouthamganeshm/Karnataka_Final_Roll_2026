@@ -1,0 +1,1575 @@
+{
+ "source": "https://ceo.karnataka.gov.in/uploads/PDF%20FINAL%20AC%20WISE%2027_1793094730.pdf",
+ "published": "2026-10-27",
+ "stateElectors": 45455689,
+ "acs": {
+  "1": {
+   "male": 106818,
+   "female": 106993,
+   "tg": 8,
+   "electors": 213819,
+   "stations": 259
+  },
+  "2": {
+   "male": 107145,
+   "female": 107441,
+   "tg": 11,
+   "electors": 214597,
+   "stations": 255
+  },
+  "3": {
+   "male": 113885,
+   "female": 110997,
+   "tg": 7,
+   "electors": 224889,
+   "stations": 270
+  },
+  "4": {
+   "male": 96080,
+   "female": 93282,
+   "tg": 6,
+   "electors": 189368,
+   "stations": 238
+  },
+  "5": {
+   "male": 89922,
+   "female": 86281,
+   "tg": 11,
+   "electors": 176214,
+   "stations": 227
+  },
+  "6": {
+   "male": 100288,
+   "female": 96248,
+   "tg": 11,
+   "electors": 196547,
+   "stations": 246
+  },
+  "7": {
+   "male": 96606,
+   "female": 97469,
+   "tg": 8,
+   "electors": 194083,
+   "stations": 234
+  },
+  "8": {
+   "male": 115551,
+   "female": 114599,
+   "tg": 9,
+   "electors": 230159,
+   "stations": 290
+  },
+  "9": {
+   "male": 109995,
+   "female": 113332,
+   "tg": 17,
+   "electors": 223344,
+   "stations": 297
+  },
+  "10": {
+   "male": 95669,
+   "female": 97488,
+   "tg": 6,
+   "electors": 193163,
+   "stations": 243
+  },
+  "11": {
+   "male": 96394,
+   "female": 102184,
+   "tg": 15,
+   "electors": 198593,
+   "stations": 260
+  },
+  "12": {
+   "male": 98093,
+   "female": 100178,
+   "tg": 12,
+   "electors": 198283,
+   "stations": 260
+  },
+  "13": {
+   "male": 119714,
+   "female": 118699,
+   "tg": 9,
+   "electors": 238422,
+   "stations": 299
+  },
+  "14": {
+   "male": 102912,
+   "female": 96160,
+   "tg": 4,
+   "electors": 199076,
+   "stations": 319
+  },
+  "15": {
+   "male": 93455,
+   "female": 91447,
+   "tg": 8,
+   "electors": 184910,
+   "stations": 232
+  },
+  "16": {
+   "male": 90653,
+   "female": 89821,
+   "tg": 2,
+   "electors": 180476,
+   "stations": 225
+  },
+  "17": {
+   "male": 95402,
+   "female": 94379,
+   "tg": 6,
+   "electors": 189787,
+   "stations": 238
+  },
+  "18": {
+   "male": 96949,
+   "female": 93172,
+   "tg": 9,
+   "electors": 190130,
+   "stations": 252
+  },
+  "19": {
+   "male": 90933,
+   "female": 95227,
+   "tg": 3,
+   "electors": 186163,
+   "stations": 222
+  },
+  "20": {
+   "male": 104777,
+   "female": 105106,
+   "tg": 14,
+   "electors": 209897,
+   "stations": 253
+  },
+  "21": {
+   "male": 97875,
+   "female": 98048,
+   "tg": 8,
+   "electors": 195931,
+   "stations": 253
+  },
+  "22": {
+   "male": 104841,
+   "female": 106616,
+   "tg": 11,
+   "electors": 211468,
+   "stations": 273
+  },
+  "23": {
+   "male": 103329,
+   "female": 101953,
+   "tg": 15,
+   "electors": 205297,
+   "stations": 271
+  },
+  "24": {
+   "male": 102317,
+   "female": 104591,
+   "tg": 15,
+   "electors": 206923,
+   "stations": 319
+  },
+  "25": {
+   "male": 99014,
+   "female": 98639,
+   "tg": 9,
+   "electors": 197662,
+   "stations": 264
+  },
+  "26": {
+   "male": 98548,
+   "female": 96713,
+   "tg": 25,
+   "electors": 195286,
+   "stations": 254
+  },
+  "27": {
+   "male": 104005,
+   "female": 98626,
+   "tg": 27,
+   "electors": 202658,
+   "stations": 256
+  },
+  "28": {
+   "male": 100822,
+   "female": 98842,
+   "tg": 21,
+   "electors": 199685,
+   "stations": 244
+  },
+  "29": {
+   "male": 103812,
+   "female": 100131,
+   "tg": 9,
+   "electors": 203952,
+   "stations": 259
+  },
+  "30": {
+   "male": 104158,
+   "female": 108869,
+   "tg": 41,
+   "electors": 213068,
+   "stations": 287
+  },
+  "31": {
+   "male": 124682,
+   "female": 117855,
+   "tg": 12,
+   "electors": 242549,
+   "stations": 306
+  },
+  "32": {
+   "male": 119019,
+   "female": 110438,
+   "tg": 22,
+   "electors": 229479,
+   "stations": 277
+  },
+  "33": {
+   "male": 114103,
+   "female": 107294,
+   "tg": 25,
+   "electors": 221422,
+   "stations": 276
+  },
+  "34": {
+   "male": 107695,
+   "female": 100921,
+   "tg": 21,
+   "electors": 208637,
+   "stations": 261
+  },
+  "35": {
+   "male": 113073,
+   "female": 107849,
+   "tg": 14,
+   "electors": 220936,
+   "stations": 285
+  },
+  "36": {
+   "male": 125978,
+   "female": 123174,
+   "tg": 21,
+   "electors": 249173,
+   "stations": 325
+  },
+  "37": {
+   "male": 105581,
+   "female": 104202,
+   "tg": 16,
+   "electors": 209799,
+   "stations": 275
+  },
+  "38": {
+   "male": 106914,
+   "female": 106634,
+   "tg": 20,
+   "electors": 213568,
+   "stations": 273
+  },
+  "39": {
+   "male": 107132,
+   "female": 107495,
+   "tg": 7,
+   "electors": 214634,
+   "stations": 289
+  },
+  "40": {
+   "male": 100956,
+   "female": 99221,
+   "tg": 15,
+   "electors": 200192,
+   "stations": 263
+  },
+  "41": {
+   "male": 98524,
+   "female": 100229,
+   "tg": 27,
+   "electors": 198780,
+   "stations": 264
+  },
+  "42": {
+   "male": 96474,
+   "female": 92051,
+   "tg": 9,
+   "electors": 188534,
+   "stations": 253
+  },
+  "43": {
+   "male": 117100,
+   "female": 109362,
+   "tg": 20,
+   "electors": 226482,
+   "stations": 304
+  },
+  "44": {
+   "male": 99002,
+   "female": 103083,
+   "tg": 32,
+   "electors": 202117,
+   "stations": 265
+  },
+  "45": {
+   "male": 118614,
+   "female": 120888,
+   "tg": 40,
+   "electors": 239542,
+   "stations": 308
+  },
+  "46": {
+   "male": 109772,
+   "female": 99118,
+   "tg": 34,
+   "electors": 208924,
+   "stations": 258
+  },
+  "47": {
+   "male": 119134,
+   "female": 109716,
+   "tg": 6,
+   "electors": 228856,
+   "stations": 286
+  },
+  "48": {
+   "male": 116388,
+   "female": 109651,
+   "tg": 8,
+   "electors": 226047,
+   "stations": 271
+  },
+  "49": {
+   "male": 96029,
+   "female": 90483,
+   "tg": 2,
+   "electors": 186514,
+   "stations": 236
+  },
+  "50": {
+   "male": 95579,
+   "female": 93056,
+   "tg": 12,
+   "electors": 188647,
+   "stations": 252
+  },
+  "51": {
+   "male": 111888,
+   "female": 103531,
+   "tg": 3,
+   "electors": 215422,
+   "stations": 274
+  },
+  "52": {
+   "male": 105376,
+   "female": 95884,
+   "tg": 0,
+   "electors": 201260,
+   "stations": 260
+  },
+  "53": {
+   "male": 100855,
+   "female": 102810,
+   "tg": 21,
+   "electors": 203686,
+   "stations": 278
+  },
+  "54": {
+   "male": 89971,
+   "female": 94660,
+   "tg": 47,
+   "electors": 184678,
+   "stations": 254
+  },
+  "55": {
+   "male": 100819,
+   "female": 103664,
+   "tg": 28,
+   "electors": 204511,
+   "stations": 280
+  },
+  "56": {
+   "male": 108064,
+   "female": 106988,
+   "tg": 7,
+   "electors": 215059,
+   "stations": 275
+  },
+  "57": {
+   "male": 112841,
+   "female": 113064,
+   "tg": 11,
+   "electors": 225916,
+   "stations": 294
+  },
+  "58": {
+   "male": 100285,
+   "female": 103413,
+   "tg": 14,
+   "electors": 203712,
+   "stations": 272
+  },
+  "59": {
+   "male": 93116,
+   "female": 94226,
+   "tg": 5,
+   "electors": 187347,
+   "stations": 239
+  },
+  "60": {
+   "male": 109826,
+   "female": 107076,
+   "tg": 9,
+   "electors": 216911,
+   "stations": 282
+  },
+  "61": {
+   "male": 104457,
+   "female": 107451,
+   "tg": 13,
+   "electors": 211921,
+   "stations": 277
+  },
+  "62": {
+   "male": 93506,
+   "female": 95638,
+   "tg": 15,
+   "electors": 189159,
+   "stations": 240
+  },
+  "63": {
+   "male": 105360,
+   "female": 104939,
+   "tg": 11,
+   "electors": 210310,
+   "stations": 259
+  },
+  "64": {
+   "male": 114310,
+   "female": 116537,
+   "tg": 16,
+   "electors": 230863,
+   "stations": 294
+  },
+  "65": {
+   "male": 103135,
+   "female": 100526,
+   "tg": 9,
+   "electors": 203670,
+   "stations": 259
+  },
+  "66": {
+   "male": 99424,
+   "female": 102352,
+   "tg": 15,
+   "electors": 201791,
+   "stations": 227
+  },
+  "67": {
+   "male": 106124,
+   "female": 105303,
+   "tg": 13,
+   "electors": 211440,
+   "stations": 271
+  },
+  "68": {
+   "male": 89702,
+   "female": 87958,
+   "tg": 6,
+   "electors": 177666,
+   "stations": 226
+  },
+  "69": {
+   "male": 98851,
+   "female": 96931,
+   "tg": 8,
+   "electors": 195790,
+   "stations": 242
+  },
+  "70": {
+   "male": 91407,
+   "female": 87592,
+   "tg": 6,
+   "electors": 179005,
+   "stations": 219
+  },
+  "71": {
+   "male": 98622,
+   "female": 98497,
+   "tg": 8,
+   "electors": 197127,
+   "stations": 247
+  },
+  "72": {
+   "male": 91106,
+   "female": 93902,
+   "tg": 14,
+   "electors": 185022,
+   "stations": 227
+  },
+  "73": {
+   "male": 101689,
+   "female": 107096,
+   "tg": 20,
+   "electors": 208805,
+   "stations": 267
+  },
+  "74": {
+   "male": 107919,
+   "female": 114553,
+   "tg": 5,
+   "electors": 222477,
+   "stations": 267
+  },
+  "75": {
+   "male": 97425,
+   "female": 92360,
+   "tg": 5,
+   "electors": 189790,
+   "stations": 238
+  },
+  "76": {
+   "male": 85606,
+   "female": 84760,
+   "tg": 1,
+   "electors": 170367,
+   "stations": 234
+  },
+  "77": {
+   "male": 98736,
+   "female": 102733,
+   "tg": 0,
+   "electors": 201469,
+   "stations": 265
+  },
+  "78": {
+   "male": 89203,
+   "female": 89909,
+   "tg": 2,
+   "electors": 179114,
+   "stations": 227
+  },
+  "79": {
+   "male": 110492,
+   "female": 107511,
+   "tg": 0,
+   "electors": 218003,
+   "stations": 273
+  },
+  "80": {
+   "male": 97253,
+   "female": 97791,
+   "tg": 0,
+   "electors": 195044,
+   "stations": 278
+  },
+  "81": {
+   "male": 88716,
+   "female": 86910,
+   "tg": 0,
+   "electors": 175626,
+   "stations": 246
+  },
+  "82": {
+   "male": 104549,
+   "female": 99784,
+   "tg": 2,
+   "electors": 204335,
+   "stations": 256
+  },
+  "83": {
+   "male": 113367,
+   "female": 107652,
+   "tg": 8,
+   "electors": 221027,
+   "stations": 276
+  },
+  "84": {
+   "male": 110351,
+   "female": 105927,
+   "tg": 8,
+   "electors": 216286,
+   "stations": 272
+  },
+  "85": {
+   "male": 100836,
+   "female": 98270,
+   "tg": 2,
+   "electors": 199108,
+   "stations": 251
+  },
+  "86": {
+   "male": 90422,
+   "female": 86837,
+   "tg": 4,
+   "electors": 177263,
+   "stations": 235
+  },
+  "87": {
+   "male": 108772,
+   "female": 106499,
+   "tg": 4,
+   "electors": 215275,
+   "stations": 269
+  },
+  "88": {
+   "male": 89879,
+   "female": 87450,
+   "tg": 8,
+   "electors": 177337,
+   "stations": 226
+  },
+  "89": {
+   "male": 108773,
+   "female": 108922,
+   "tg": 19,
+   "electors": 217714,
+   "stations": 275
+  },
+  "90": {
+   "male": 103558,
+   "female": 109907,
+   "tg": 48,
+   "electors": 213513,
+   "stations": 271
+  },
+  "91": {
+   "male": 101777,
+   "female": 105342,
+   "tg": 40,
+   "electors": 207159,
+   "stations": 253
+  },
+  "92": {
+   "male": 98055,
+   "female": 100319,
+   "tg": 58,
+   "electors": 198432,
+   "stations": 244
+  },
+  "93": {
+   "male": 99567,
+   "female": 103249,
+   "tg": 45,
+   "electors": 202861,
+   "stations": 238
+  },
+  "94": {
+   "male": 98882,
+   "female": 107018,
+   "tg": 37,
+   "electors": 205937,
+   "stations": 261
+  },
+  "95": {
+   "male": 102682,
+   "female": 103172,
+   "tg": 21,
+   "electors": 205875,
+   "stations": 264
+  },
+  "96": {
+   "male": 100474,
+   "female": 97393,
+   "tg": 15,
+   "electors": 197882,
+   "stations": 264
+  },
+  "97": {
+   "male": 118829,
+   "female": 117155,
+   "tg": 16,
+   "electors": 236000,
+   "stations": 311
+  },
+  "98": {
+   "male": 100959,
+   "female": 101985,
+   "tg": 9,
+   "electors": 202953,
+   "stations": 278
+  },
+  "99": {
+   "male": 114649,
+   "female": 119181,
+   "tg": 24,
+   "electors": 233854,
+   "stations": 302
+  },
+  "100": {
+   "male": 111749,
+   "female": 114275,
+   "tg": 10,
+   "electors": 226034,
+   "stations": 300
+  },
+  "101": {
+   "male": 95956,
+   "female": 96263,
+   "tg": 2,
+   "electors": 192221,
+   "stations": 258
+  },
+  "102": {
+   "male": 113078,
+   "female": 112878,
+   "tg": 7,
+   "electors": 225963,
+   "stations": 315
+  },
+  "103": {
+   "male": 92919,
+   "female": 90588,
+   "tg": 7,
+   "electors": 183514,
+   "stations": 269
+  },
+  "104": {
+   "male": 103101,
+   "female": 98805,
+   "tg": 15,
+   "electors": 201921,
+   "stations": 265
+  },
+  "105": {
+   "male": 95823,
+   "female": 96561,
+   "tg": 9,
+   "electors": 192393,
+   "stations": 236
+  },
+  "106": {
+   "male": 98624,
+   "female": 105089,
+   "tg": 18,
+   "electors": 203731,
+   "stations": 258
+  },
+  "107": {
+   "male": 87601,
+   "female": 90339,
+   "tg": 33,
+   "electors": 177973,
+   "stations": 284
+  },
+  "108": {
+   "male": 93893,
+   "female": 93885,
+   "tg": 4,
+   "electors": 187782,
+   "stations": 248
+  },
+  "109": {
+   "male": 94557,
+   "female": 94248,
+   "tg": 5,
+   "electors": 188810,
+   "stations": 265
+  },
+  "110": {
+   "male": 93588,
+   "female": 93024,
+   "tg": 4,
+   "electors": 186616,
+   "stations": 248
+  },
+  "111": {
+   "male": 101043,
+   "female": 103732,
+   "tg": 5,
+   "electors": 204780,
+   "stations": 270
+  },
+  "112": {
+   "male": 86529,
+   "female": 91731,
+   "tg": 4,
+   "electors": 178264,
+   "stations": 257
+  },
+  "113": {
+   "male": 108644,
+   "female": 116042,
+   "tg": 13,
+   "electors": 224699,
+   "stations": 297
+  },
+  "114": {
+   "male": 88447,
+   "female": 91668,
+   "tg": 0,
+   "electors": 180115,
+   "stations": 270
+  },
+  "115": {
+   "male": 93545,
+   "female": 92731,
+   "tg": 3,
+   "electors": 186279,
+   "stations": 247
+  },
+  "116": {
+   "male": 93270,
+   "female": 92379,
+   "tg": 0,
+   "electors": 185649,
+   "stations": 256
+  },
+  "117": {
+   "male": 95622,
+   "female": 98638,
+   "tg": 0,
+   "electors": 194260,
+   "stations": 289
+  },
+  "118": {
+   "male": 112987,
+   "female": 117319,
+   "tg": 3,
+   "electors": 230309,
+   "stations": 294
+  },
+  "119": {
+   "male": 97975,
+   "female": 105126,
+   "tg": 2,
+   "electors": 203103,
+   "stations": 238
+  },
+  "120": {
+   "male": 100112,
+   "female": 107483,
+   "tg": 3,
+   "electors": 207598,
+   "stations": 247
+  },
+  "121": {
+   "male": 90588,
+   "female": 97361,
+   "tg": 3,
+   "electors": 187952,
+   "stations": 231
+  },
+  "122": {
+   "male": 89447,
+   "female": 95734,
+   "tg": 0,
+   "electors": 185181,
+   "stations": 234
+  },
+  "123": {
+   "male": 77233,
+   "female": 81481,
+   "tg": 1,
+   "electors": 158715,
+   "stations": 261
+  },
+  "124": {
+   "male": 76007,
+   "female": 79623,
+   "tg": 0,
+   "electors": 155630,
+   "stations": 233
+  },
+  "125": {
+   "male": 96236,
+   "female": 99887,
+   "tg": 11,
+   "electors": 196134,
+   "stations": 270
+  },
+  "126": {
+   "male": 85689,
+   "female": 87731,
+   "tg": 2,
+   "electors": 173422,
+   "stations": 237
+  },
+  "127": {
+   "male": 94568,
+   "female": 95990,
+   "tg": 3,
+   "electors": 190561,
+   "stations": 254
+  },
+  "128": {
+   "male": 103003,
+   "female": 105299,
+   "tg": 1,
+   "electors": 208303,
+   "stations": 270
+  },
+  "129": {
+   "male": 83485,
+   "female": 88983,
+   "tg": 2,
+   "electors": 172470,
+   "stations": 232
+  },
+  "130": {
+   "male": 85669,
+   "female": 87676,
+   "tg": 1,
+   "electors": 173346,
+   "stations": 229
+  },
+  "131": {
+   "male": 94460,
+   "female": 94664,
+   "tg": 3,
+   "electors": 189127,
+   "stations": 270
+  },
+  "132": {
+   "male": 98090,
+   "female": 105857,
+   "tg": 14,
+   "electors": 203961,
+   "stations": 247
+  },
+  "133": {
+   "male": 96496,
+   "female": 99523,
+   "tg": 5,
+   "electors": 196024,
+   "stations": 238
+  },
+  "134": {
+   "male": 96715,
+   "female": 98523,
+   "tg": 6,
+   "electors": 195244,
+   "stations": 256
+  },
+  "135": {
+   "male": 85753,
+   "female": 87820,
+   "tg": 5,
+   "electors": 173578,
+   "stations": 222
+  },
+  "136": {
+   "male": 107339,
+   "female": 107218,
+   "tg": 7,
+   "electors": 214564,
+   "stations": 282
+  },
+  "137": {
+   "male": 95049,
+   "female": 91936,
+   "tg": 8,
+   "electors": 186993,
+   "stations": 251
+  },
+  "138": {
+   "male": 90665,
+   "female": 90482,
+   "tg": 5,
+   "electors": 181152,
+   "stations": 248
+  },
+  "139": {
+   "male": 94109,
+   "female": 96890,
+   "tg": 5,
+   "electors": 191004,
+   "stations": 271
+  },
+  "140": {
+   "male": 91948,
+   "female": 93095,
+   "tg": 5,
+   "electors": 185048,
+   "stations": 282
+  },
+  "141": {
+   "male": 95472,
+   "female": 98307,
+   "tg": 6,
+   "electors": 193785,
+   "stations": 271
+  },
+  "142": {
+   "male": 93410,
+   "female": 93266,
+   "tg": 3,
+   "electors": 186679,
+   "stations": 255
+  },
+  "143": {
+   "male": 97482,
+   "female": 99352,
+   "tg": 22,
+   "electors": 196856,
+   "stations": 282
+  },
+  "144": {
+   "male": 99492,
+   "female": 99628,
+   "tg": 4,
+   "electors": 199124,
+   "stations": 288
+  },
+  "145": {
+   "male": 98426,
+   "female": 100582,
+   "tg": 7,
+   "electors": 199015,
+   "stations": 274
+  },
+  "146": {
+   "male": 80948,
+   "female": 83652,
+   "tg": 25,
+   "electors": 164625,
+   "stations": 224
+  },
+  "147": {
+   "male": 91508,
+   "female": 92176,
+   "tg": 22,
+   "electors": 183706,
+   "stations": 259
+  },
+  "148": {
+   "male": 105477,
+   "female": 106956,
+   "tg": 24,
+   "electors": 212457,
+   "stations": 284
+  },
+  "149": {
+   "male": 89675,
+   "female": 90785,
+   "tg": 6,
+   "electors": 180466,
+   "stations": 249
+  },
+  "150": {
+   "male": 154567,
+   "female": 162423,
+   "tg": 37,
+   "electors": 317027,
+   "stations": 418
+  },
+  "151": {
+   "male": 153425,
+   "female": 160620,
+   "tg": 33,
+   "electors": 314078,
+   "stations": 509
+  },
+  "152": {
+   "male": 164073,
+   "female": 171221,
+   "tg": 48,
+   "electors": 335342,
+   "stations": 442
+  },
+  "153": {
+   "male": 193584,
+   "female": 208227,
+   "tg": 46,
+   "electors": 401857,
+   "stations": 553
+  },
+  "154": {
+   "male": 133818,
+   "female": 147839,
+   "tg": 30,
+   "electors": 281687,
+   "stations": 437
+  },
+  "155": {
+   "male": 112989,
+   "female": 121262,
+   "tg": 32,
+   "electors": 234283,
+   "stations": 419
+  },
+  "156": {
+   "male": 79094,
+   "female": 87067,
+   "tg": 19,
+   "electors": 166180,
+   "stations": 276
+  },
+  "157": {
+   "male": 59289,
+   "female": 66246,
+   "tg": 1,
+   "electors": 125536,
+   "stations": 207
+  },
+  "158": {
+   "male": 84580,
+   "female": 91422,
+   "tg": 13,
+   "electors": 176015,
+   "stations": 285
+  },
+  "159": {
+   "male": 81403,
+   "female": 87139,
+   "tg": 31,
+   "electors": 168573,
+   "stations": 228
+  },
+  "160": {
+   "male": 114109,
+   "female": 123125,
+   "tg": 45,
+   "electors": 237279,
+   "stations": 337
+  },
+  "161": {
+   "male": 65982,
+   "female": 71599,
+   "tg": 42,
+   "electors": 137623,
+   "stations": 244
+  },
+  "162": {
+   "male": 59972,
+   "female": 63974,
+   "tg": 7,
+   "electors": 123953,
+   "stations": 191
+  },
+  "163": {
+   "male": 63344,
+   "female": 70517,
+   "tg": 29,
+   "electors": 133890,
+   "stations": 193
+  },
+  "164": {
+   "male": 62355,
+   "female": 65391,
+   "tg": 28,
+   "electors": 127774,
+   "stations": 220
+  },
+  "165": {
+   "male": 54493,
+   "female": 59330,
+   "tg": 10,
+   "electors": 113833,
+   "stations": 194
+  },
+  "166": {
+   "male": 77345,
+   "female": 84364,
+   "tg": 5,
+   "electors": 161714,
+   "stations": 269
+  },
+  "167": {
+   "male": 77720,
+   "female": 82826,
+   "tg": 32,
+   "electors": 160578,
+   "stations": 284
+  },
+  "168": {
+   "male": 73794,
+   "female": 75149,
+   "tg": 27,
+   "electors": 148970,
+   "stations": 216
+  },
+  "169": {
+   "male": 66922,
+   "female": 70332,
+   "tg": 13,
+   "electors": 137267,
+   "stations": 222
+  },
+  "170": {
+   "male": 60905,
+   "female": 65614,
+   "tg": 0,
+   "electors": 126519,
+   "stations": 220
+  },
+  "171": {
+   "male": 81750,
+   "female": 88652,
+   "tg": 17,
+   "electors": 170419,
+   "stations": 279
+  },
+  "172": {
+   "male": 67731,
+   "female": 72948,
+   "tg": 10,
+   "electors": 140689,
+   "stations": 243
+  },
+  "173": {
+   "male": 62618,
+   "female": 66672,
+   "tg": 6,
+   "electors": 129296,
+   "stations": 210
+  },
+  "174": {
+   "male": 205599,
+   "female": 205038,
+   "tg": 34,
+   "electors": 410671,
+   "stations": 533
+  },
+  "175": {
+   "male": 110266,
+   "female": 114057,
+   "tg": 16,
+   "electors": 224339,
+   "stations": 390
+  },
+  "176": {
+   "male": 217158,
+   "female": 224037,
+   "tg": 37,
+   "electors": 441232,
+   "stations": 605
+  },
+  "177": {
+   "male": 128371,
+   "female": 133130,
+   "tg": 26,
+   "electors": 261527,
+   "stations": 384
+  },
+  "178": {
+   "male": 108430,
+   "female": 111757,
+   "tg": 4,
+   "electors": 220191,
+   "stations": 298
+  },
+  "179": {
+   "male": 97048,
+   "female": 99918,
+   "tg": 11,
+   "electors": 196977,
+   "stations": 296
+  },
+  "180": {
+   "male": 95589,
+   "female": 98740,
+   "tg": 1,
+   "electors": 194330,
+   "stations": 279
+  },
+  "181": {
+   "male": 94406,
+   "female": 98586,
+   "tg": 44,
+   "electors": 193036,
+   "stations": 281
+  },
+  "182": {
+   "male": 107040,
+   "female": 110293,
+   "tg": 14,
+   "electors": 217347,
+   "stations": 311
+  },
+  "183": {
+   "male": 97963,
+   "female": 101990,
+   "tg": 13,
+   "electors": 199966,
+   "stations": 284
+  },
+  "184": {
+   "male": 101682,
+   "female": 105836,
+   "tg": 6,
+   "electors": 207524,
+   "stations": 301
+  },
+  "185": {
+   "male": 103194,
+   "female": 111004,
+   "tg": 4,
+   "electors": 214202,
+   "stations": 287
+  },
+  "186": {
+   "male": 111904,
+   "female": 114439,
+   "tg": 9,
+   "electors": 226352,
+   "stations": 291
+  },
+  "187": {
+   "male": 95111,
+   "female": 101874,
+   "tg": 8,
+   "electors": 196993,
+   "stations": 262
+  },
+  "188": {
+   "male": 96402,
+   "female": 99843,
+   "tg": 8,
+   "electors": 196253,
+   "stations": 270
+  },
+  "189": {
+   "male": 95145,
+   "female": 101045,
+   "tg": 28,
+   "electors": 196218,
+   "stations": 265
+  },
+  "190": {
+   "male": 97832,
+   "female": 103429,
+   "tg": 24,
+   "electors": 201285,
+   "stations": 253
+  },
+  "191": {
+   "male": 101151,
+   "female": 102518,
+   "tg": 3,
+   "electors": 203672,
+   "stations": 272
+  },
+  "192": {
+   "male": 102112,
+   "female": 104570,
+   "tg": 7,
+   "electors": 206689,
+   "stations": 276
+  },
+  "193": {
+   "male": 94984,
+   "female": 99470,
+   "tg": 3,
+   "electors": 194457,
+   "stations": 272
+  },
+  "194": {
+   "male": 101741,
+   "female": 105257,
+   "tg": 3,
+   "electors": 207001,
+   "stations": 281
+  },
+  "195": {
+   "male": 93960,
+   "female": 95149,
+   "tg": 0,
+   "electors": 189109,
+   "stations": 276
+  },
+  "196": {
+   "male": 93086,
+   "female": 99075,
+   "tg": 12,
+   "electors": 192173,
+   "stations": 282
+  },
+  "197": {
+   "male": 101504,
+   "female": 103078,
+   "tg": 9,
+   "electors": 204591,
+   "stations": 330
+  },
+  "198": {
+   "male": 109414,
+   "female": 106998,
+   "tg": 3,
+   "electors": 216415,
+   "stations": 292
+  },
+  "199": {
+   "male": 94072,
+   "female": 96088,
+   "tg": 2,
+   "electors": 190162,
+   "stations": 295
+  },
+  "200": {
+   "male": 110338,
+   "female": 111916,
+   "tg": 0,
+   "electors": 222254,
+   "stations": 268
+  },
+  "201": {
+   "male": 96041,
+   "female": 101666,
+   "tg": 5,
+   "electors": 197712,
+   "stations": 245
+  },
+  "202": {
+   "male": 110572,
+   "female": 116955,
+   "tg": 3,
+   "electors": 227530,
+   "stations": 267
+  },
+  "203": {
+   "male": 101062,
+   "female": 111441,
+   "tg": 9,
+   "electors": 212512,
+   "stations": 260
+  },
+  "204": {
+   "male": 98697,
+   "female": 100259,
+   "tg": 0,
+   "electors": 198956,
+   "stations": 235
+  },
+  "205": {
+   "male": 107231,
+   "female": 108478,
+   "tg": 1,
+   "electors": 215710,
+   "stations": 261
+  },
+  "206": {
+   "male": 100703,
+   "female": 103478,
+   "tg": 0,
+   "electors": 204181,
+   "stations": 245
+  },
+  "207": {
+   "male": 98554,
+   "female": 101039,
+   "tg": 0,
+   "electors": 199593,
+   "stations": 238
+  },
+  "208": {
+   "male": 102737,
+   "female": 109505,
+   "tg": 2,
+   "electors": 212244,
+   "stations": 285
+  },
+  "209": {
+   "male": 98148,
+   "female": 101238,
+   "tg": 2,
+   "electors": 199388,
+   "stations": 282
+  },
+  "210": {
+   "male": 89164,
+   "female": 89486,
+   "tg": 3,
+   "electors": 178653,
+   "stations": 240
+  },
+  "211": {
+   "male": 97291,
+   "female": 99448,
+   "tg": 9,
+   "electors": 196748,
+   "stations": 259
+  },
+  "212": {
+   "male": 109564,
+   "female": 112439,
+   "tg": 12,
+   "electors": 222015,
+   "stations": 285
+  },
+  "213": {
+   "male": 101403,
+   "female": 102594,
+   "tg": 10,
+   "electors": 204007,
+   "stations": 288
+  },
+  "214": {
+   "male": 95451,
+   "female": 97527,
+   "tg": 7,
+   "electors": 192985,
+   "stations": 249
+  },
+  "215": {
+   "male": 140829,
+   "female": 148121,
+   "tg": 21,
+   "electors": 288971,
+   "stations": 351
+  },
+  "216": {
+   "male": 85865,
+   "female": 95162,
+   "tg": 17,
+   "electors": 181044,
+   "stations": 265
+  },
+  "217": {
+   "male": 86695,
+   "female": 95124,
+   "tg": 11,
+   "electors": 181830,
+   "stations": 248
+  },
+  "218": {
+   "male": 113143,
+   "female": 122853,
+   "tg": 29,
+   "electors": 236025,
+   "stations": 283
+  },
+  "219": {
+   "male": 106050,
+   "female": 108829,
+   "tg": 10,
+   "electors": 214889,
+   "stations": 267
+  },
+  "220": {
+   "male": 89770,
+   "female": 93119,
+   "tg": 11,
+   "electors": 182900,
+   "stations": 232
+  },
+  "221": {
+   "male": 102623,
+   "female": 102588,
+   "tg": 5,
+   "electors": 205216,
+   "stations": 269
+  },
+  "222": {
+   "male": 96682,
+   "female": 101504,
+   "tg": 12,
+   "electors": 198198,
+   "stations": 245
+  },
+  "223": {
+   "male": 95588,
+   "female": 101488,
+   "tg": 11,
+   "electors": 197087,
+   "stations": 259
+  },
+  "224": {
+   "male": 97588,
+   "female": 102761,
+   "tg": 8,
+   "electors": 200357,
+   "stations": 257
+  }
+ }
+}

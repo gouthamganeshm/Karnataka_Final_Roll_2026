@@ -20,6 +20,10 @@
  * record the English roll contradicts is withheld, and an AC agreeing on fewer
  * than 99.7% of compared records is held.
  *
+ * Official count (reference/ceo-final-2026.json, from the CEO Karnataka's own
+ * final-roll statement): an AC whose live cards read differ from its official
+ * elector count by more than 0.5% is held, whatever the verifier said.
+ *
  * A record is 9 bytes, sorted by suffix so the browser can binary-search a
  * bucket. The suffix is raw hash bytes (compare big-endian); the rest is
  * little-endian:
@@ -59,12 +63,14 @@ const REC = 10; // bucket byte + 9-byte record, while grouping
 const FORMAT = 2;
 const BUILT = new Date().toISOString();
 const V5_MIN_AGREE = 0.997;
+const OFFICIAL_MAX_GAP = 0.005;
 
 const source = JSON.parse(readFileSync(join(ROOT, 'roll-source.json'), 'utf8'));
 const seed = JSON.parse(readFileSync(join(ROOT, 'seed', 'ac-metadata.json'), 'utf8'));
 const readJson = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null);
 const shipped = readJson(join(rowsDir, 'manifest.json'));
 const meta = new Map(seed.constituencies.map((c) => [c.acNumber, c]));
+const official = readJson(join(ROOT, 'reference', 'ceo-final-2026.json'))?.acs ?? {};
 for (const c of shipped?.constituencies ?? []) meta.set(c.acNumber, { ...meta.get(c.acNumber), ...c });
 
 async function* rowsOf(path) {
@@ -111,7 +117,7 @@ for (const f of rowFiles) {
   const stat = {
     status: !ver ? 'pending' : ver.verdict === 'pass' ? 'verified' : 'held',
     reasons: ver?.reasons ?? [], electors: 0, deleted: 0, approx: 0, withheld: 0, disputed: 0,
-    cards: 0, printed: 0, partsRead: sum?.partsRead ?? 0,
+    cards: 0, liveCards: 0, printed: 0, partsRead: sum?.partsRead ?? 0,
     v5: xc ? { part: xc.part, compared: 0, agree: 0 } : null
   };
   for (const p of Object.values(sum?.perPart ?? {})) stat.printed += p.totals?.total ?? 0;
@@ -119,6 +125,7 @@ for (const f of rowFiles) {
   const pending = [];
   for await (const r of rowsOf(join(rowsDir, f))) {
     stat.cards++;
+    if (!r.deleted) stat.liveCards++;
     if (!EPIC_RE.test(r.epic) || r.epicOk === false) { stat.withheld++; continue; }
     if (disputed.has(`${r.part}/${r.page}/${r.cell}`)) { stat.disputed++; continue; }
     if (xc && r.ok && r.part === xc.part && xc.eng.has(r.serial)) {
@@ -131,6 +138,11 @@ for (const f of rowFiles) {
   if (stat.v5 && stat.v5.compared >= 50 && stat.v5.agree / stat.v5.compared < V5_MIN_AGREE && stat.status === 'verified') {
     stat.status = 'held';
     stat.reasons.push(`English cross-check ${stat.v5.agree}/${stat.v5.compared} < ${V5_MIN_AGREE * 100}%`);
+  }
+  const want = official[ac]?.electors;
+  if (want && stat.status === 'verified' && Math.abs(stat.liveCards - want) > OFFICIAL_MAX_GAP * want) {
+    stat.status = 'held';
+    stat.reasons.push(`${stat.liveCards} cards read, official count ${want}`);
   }
   if (stat.status === 'verified') {
     for (const r of pending) {
@@ -149,7 +161,7 @@ for (const f of rowFiles) {
   perAc.set(ac, stat);
   console.log(`AC ${ac}: ${stat.status}${stat.reasons.length ? ' (' + stat.reasons.join('; ') + ')' : ''} — ` +
     `${stat.electors} published, ${stat.deleted} deleted, ${stat.withheld} unreadable, ${stat.disputed} disputed, ` +
-    `${stat.cards}/${stat.printed || '?'} cards` + (stat.v5 ? `, English ${stat.v5.agree}/${stat.v5.compared}` : ''));
+    `${stat.cards}/${stat.printed || '?'} cards, ${stat.liveCards} live vs official ${want ?? '?'}` + (stat.v5 ? `, English ${stat.v5.agree}/${stat.v5.compared}` : ''));
 }
 
 // ------------------------------------------------------------------ write
@@ -199,7 +211,8 @@ const acs = [...meta.values()]
       partsRead: live ? s.partsRead : 0,
       electors: live ? s.electors : 0, deleted: live ? s.deleted : 0, approx: live ? s.approx : 0,
       withheld: live ? s.withheld + s.disputed : 0,
-      printed: s?.printed ?? 0
+      printed: s?.printed ?? 0,
+      official: official[c.acNumber]?.electors ?? null
     };
   });
 const parts = acs.reduce((n, a) => n + a.parts, 0);
