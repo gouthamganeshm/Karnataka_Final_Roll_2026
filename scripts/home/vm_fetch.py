@@ -119,6 +119,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--ac', help='comma-separated ACs (default: every AC not shipped, in queue order)')
     ap.add_argument('--threads', type=int, default=16)
+    ap.add_argument('--vm', type=int, help='VM number K in reference/vm-plan.json (python scripts/home/vm_plan.py)')
     ap.add_argument('--share', metavar='K/N', help='this VM is number K of N and takes every N-th district in queue '
                     'order (largest first)')
     ap.add_argument('--small', metavar='K/N', help='take the smallest districts first (home takes the largest); '
@@ -130,7 +131,12 @@ def main() -> int:
     if args.ac:
         want = {int(a) for a in args.ac.split(',')}
         order = [a for a in order if a in want]
-    if args.small or args.share:
+    if args.vm:
+        plan = json.loads((ROOT / 'reference' / 'vm-plan.json').read_text('utf8'))
+        mine = set(plan[str(args.vm)])
+        order = [a for a in order if a in mine]
+        print(f'VM {args.vm}: {len(order)} ACs by plan', flush=True)
+    elif args.small or args.share:
         k, n = map(int, (args.small or args.share).split('/'))
         district = {c['acNumber']: c['district'] for c in run.SEED['constituencies']}
         groups = []                              # districts in run_order, each a list of ACs
