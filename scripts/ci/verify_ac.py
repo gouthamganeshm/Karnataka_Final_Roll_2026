@@ -196,7 +196,15 @@ def v3_totals(rows_by_part: dict[int, list[dict]], summary: dict, part_flags: di
             continue
         checked += 1
         printed += t['total']
-        deletions_ok = cards <= t['total'] and t.get('deleted', deleted) == deleted
+        # A surplus of live cards could be an unmarked deletion, so it unsettles
+        # the part, unless the printed deletion count was read and equals the
+        # marks found: then no deletion went unmarked and the surplus is
+        # something else (flagged below). That rule alone withheld 22 whole
+        # booths, ~15,000 voters, over a card or two (2026-10-27).
+        if 'deleted' in t:
+            deletions_ok = t['deleted'] == deleted
+        else:
+            deletions_ok = cards <= t['total']
         if (cards == t['total'] and deletions_ok
                 and ('end' not in t or max((r['serial'] for r in rows), default=0) == t['end'])):
             matched += 1

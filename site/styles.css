@@ -320,6 +320,8 @@ table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
 th { color: var(--ink-2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
 .r { text-align: right; font-variant-numeric: tabular-nums; }
+#cov-table tfoot td { font-weight: 600; border-top: 1px solid var(--line, currentColor); }
+.cov-note { margin-top: 8px; }
 .bar { display: inline-block; width: 46px; height: 6px; border-radius: 3px; background: var(--surface-2); vertical-align: middle; margin-left: 6px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--ok); }
 

@@ -119,9 +119,19 @@
       : a.status === 'held'
         ? `<span class="tag hold">${t('under review', 'ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ')}</span>`
         : `<span class="tag">${t('processing', 'ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ')}</span>`;
+    // Searchable electors against the CEO's official count for the AC.
+    const match = (a) => (a.status === 'verified' && a.official ? (Math.floor(1000 * a.electors / a.official) / 10).toFixed(1) + '%' : '—');
     $('cov-table').tBodies[0].innerHTML = rows.map((a) => `<tr><td>${a.ac}</td><td>${esc(lang === 'kn' && a.nameKn ? a.nameKn : a.name)}</td>
         <td>${esc(lang === 'kn' && a.districtKn ? a.districtKn : title(a.district))}</td><td class="r">${a.status === 'verified' ? fmt(a.electors) : '—'}</td>
+        <td class="r">${a.official ? fmt(a.official) : '—'}</td><td class="r">${match(a)}</td>
         <td class="r">${state(a)}</td></tr>`).join('');
+    const live = manifest.acs.filter((a) => a.status === 'verified' && a.official);
+    const sum = (k) => live.reduce((n, a) => n + a[k], 0);
+    $('cov-table').tFoot.innerHTML = live.length
+      ? `<tr><td></td><td colspan="2">${t(`${live.length} constituencies loaded`, `${live.length} ಕ್ಷೇತ್ರಗಳು ಲೋಡ್ ಆಗಿವೆ`)}</td>
+         <td class="r">${fmt(sum('electors'))}</td><td class="r">${fmt(sum('official'))}</td>
+         <td class="r">${(Math.floor(1000 * sum('electors') / sum('official')) / 10).toFixed(1)}%</td><td></td></tr>`
+      : '';
   }
   $('filter').addEventListener('input', () => manifest && renderTable());
 
