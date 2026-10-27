@@ -103,22 +103,6 @@ def ship(ac: int, paths: list[Path]) -> None:
         p.unlink()
 
 
-MAX_ACTIVE = 6          # OCR runs queued or running before a VM stops fetching ahead
-
-
-def wait_for_actions() -> None:
-    """Actions reads about one AC at a time; fetching further ahead only piles PDFs up in the release."""
-    while True:
-        try:
-            out = release.gh('run', 'list', '-R', release.repo(), '--workflow', 'ocr.yml', '--json', 'status',
-                             '-L', '50', capture=True)
-            if sum(r['status'] in ('queued', 'in_progress') for r in json.loads(out)) < MAX_ACTIVE:
-                return
-        except Exception as err:  # noqa: BLE001
-            print(f'  run list failed ({err})', flush=True)
-        time.sleep(60)
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--ac', help='comma-separated ACs (default: every AC not shipped, in queue order)')
@@ -152,7 +136,6 @@ def main() -> int:
             shipped = json.loads(run.SHIPPED.read_text('utf8')) if run.SHIPPED.exists() else {}
             if str(ac) in shipped and not args.ac:
                 continue
-            wait_for_actions()
             paths, failed = fetch_ac(ac, parts_by_ac[ac], args.threads)
             for f in pending:
                 f.result()                       # at most one AC waits for upload
