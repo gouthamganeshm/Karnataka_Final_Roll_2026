@@ -15,6 +15,10 @@ Every published record gets, on top of the readers that produced it:
       no EPIC twice in the AC unless every copy was read
       unanimously, every full page has every card            -> disputed / part flag
   V3  the part's printed elector total equals the cards read   -> part flag
+      less the cards marked deleted; and those deletions equal the printed
+      count — if they do not, or there are more live cards than the
+      total, a deleted elector may be unmarked, so every record of the
+      part is disputed
   V4  EPICs the draft roll does not corroborate must have their letters
       confirmed by the prototype reader                         -> else disputed
 
@@ -98,7 +102,8 @@ def v2_structure(rows_by_part: dict[int, list[dict]], summary: dict) -> tuple[di
     return disputed, part_flags
 
 
-def v3_totals(rows_by_part: dict[int, list[dict]], summary: dict, part_flags: dict) -> dict:
+def v3_totals(rows_by_part: dict[int, list[dict]], summary: dict, part_flags: dict,
+              disputed: dict) -> dict:
     checked = matched = 0
     missing = 0
     printed = 0
@@ -110,12 +115,20 @@ def v3_totals(rows_by_part: dict[int, list[dict]], summary: dict, part_flags: di
             continue
         checked += 1
         printed += t['total']
-        cards = len(rows_by_part.get(part, []))
-        if cards == t['total'] and ('end' not in t or max((r['serial'] for r in rows_by_part.get(part, [])), default=0) == t['end']):
+        rows = rows_by_part.get(part, [])
+        deleted = sum(bool(r.get('deleted')) for r in rows)
+        cards = len(rows) - deleted
+        deletions_ok = cards <= t['total'] and t.get('deleted', deleted) == deleted
+        if (cards == t['total'] and deletions_ok
+                and ('end' not in t or max((r['serial'] for r in rows), default=0) == t['end'])):
             matched += 1
-        else:
-            part_flags[part].append(f"v3:count:{cards}/{t['total']}")
-            missing += max(0, t['total'] - cards)
+            continue
+        part_flags[part].append(f"v3:count:{cards}/{t['total']}")
+        missing += max(0, t['total'] - cards)
+        if not deletions_ok:
+            part_flags[part].append(f"v3:deleted:{deleted}/{t.get('deleted', '?')}")
+            for r in rows:
+                disputed.setdefault((part, r['page'], r['cell']), 'v3:deleted:unsettled')
     return {'checked': checked, 'matched': matched, 'printed': printed, 'missing': missing}
 
 
@@ -170,7 +183,7 @@ def main() -> int:
         return pages[r['page']][0][r['cell']] if pages else None
 
     disputed, part_flags = v2_structure(rows_by_part, summary)
-    v3 = v3_totals(rows_by_part, summary, part_flags)
+    v3 = v3_totals(rows_by_part, summary, part_flags, disputed)
 
     keys = None
     if args.draft_keys and Path(args.draft_keys).exists():

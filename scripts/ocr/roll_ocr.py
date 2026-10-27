@@ -159,13 +159,15 @@ def find_grid(dark: np.ndarray) -> Grid | None:
     # part's printed elector total (verifier check V3). Its top rule is one
     # card wide too, so both are looked for below the last full rule: the
     # first one-card-wide rule, and the next one at least a card's height on.
-    if rows:
-        start = rows[-1] + 2 * gap
-        tail = [start + y for y in _mids(np.where(dark[start:].sum(axis=1) > 0.25 * w)[0], gap)]
-        if tail:
-            ends = [y for y in tail[1:] if y - tail[0] > min_band]
-            if ends:
-                bands.append((tail[0], ends[0]))
+    # A page holding nothing but that one card (the final roll's additions
+    # list can end that way) has no full rule at all, so the search then
+    # starts at the top of the page.
+    start = rows[-1] + 2 * gap if rows else 0
+    tail = [start + y for y in _mids(np.where(dark[start:].sum(axis=1) > 0.25 * w)[0], gap)]
+    if tail:
+        ends = [y for y in tail[1:] if y - tail[0] > min_band]
+        if ends:
+            bands.append((tail[0], ends[0]))
     if not bands:
         return None
     top, bot = bands[0]
@@ -225,10 +227,13 @@ def card_header(im: Image.Image, dark: np.ndarray, band_top: int,
     if len(sides) < 2:
         return None, None
 
-    bl, br = sides[0], sides[-1]
+    # A card in the final roll's additions list has a second box after the
+    # serial ("868 | 7"). The serial is the first box only; reading to the last
+    # side put the second number in the crop, and it was read as the serial.
+    bl, br, end = sides[0], sides[1], sides[-1]
     y0, y1 = band_top + m + top + px(2), band_top + m + bot - px(1)
     serial_box = (left + m + bl + px(2), y0, left + m + br - px(1), y1)
-    epic_box = (left + m + br + px(8), y0 - px(4), right - px(4), y1 + px(4))
+    epic_box = (left + m + end + px(8), y0 - px(4), right - px(4), y1 + px(4))
     # A card whose detected box is degenerate (near-zero or negative width —
     # seen on a handful of parts where the rule-detection picks up noise)
     # must not crash the whole part over one card. PIL's crop() raises rather
@@ -282,6 +287,43 @@ def coerce_epic(raw: str) -> str:
     if len(s) != 10:
         return s
     return s[:3].translate(_TO_ALPHA) + s[3:].translate(_TO_DIGIT)
+
+
+_HASH_MARK = None
+
+
+def serial_marker(crop: Image.Image | None) -> str | None:
+    """The mark printed left of the serial, inside its box: None, '#' or 'X'.
+
+    The final roll keeps a deleted elector's card in the list, stamped DELETED,
+    with the reason code (E, S, R, M, Q) left of the serial; '#' there instead
+    means the entry was modified and is still on the roll. Either sits far
+    left of the right-aligned number (gaps measured 100+ px against 8-12
+    between digits). '#' is recognised by its template (`hash-mark.npy`,
+    learned from 120 marks on eleven 2026 final-roll parts: every '#' scored
+    >= 0.72 against it, every S and Q <= -0.09). Any other mark is 'X', a
+    deletion, so a code not seen yet errs towards withholding the card.
+    """
+    global _HASH_MARK
+    if crop is None:
+        return None
+    g = 255 - np.asarray(crop.convert('L')).astype(np.float32)
+    cols = np.where((g > 127).any(axis=0))[0]
+    if len(cols) < 2:
+        return None
+    gaps = np.diff(cols)
+    wide = np.where(gaps > max(30, 2 * crop.height))[0]
+    if not len(wide):
+        return None
+    blob = g[:, cols[0]:cols[wide[0]] + 1]
+    ys, xs = np.where(blob > 64)
+    blob = blob[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    v = np.asarray(Image.fromarray(blob.astype(np.uint8)).resize((16, 20), Image.BILINEAR)).astype(np.float32).ravel()
+    v -= v.mean()
+    v /= np.linalg.norm(v) + 1e-6
+    if _HASH_MARK is None:
+        _HASH_MARK = np.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hash-mark.npy'))
+    return '#' if float(v @ _HASH_MARK) >= 0.5 else 'X'
 
 
 def repair_serials(raw: list[str]) -> tuple[list[int], list[bool]]:

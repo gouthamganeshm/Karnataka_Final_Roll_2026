@@ -11,7 +11,8 @@ writes one JSON row per elector card:
      "ok": true, "epicOk": true, "how": "direct", "rd": [sheet, glyph, alone]}
 
 `epicOk`: the EPIC readers agreed (see `crops.ocr_page`); only such rows can
-be published. `ok`: as in the draft pipeline — a serial the sequence confirms.
+be published. A card the final roll marks deleted (`"deleted": true`, its
+serial box carries a reason code) is never `epicOk`: the elector is off the roll. `ok`: as in the draft pipeline — a serial the sequence confirms.
 `page`/`cell` locate the card's crop for the verifier.
 
 Next to the rows, `<name>.summary.json` holds per-part counts and the part's
@@ -45,7 +46,8 @@ def ocr_bundle(item: tuple[str, bytes]):
     ac, part = index['ac'], index['part']
     out = [{'ac': ac, 'part': part, 'page': info['page'], 'cell': info['cell'],
             'serial': r.serial, 'epic': r.epic,
-            'ok': bool(r.ok and R.EPIC_RE.match(r.epic)), 'epicOk': bool(agreed),
+            'ok': bool(r.ok and R.EPIC_RE.match(r.epic)),
+            'epicOk': bool(agreed) and info.get('mark') != 'X', 'deleted': info.get('mark') == 'X',
             'how': info.get('how'), 'rd': [info.get('sheet'), info.get('glyph'), info.get('alone')]}
            for r, agreed, info in rows]
     tot = totals.read_totals(crops.bundle_image(data, 'cover'), crops.bundle_image(data, 'summary'))
@@ -70,7 +72,8 @@ def main(tar_path: str, out_path: str) -> int:
             n_rows += len(rows)
             pub = sum(r['epicOk'] for r in rows)
             n_pub += pub
-            parts[part] = {'cards': len(rows), 'published': pub, 'totals': tot, 'grid': grid, 'style': style}
+            parts[part] = {'cards': len(rows), 'published': pub, 'deleted': sum(r['deleted'] for r in rows),
+                           'totals': tot, 'grid': grid, 'style': style}
             print(f'AC {ac} part {part} [{style}]: {len(rows)} cards, {pub} readable'
                   f'{"" if tot is None else ", printed total " + str(tot.get("total"))} '
                   f'in {secs:.0f}s ({len(parts)}/{len(items)})', flush=True)

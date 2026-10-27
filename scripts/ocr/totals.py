@@ -14,6 +14,15 @@ A reading is only returned when it checks itself: Total = Male + Female +
 Third Gender (and, on the cover, Ending >= Starting). Anything else is None —
 "unreadable" is never turned into a number.
 
+The final roll prints its deleted electors' cards too (stamped DELETED, kept
+in the serial run), and Total is net of them. So `deleted`, the number of
+printed cards that are not on the roll, is read twice: the cover's
+Ending - Starting + 1 - Total, and the summary's rows I main list, II
+additions, III deletions, IV gender corrections, net. Only the Total column
+of rows I-III is used (their zero cells misread too often for the
+Male + Female + TG check), and only when I + II - III = net: row IV moves
+electors between columns, so its total is always 0.
+
     python -I scripts/ocr/totals.py part.pdf [...]     # try it on PDFs
 """
 from __future__ import annotations
@@ -118,7 +127,10 @@ def read_cover(img: Image.Image | None) -> dict | None:
     if row is None:
         return None
     start, end, male, female, tg, total = row
-    return {'start': start, 'end': end, 'male': male, 'female': female, 'tg': tg, 'total': total}
+    out = {'start': start, 'end': end, 'male': male, 'female': female, 'tg': tg, 'total': total}
+    if end - start + 1 >= total:     # less is a misread Ending, not a count
+        out['deleted'] = end - start + 1 - total
+    return out
 
 
 def read_summary(img: Image.Image | None) -> dict | None:
@@ -127,20 +139,29 @@ def read_summary(img: Image.Image | None) -> dict | None:
         return None
     dark = np.asarray(img.convert('L')) < 128
     rules = _rules(dark, 0.5)
-    for y0, y1 in reversed(list(zip(rules, rules[1:]))):
+    for k, (y0, y1) in reversed(list(enumerate(zip(rules, rules[1:])))):
         cands = _candidates(_row_cells(img, y0, y1))[-4:]
         if len(cands) == 4:
             row = _consistent(cands, lambda m, f, g, t: t and t == m + f + g)
             if row:
                 male, female, tg, total = row
-                return {'male': male, 'female': female, 'tg': tg, 'total': total}
+                out = {'male': male, 'female': female, 'tg': tg, 'total': total}
+                # Rows I, II, III are the ruled rows 4, 3 and 2 above the net row.
+                if k >= 4:
+                    last = [(_candidates(_row_cells(img, rules[k - j], rules[k - j + 1])) or [set()])[-1]
+                            for j in (4, 3, 2)]
+                    fits = {d for a in last[0] for b in last[1] for d in last[2] if a + b - d == total}
+                    if len(fits) == 1:
+                        out['deleted'] = fits.pop()
+                return out
     return None
 
 
 def read_totals(cover: Image.Image | None, summary: Image.Image | None) -> dict | None:
     """The cover's reading, cross-checked against the summary page when both read."""
     c, s = read_cover(cover), read_summary(summary)
-    if c and s and c['total'] != s['total']:
+    if c and s and (c['total'] != s['total'] or
+                    ('deleted' in s and c['deleted'] != s['deleted'])):
         return {'conflict': True, 'cover': c, 'summary': s}
     if c:
         return {**c, 'from': 'cover', 'confirmed': bool(s)}

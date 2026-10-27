@@ -83,9 +83,13 @@ def cut_page(img: Image.Image, cells_out: list | None = None) -> Page:
     if grid is None:
         return [], []
     # Card pages have equal-width columns. The cover and summary tables do not,
-    # and must not be mistaken for cards.
+    # and must not be mistaken for cards. A page holding one lone card has a
+    # single column, accepted only at a card's width (31% of the page).
     widths = [r - l for l, r in grid.cols]
-    if len(widths) < 2 or max(widths) > 1.15 * min(widths):
+    if len(widths) == 1:
+        if not 0.28 < widths[0] / im.width < 0.35:
+            return [], []
+    elif not widths or max(widths) > 1.15 * min(widths):
         return [], []
     epic_crops, serial_crops = [], []
     for band_top, band_bot in grid.bands:
@@ -501,14 +505,16 @@ def ocr_pages(pages: list[Page], style: str = 'kan', texts: list | None = None) 
 
     Returns (Row, epic_ok, info) per card. `Row.ok` keeps roll_ocr's meaning
     (valid EPIC and confirmed serial); `epic_ok` says the readers settled every
-    character of the EPIC; `info` has the page, cell and each reader's output.
+    character of the EPIC; `info` has the page, cell, each reader's output and
+    the serial box's mark (`R.serial_marker`: 'X' is a deleted elector).
     """
     epics, epic_ok, serials, crops, infos = [], [], [], [], []
     for p, (epic_crops, serial_crops) in enumerate(pages):
         text = texts[p] if texts and p < len(texts) else None
         e, k, s, c, inf = ocr_page(epic_crops, serial_crops, style, text)
-        for d in inf:
+        for d, crop in zip(inf, c):
             d['page'] = p
+            d['mark'] = R.serial_marker(crop)
         epics.extend(e)
         epic_ok.extend(k)
         serials.extend(s)
