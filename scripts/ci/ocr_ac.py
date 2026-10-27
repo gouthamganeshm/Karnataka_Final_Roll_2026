@@ -41,6 +41,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ocr'))
 
 
+def cut_pdf(item: tuple[str, bytes, int]) -> tuple[str, bytes]:
+    """A raw part PDF (fetched by a cloud VM) cut into the bundle home would make."""
+    import crops
+    name, data, ac = item
+    part = int(name.split('.')[0])
+    cp = crops.cut_part(data)
+    return f'{part}.zip', crops.write_bundle(cp['pages'], ac, part, cp, lang='kan')
+
+
 def ocr_bundle(item: tuple[str, bytes]):
     import crops
     import roll_ocr as R
@@ -66,7 +75,7 @@ def summary_path(out_path: str) -> Path:
     return Path(out_path).with_suffix('').with_suffix('.summary.json')
 
 
-def main(tar_path: str, out_path: str, shard: str | None = None) -> int:
+def main(tar_path: str, out_path: str, shard: str | None = None, crops_out: str | None = None) -> int:
     i, n = map(int, shard.split('/')) if shard else (0, 1)
     with tarfile.open(tar_path) as tar:
         meta = json.loads(tar.extractfile('meta.json').read())
@@ -74,10 +83,24 @@ def main(tar_path: str, out_path: str, shard: str | None = None) -> int:
         # (no bundle in the tar) is still some shard's to report as unread.
         mine = set(sorted(meta['parts'])[i::n])
         items = [(m.name, tar.extractfile(m).read()) for m in tar.getmembers()
-                 if m.name.endswith('.zip') and int(m.name.split('.')[0]) in mine]
+                 if m.name.endswith(('.zip', '.pdf')) and int(m.name.split('.')[0]) in mine]
 
     ac = meta['ac']
     workers = os.cpu_count() or 4
+    pdfs = [(name, data, ac) for name, data in items if name.endswith('.pdf')]
+    if pdfs:
+        # Raw PDFs from a cloud VM: cut here, and keep the crops (crops_out)
+        # for the verifier, exactly as home would have shipped them.
+        with ProcessPoolExecutor(workers) as pool:
+            items = [it for it in items if it[0].endswith('.zip')] + list(pool.map(cut_pdf, pdfs))
+        if crops_out:
+            import io
+            with tarfile.open(crops_out, 'w') as ct:
+                for name, data in items:
+                    info = tarfile.TarInfo(name)
+                    info.size = len(data)
+                    ct.addfile(info, io.BytesIO(data))
+        print(f'AC {ac}: cut {len(pdfs)} PDFs', flush=True)
     t0 = time.time()
     parts = {}
     n_rows = n_pub = 0
@@ -130,5 +153,7 @@ def merge(out_path: str, shards: list[str]) -> int:
 if __name__ == '__main__':
     if sys.argv[1] == 'merge':
         sys.exit(merge(sys.argv[2], sys.argv[3:]))
-    shard = sys.argv[sys.argv.index('--shard') + 1] if '--shard' in sys.argv else None
-    sys.exit(main(*[a for a in sys.argv[1:] if a not in ('--shard', shard)][:2], shard=shard))
+    opt = lambda k: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else None  # noqa: E731
+    shard, crops_out = opt('--shard'), opt('--crops-out')
+    pos = [a for a in sys.argv[1:] if a not in ('--shard', shard, '--crops-out', crops_out)]
+    sys.exit(main(*pos[:2], shard=shard, crops_out=crops_out))

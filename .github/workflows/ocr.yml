@@ -22,7 +22,7 @@ on:
         description: Draft release carrying the crops (see roll-source.json)
         required: true
       kind:
-        description: kan (the roll) or eng (the English cross-check part)
+        description: kan (home-cut crops), pdf (raw part PDFs from a cloud VM, cut here) or eng
         required: false
         default: kan
       shards:
@@ -35,7 +35,7 @@ permissions:
   actions: write    # dispatch the next workflow
 
 concurrency:
-  group: ocr-${{ inputs.ac }}-${{ inputs.kind || 'kan' }}
+  group: ocr-${{ inputs.ac }}-${{ inputs.kind == 'eng' && 'eng' || 'kan' }}
   cancel-in-progress: false
 
 jobs:
@@ -89,6 +89,9 @@ jobs:
         run: |
           if [ "$KIND" = eng ]; then
             echo "TAR=crops-eng-$AC.tar" >> "$GITHUB_ENV"; echo "OUT=eng-$AC" >> "$GITHUB_ENV"
+          elif [ "$KIND" = pdf ]; then
+            # The VM split the part PDFs the way ocr_ac.py splits shards.
+            echo "TAR=pdfs-$AC.s$SHARD.tar" >> "$GITHUB_ENV"; echo "OUT=rows-$AC" >> "$GITHUB_ENV"
           else
             echo "TAR=crops-$AC.tar" >> "$GITHUB_ENV"; echo "OUT=rows-$AC" >> "$GITHUB_ENV"
           fi
@@ -97,10 +100,17 @@ jobs:
         run: python scripts/release.py download "$TAR" work
 
       - name: OCR
-        run: python scripts/ci/ocr_ac.py "work/$TAR" "work/$OUT.s$SHARD.jsonl.gz" --shard "$SHARD/$SHARDS"
+        run: |
+          if [ "$KIND" = pdf ]; then
+            python scripts/ci/ocr_ac.py "work/$TAR" "work/$OUT.s$SHARD.jsonl.gz" --shard "$SHARD/$SHARDS" --crops-out "work/crops-$AC.s$SHARD.tar"
+          else
+            python scripts/ci/ocr_ac.py "work/$TAR" "work/$OUT.s$SHARD.jsonl.gz" --shard "$SHARD/$SHARDS"
+          fi
 
       - name: Return shard rows
-        run: python scripts/release.py upload "work/$OUT.s$SHARD.jsonl.gz" "work/$OUT.s$SHARD.summary.json"
+        run: |
+          python scripts/release.py upload "work/$OUT.s$SHARD.jsonl.gz" "work/$OUT.s$SHARD.summary.json"
+          if [ "$KIND" = pdf ]; then python scripts/release.py upload "work/crops-$AC.s$SHARD.tar"; fi
 
   merge:
     needs: [plan, ocr]
@@ -145,6 +155,29 @@ jobs:
       - name: Remove shard rows
         run: |
           python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
+
+      # Raw PDFs from a VM: join the shards' crops into the crops-<ac>.tar the
+      # verifier reads (as home would have shipped it), then drop the PDFs.
+      - name: Join crops
+        if: inputs.kind == 'pdf'
+        run: |
+          python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar"; done)
+          python - <<'EOF'
+          import io, json, os, tarfile
+          ac, n = os.environ['AC'], int(os.environ['SHARDS'])
+          s = json.load(open(f'work/rows-{ac}.summary.json'))
+          parts = sorted({int(p) for p in s['perPart']} | set(s['unread']))
+          with tarfile.open(f'work/crops-{ac}.tar', 'w') as out:
+              for i in range(n):
+                  with tarfile.open(f'work/crops-{ac}.s{i}.tar') as t:
+                      for m in t.getmembers():
+                          out.addfile(m, t.extractfile(m))
+              meta = json.dumps({'ac': int(ac), 'parts': parts, 'failed': s['unread'], 'lang': 'kan'}).encode()
+              info = tarfile.TarInfo('meta.json'); info.size = len(meta)
+              out.addfile(info, io.BytesIO(meta))
+          EOF
+          python scripts/release.py upload "work/crops-$AC.tar"
+          python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar pdfs-$AC.s$i.tar"; done)
 
       # The Kannada crops stay for the verifier, which re-reads every card.
       # With the repo variable VERIFY=paused the per-card checks are skipped:
