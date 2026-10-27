@@ -31,7 +31,7 @@ sys.path.insert(0, str(ROOT / 'scripts' / 'home'))
 import release  # noqa: E402
 import run  # noqa: E402
 
-SHARDS = 16
+SHARDS = 20
 OUT = run.CACHE / 'vm-out'
 
 

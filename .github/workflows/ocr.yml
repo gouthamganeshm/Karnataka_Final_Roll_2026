@@ -5,7 +5,7 @@
 # kind=eng  crops-eng-<ac>.tar  -> eng-<ac>.jsonl.gz + summary (English cross-check
 #                                  part, V5), then a republish
 #
-# The parts are split over `shards` parallel jobs (default 16; one 4-core runner
+# The parts are split over `shards` parallel jobs (default 20; one 4-core runner
 # alone reads a 600-part AC in ~1.5 h); `merge` joins their rows into exactly what one job
 # writes. Shard rows travel through the draft release, never as Actions
 # artifacts: on a public repo any signed-in user can download those.
@@ -28,7 +28,7 @@ on:
       shards:
         description: parallel OCR jobs for this AC
         required: false
-        default: '16'
+        default: '20'
 
 permissions:
   contents: write   # read/write assets on the draft release
@@ -47,7 +47,7 @@ jobs:
     steps:
       - id: n
         env:
-          WANT: ${{ inputs.kind == 'eng' && '1' || inputs.shards || '16' }}
+          WANT: ${{ inputs.kind == 'eng' && '1' || inputs.shards || '20' }}
         run: |
           n=$(( WANT < 1 ? 1 : (WANT > 20 ? 20 : WANT) ))
           echo "shards=$n" >> "$GITHUB_OUTPUT"
