@@ -75,8 +75,9 @@
     const hits = [];
     for (let i = lo; i < n && dv.getUint32(i * REC, false) === want; i++) {
       const o = i * REC;
+      const p = dv.getUint16(o + 5, true);
       const s = dv.getUint16(o + 7, true);
-      hits.push({ ac: dv.getUint8(o + 4), part: dv.getUint16(o + 5, true), serial: s & 0x7fff, approx: !!(s & 0x8000) });
+      hits.push({ ac: dv.getUint8(o + 4), part: p & 0x7fff, deleted: !!(p & 0x8000), serial: s & 0x7fff, approx: !!(s & 0x8000) });
     }
     return hits;
   }
@@ -135,7 +136,22 @@
         `<p class="note">${t('Check your connection and try again.', 'ನಿಮ್ಮ ಸಂಪರ್ಕ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.')}</p>`);
       return;
     }
-    const { epic, hits } = state;
+    const { epic } = state;
+    // A card the final roll stamps DELETED is published too, flagged, so a
+    // struck-off EPIC can be told apart from one that is simply not loaded.
+    const hits = state.hits.filter((h) => !h.deleted);
+    const gone = state.hits.filter((h) => h.deleted);
+    if (!hits.length && gone.length) {
+      const more = manifest.coverage < 0.99
+        ? t(' Not every constituency is loaded yet, so check again later.', ' ಎಲ್ಲಾ ಕ್ಷೇತ್ರಗಳು ಇನ್ನೂ ಲೋಡ್ ಆಗಿಲ್ಲ — ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ.')
+        : '';
+      el.innerHTML = card('bad', '✕', t('Marked DELETED in the final roll', 'ಅಂತಿಮ ಪಟ್ಟಿಯಲ್ಲಿ ಅಳಿಸಲಾಗಿದೆ (DELETED)'),
+        `<div class="epic-echo">${epic}</div>${gone.map(place).join('')}
+         <p class="note">${t('This EPIC is in the final roll at the place above, but the entry is struck off with a DELETED stamp, so it is not on the roll there. Open the PDF to see the card and the reason code beside the serial. If you moved, you may be enrolled elsewhere.' + more + ' If you think the deletion is wrong, call 1950 or contact your Electoral Registration Officer; you can apply again with Form 6.',
+           'ಈ EPIC ಅಂತಿಮ ಪಟ್ಟಿಯಲ್ಲಿ ಮೇಲಿನ ಸ್ಥಳದಲ್ಲಿದೆ, ಆದರೆ ಆ ನಮೂದನ್ನು DELETED ಮುದ್ರೆಯೊಂದಿಗೆ ಅಳಿಸಲಾಗಿದೆ — ಅಲ್ಲಿ ನೀವು ಪಟ್ಟಿಯಲ್ಲಿಲ್ಲ. ಕಾರ್ಡ್ ಮತ್ತು ಕ್ರಮ ಸಂಖ್ಯೆಯ ಪಕ್ಕದ ಕಾರಣ ಸಂಕೇತವನ್ನು ನೋಡಲು PDF ತೆರೆಯಿರಿ. ನೀವು ಸ್ಥಳಾಂತರಗೊಂಡಿದ್ದರೆ ಬೇರೆಡೆ ನೋಂದಾಯಿತರಾಗಿರಬಹುದು.' + more + ' ಅಳಿಸುವಿಕೆ ತಪ್ಪು ಎಂದು ಭಾವಿಸಿದರೆ 1950 ಗೆ ಕರೆ ಮಾಡಿ ಅಥವಾ ಮತದಾರರ ನೋಂದಣಿ ಅಧಿಕಾರಿಯನ್ನು ಸಂಪರ್ಕಿಸಿ; ನಮೂನೆ 6 ಮೂಲಕ ಮತ್ತೆ ಅರ್ಜಿ ಸಲ್ಲಿಸಬಹುದು.')}</p>
+         <div class="actions"><a class="btn" href="tel:1950">${t('Call 1950', '1950 ಗೆ ಕರೆ')}</a></div>`);
+      return;
+    }
     if (!hits.length) {
       const complete = manifest.coverage >= 0.99;
       el.innerHTML = complete
@@ -151,28 +167,35 @@
              `ಈವರೆಗೆ ಲೋಡ್ ಆದ ${Math.floor(manifest.coverage * 100)}% ಮತಗಟ್ಟೆಗಳಲ್ಲಿ ಸಿಗಲಿಲ್ಲ. ಉಳಿದವು ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿವೆ — ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ.`)}</p>`);
       return;
     }
-    const blocks = hits.map((h) => {
-      const a = manifest.byAc.get(h.ac) || { name: '', nameKn: '', district: '' };
-      const name = lang === 'kn' && a.nameKn ? a.nameKn : a.name;
-      return `<div class="multi">
-        <p class="place">${h.ac} · ${esc(name)}</p>
-        <p class="place-sub">${esc(lang === 'kn' && a.districtKn ? a.districtKn : title(a.district))} ${t('district', 'ಜಿಲ್ಲೆ')}</p>
-        <div class="ticket">
-          <div class="tk"><span class="k">${t('Constituency', 'ಕ್ಷೇತ್ರ')}</span><span class="v">${h.ac}</span></div>
-          <div class="tk"><span class="k">${t('Part', 'ಭಾಗ')}</span><span class="v">${h.part}</span></div>
-          <div class="tk"><span class="k">${t('Serial', 'ಕ್ರಮ ಸಂಖ್ಯೆ')}</span><span class="v">${h.approx ? '~' : ''}${h.serial}</span></div>
-        </div>
-        ${h.approx ? `<p class="note">${t('~ The serial number could not be fully confirmed by the reader; it is very likely right, but check it in the PDF.', '~ ಕ್ರಮ ಸಂಖ್ಯೆಯನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ದೃಢೀಕರಿಸಲಾಗಲಿಲ್ಲ; PDF ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.')}</p>` : ''}
-        <div class="actions">
-          <a class="btn primary" href="${pdfUrl(h.ac, h.part)}" target="_blank" rel="noopener">${t('Open official PDF', 'ಅಧಿಕೃತ PDF ತೆರೆಯಿರಿ')} ↗</a>
-          <button class="btn" type="button" data-share>${t('Share', 'ಹಂಚಿಕೊಳ್ಳಿ')}</button>
-        </div></div>`;
-    }).join('');
+    const blocks = hits.map(place).join('');
     const head = hits.length > 1
       ? t(`Found in ${hits.length} places`, `${hits.length} ಸ್ಥಳಗಳಲ್ಲಿ ಸಿಕ್ಕಿದೆ`)
       : t('You\'re on the roll', 'ನೀವು ಪಟ್ಟಿಯಲ್ಲಿದ್ದೀರಿ');
-    el.innerHTML = card('ok', '✓', head, `<div class="epic-echo">${epic}</div>${blocks}`);
+    const struck = gone.length
+      ? `<p class="note">${t('Also listed as DELETED at ', 'ಇಲ್ಲಿ DELETED ಎಂದೂ ಇದೆ: ')}${gone.map((h) =>
+          `${h.ac} · ${t('part', 'ಭಾಗ')} ${h.part} · ${t('serial', 'ಕ್ರಮ ಸಂಖ್ಯೆ')} ${h.serial}`).join(', ')}${
+          t(' — an older entry struck off, usually because the voter moved.', ' — ಹಳೆಯ ನಮೂದು, ಸಾಮಾನ್ಯವಾಗಿ ಸ್ಥಳಾಂತರದಿಂದಾಗಿ ಅಳಿಸಲಾಗಿದೆ.')}</p>`
+      : '';
+    el.innerHTML = card('ok', '✓', head, `<div class="epic-echo">${epic}</div>${blocks}${struck}`);
     el.querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', share));
+  }
+
+  function place(h) {
+    const a = manifest.byAc.get(h.ac) || { name: '', nameKn: '', district: '' };
+    const name = lang === 'kn' && a.nameKn ? a.nameKn : a.name;
+    return `<div class="multi">
+      <p class="place">${h.ac} · ${esc(name)}</p>
+      <p class="place-sub">${esc(lang === 'kn' && a.districtKn ? a.districtKn : title(a.district))} ${t('district', 'ಜಿಲ್ಲೆ')}</p>
+      <div class="ticket">
+        <div class="tk"><span class="k">${t('Constituency', 'ಕ್ಷೇತ್ರ')}</span><span class="v">${h.ac}</span></div>
+        <div class="tk"><span class="k">${t('Part', 'ಭಾಗ')}</span><span class="v">${h.part}</span></div>
+        <div class="tk"><span class="k">${t('Serial', 'ಕ್ರಮ ಸಂಖ್ಯೆ')}</span><span class="v">${h.approx ? '~' : ''}${h.serial}</span></div>
+      </div>
+      ${h.approx ? `<p class="note">${t('~ The serial number could not be fully confirmed by the reader; it is very likely right, but check it in the PDF.', '~ ಕ್ರಮ ಸಂಖ್ಯೆಯನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ದೃಢೀಕರಿಸಲಾಗಲಿಲ್ಲ; PDF ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.')}</p>` : ''}
+      <div class="actions">
+        <a class="btn primary" href="${pdfUrl(h.ac, h.part)}" target="_blank" rel="noopener">${t('Open official PDF', 'ಅಧಿಕೃತ PDF ತೆರೆಯಿರಿ')} ↗</a>
+        ${h.deleted ? '' : `<button class="btn" type="button" data-share>${t('Share', 'ಹಂಚಿಕೊಳ್ಳಿ')}</button>`}
+      </div></div>`;
   }
 
   function card(kind, icon, head, body) {

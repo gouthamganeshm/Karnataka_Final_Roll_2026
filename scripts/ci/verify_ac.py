@@ -92,7 +92,9 @@ def v2_structure(rows_by_part: dict[int, list[dict]], summary: dict) -> tuple[di
     by_epic = collections.defaultdict(list)
     for part, rows in rows_by_part.items():
         for r in rows:
-            if r['epicOk']:
+            # A deleted card beside a live one is a voter who moved within the
+            # AC (134 such pairs in AC 162), not a misread; only live copies count.
+            if r['epicOk'] and not r.get('deleted'):
                 by_epic[r['epic']].append(r)
     for epic, copies in by_epic.items():
         if len(copies) > 1 and not all(r['how'] == 'direct' for r in copies):

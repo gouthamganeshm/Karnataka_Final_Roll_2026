@@ -12,7 +12,8 @@ writes one JSON row per elector card:
 
 `epicOk`: the EPIC readers agreed (see `crops.ocr_page`); only such rows can
 be published. A card the final roll marks deleted (`"deleted": true`, its
-serial box carries a reason code) is never `epicOk`: the elector is off the roll. `ok`: as in the draft pipeline — a serial the sequence confirms.
+serial box carries a reason code) is read and published the same way, so the
+site can say where the EPIC was struck off; it never counts as an elector. `ok`: as in the draft pipeline — a serial the sequence confirms.
 `page`/`cell` locate the card's crop for the verifier.
 
 Next to the rows, `<name>.summary.json` holds per-part counts and the part's
@@ -47,7 +48,7 @@ def ocr_bundle(item: tuple[str, bytes]):
     out = [{'ac': ac, 'part': part, 'page': info['page'], 'cell': info['cell'],
             'serial': r.serial, 'epic': r.epic,
             'ok': bool(r.ok and R.EPIC_RE.match(r.epic)),
-            'epicOk': bool(agreed) and info.get('mark') != 'X', 'deleted': info.get('mark') == 'X',
+            'epicOk': bool(agreed), 'deleted': info.get('mark') == 'X',
             'how': info.get('how'), 'rd': [info.get('sheet'), info.get('glyph'), info.get('alone')]}
            for r, agreed, info in rows]
     tot = totals.read_totals(crops.bundle_image(data, 'cover'), crops.bundle_image(data, 'summary'))

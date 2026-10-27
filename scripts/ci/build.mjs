@@ -26,8 +26,12 @@
  *
  *   4 bytes      suffix: bytes 2..5 of SHA-256(EPIC)
  *   u8  ac
- *   u16 part
+ *   u16 part     top bit set = the card is marked DELETED in the final roll
  *   u16 serial   top bit set = serial not OCR-confirmed (EPIC itself is fine)
+ *
+ * A deleted card is published like any other (same readers, same verifier),
+ * so the site can say where the EPIC was struck off; it is not counted as an
+ * elector.
  *
  * No EPIC is published, only a hash fragment — the browser already knows the
  * number the visitor typed. 4.4 crore electors at 9 bytes is ~400 MB, inside
@@ -102,7 +106,7 @@ for (const f of rowFiles) {
   const xc = await crossCheck(ac);
   const stat = {
     status: !ver ? 'pending' : ver.verdict === 'pass' ? 'verified' : 'held',
-    reasons: ver?.reasons ?? [], electors: 0, approx: 0, withheld: 0, disputed: 0,
+    reasons: ver?.reasons ?? [], electors: 0, deleted: 0, approx: 0, withheld: 0, disputed: 0,
     cards: 0, printed: 0, partsRead: sum?.partsRead ?? 0,
     v5: xc ? { part: xc.part, compared: 0, agree: 0 } : null
   };
@@ -130,16 +134,17 @@ for (const f of rowFiles) {
       rec[0] = h[1];
       h.copy(rec, 1, 2, 6);
       rec.writeUInt8(r.ac, 5);
-      rec.writeUInt16LE(r.part, 6);
+      rec.writeUInt16LE((r.part & 0x7fff) | (r.deleted ? 0x8000 : 0), 6);
       rec.writeUInt16LE((r.serial & 0x7fff) | (r.ok ? 0 : 0x8000), 8);
       push(groups[h[0]], rec);
+      if (r.deleted) { stat.deleted++; continue; }
       stat.electors++;
       if (!r.ok) stat.approx++;
     }
   }
   perAc.set(ac, stat);
   console.log(`AC ${ac}: ${stat.status}${stat.reasons.length ? ' (' + stat.reasons.join('; ') + ')' : ''} — ` +
-    `${stat.electors} published, ${stat.withheld} unreadable, ${stat.disputed} disputed, ` +
+    `${stat.electors} published, ${stat.deleted} deleted, ${stat.withheld} unreadable, ${stat.disputed} disputed, ` +
     `${stat.cards}/${stat.printed || '?'} cards` + (stat.v5 ? `, English ${stat.v5.agree}/${stat.v5.compared}` : ''));
 }
 
@@ -183,7 +188,7 @@ const acs = [...meta.values()]
       ac: c.acNumber, name: c.name, nameKn: c.nameKn, district: c.district, districtKn: c.districtKn,
       parts: c.parts, status: s?.status ?? 'pending',
       partsRead: live ? s.partsRead : 0,
-      electors: live ? s.electors : 0, approx: live ? s.approx : 0,
+      electors: live ? s.electors : 0, deleted: live ? s.deleted : 0, approx: live ? s.approx : 0,
       withheld: live ? s.withheld + s.disputed : 0,
       printed: s?.printed ?? 0
     };
@@ -197,7 +202,8 @@ writeFileSync(join(dataDir, 'manifest.json'), JSON.stringify({
   url: shipped?.url ?? source.url,
   builtAt: new Date().toISOString(),
   record: 9,
-  electors: records,
+  electors: acs.reduce((n, a) => n + a.electors, 0),
+  deleted: acs.reduce((n, a) => n + a.deleted, 0),
   parts, partsRead,
   coverage: parts ? partsRead / parts : 0,
   acs
