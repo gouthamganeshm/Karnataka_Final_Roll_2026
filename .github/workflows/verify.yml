@@ -1,6 +1,11 @@
 # Verifier worker: checks one constituency's OCR before it may be published
 # (scripts/ci/verify_ac.py — V1 re-read, V2 structure, V3 printed totals,
 # V4 draft-roll corroboration). Dispatched by ocr.yml; dispatches publish.yml.
+#
+# The per-card checks (V1, V4) are split over `shards` parallel jobs by part;
+# each writes check-<ac>.s<i>.json (part, page, cell, reason — no EPICs) to the
+# draft release. `verdict` runs V2/V3 over the whole AC, merges the shards and
+# refuses unless they covered every part; its result equals a single run's.
 name: Verify constituency
 run-name: Verify AC ${{ inputs.ac }}
 
@@ -13,6 +18,10 @@ on:
       tag:
         description: Draft release carrying the crops and rows
         required: true
+      shards:
+        description: parallel check jobs for this AC
+        required: false
+        default: '6'
 
 permissions:
   contents: write
@@ -23,13 +32,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  verify:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.n.outputs.shards }}
+      list: ${{ steps.n.outputs.list }}
+    steps:
+      - id: n
+        env:
+          WANT: ${{ inputs.shards || '6' }}
+        run: |
+          n=$(( WANT < 1 ? 1 : (WANT > 12 ? 12 : WANT) ))
+          echo "shards=$n" >> "$GITHUB_OUTPUT"
+          echo "list=$(python3 -c "print(list(range($n)))")" >> "$GITHUB_OUTPUT"
+
+  check:
+    needs: plan
     runs-on: ubuntu-latest
     timeout-minutes: 340
+    strategy:
+      fail-fast: true
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.list) }}
     env:
       GH_TOKEN: ${{ github.token }}
       ROLL_RELEASE: ${{ inputs.tag }}
       AC: ${{ inputs.ac }}
+      SHARD: ${{ matrix.shard }}
+      SHARDS: ${{ needs.plan.outputs.shards }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,14 +88,50 @@ jobs:
         continue-on-error: true
         run: ROLL_RELEASE=ref-draft-roll python scripts/release.py download "draft-$AC.npy" work
 
-      - name: Verify
+      - name: Check (V1, V4)
         run: |
-          python scripts/ci/verify_ac.py "$AC" "work/crops-$AC.tar" "work/rows-$AC.jsonl.gz" \
-            "work/rows-$AC.summary.json" out --draft-keys "work/draft-$AC.npy"
+          python scripts/ci/verify_ac.py "$AC" "work/crops-$AC.tar" "work/rows-$AC.jsonl.gz"             "work/rows-$AC.summary.json" out --draft-keys "work/draft-$AC.npy" --shard "$SHARD/$SHARDS"
+
+      - name: Return the shard's checks
+        run: python scripts/release.py upload "out/check-$AC.s$SHARD.json"
+
+  verdict:
+    needs: [plan, check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ROLL_RELEASE: ${{ inputs.tag }}
+      AC: ${{ inputs.ac }}
+      SHARDS: ${{ needs.plan.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/ocr/requirements.txt
+
+      - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
+
+      - name: Fetch crops, rows and shard checks
+        run: |
+          python scripts/release.py download "crops-$AC.tar" work
+          python scripts/release.py download "rows-$AC.jsonl.gz" work
+          python scripts/release.py download "rows-$AC.summary.json" work
+          for i in $(seq 0 $((SHARDS - 1))); do
+            python scripts/release.py download "check-$AC.s$i.json" work
+          done
+
+      - name: Verify (V2, V3, verdict)
+        run: |
+          python scripts/ci/verify_ac.py "$AC" "work/crops-$AC.tar" "work/rows-$AC.jsonl.gz"             "work/rows-$AC.summary.json" out --checks work/check-$AC.s*.json
 
       - name: Return the verdict
         run: |
           shopt -s nullglob
           python scripts/release.py upload out/verify-$AC.json out/*.png
           python scripts/release.py delete "crops-$AC.tar"
+          for i in $(seq 0 $((SHARDS - 1))); do python scripts/release.py delete "check-$AC.s$i.json"; done
           gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"

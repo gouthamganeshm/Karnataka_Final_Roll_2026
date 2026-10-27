@@ -1,6 +1,13 @@
 """Verifier worker: check one constituency's OCR before it may be published.
 
     python scripts/ci/verify_ac.py AC CROPS_TAR ROWS SUMMARY OUT_DIR [--draft-keys draft-AC.npy]
+        [--shard i/N | --checks check-AC.s*.json]
+
+The per-card checks (V1, V4) run part by part on every core. With `--shard i/N`
+they run for every N-th part only and write OUT_DIR/check-<ac>.s<i>.json (no
+EPICs: part, page, cell and reason); a run given those files with `--checks`
+skips V1/V4, refuses unless the shards covered every part, and does the rest
+as a single run would, with the same result.
 
 Runs after `ocr_ac.py`, on the same crops, and writes OUT_DIR/verify-<ac>.json:
 
@@ -36,10 +43,12 @@ import argparse
 import collections
 import gzip
 import json
+import os
 import random
 import sys
 import tarfile
 import time
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,6 +77,63 @@ def card_crops(tar_path: str) -> dict[int, list]:
                 index, pages = C.read_bundle(tar.extractfile(m).read())
                 out[index['part']] = pages
     return out
+
+
+_W: dict = {}
+
+
+def _init(tar_path: str, keys_path: str | None) -> None:
+    _W['tar'] = tar_path
+    _W['keys'] = (np.sort(np.load(keys_path).astype(np.uint64))
+                  if keys_path and Path(keys_path).exists() else None)
+
+
+def check_part(item: tuple[int, list[dict]]) -> tuple[dict, collections.Counter]:
+    """V1 and V4 for one part's published records: ({(part, page, cell): reason}, stats).
+    V1 is tried first, so it names a record both would dispute, as before."""
+    part, rows = item
+    with tarfile.open(_W['tar']) as tar:
+        try:
+            _, pages = C.read_bundle(tar.extractfile(f'{part}.zip').read())
+        except KeyError:
+            pages = None
+
+    def crop_of(r):
+        return pages[r['page']][0][r['cell']] if pages else None
+
+    disputed, stats = {}, collections.Counter()
+    pub = [r for r in rows if r['epicOk']]
+    seen = [(r, crop_of(r)) for r in pub]
+    seen = [(r, c) for r, c in seen if c is not None]
+    reads = [V.proto_read(c) for _, c in seen]
+    for (r, _), reason in zip(seen, V.v1([(c, r['epic']) for r, c in seen], reads=reads)):
+        if reason:
+            disputed.setdefault((part, r['page'], r['cell']), reason)
+    for _ in seen:
+        stats['v1_checked'] += 1
+    for r, k in zip(pub, V.corroborated([r['epic'] for r in pub], _W['keys'])):
+        if k is None:
+            stats['v4_no_draft'] += 1
+            continue
+        if k:
+            stats['v4_corroborated'] += 1
+            continue
+        stats['v4_new'] += 1
+        c = crop_of(r)
+        reason = V.v4(c, r['epic']) if c is not None else 'v4:nocrop'
+        if reason:
+            disputed.setdefault((r['part'], r['page'], r['cell']), reason)
+    return disputed, stats
+
+
+def run_checks(rows_by_part: dict, parts: list[int], tar_path: str, keys_path: str | None):
+    """V1/V4 over `parts`, one process per core."""
+    disputed, stats = {}, collections.Counter()
+    with ProcessPoolExecutor(os.cpu_count() or 4, initializer=_init, initargs=(tar_path, keys_path)) as pool:
+        for d, st in pool.map(check_part, [(p, rows_by_part[p]) for p in parts]):
+            disputed.update(d)
+            stats.update(st)
+    return disputed, stats
 
 
 def v2_structure(rows_by_part: dict[int, list[dict]], summary: dict) -> tuple[dict, dict]:
@@ -173,19 +239,46 @@ def main() -> int:
     ap.add_argument('summary')
     ap.add_argument('out')
     ap.add_argument('--draft-keys')
+    ap.add_argument('--shard', help='i/N: V1/V4 for every N-th part only, written to a check file')
+    ap.add_argument('--checks', nargs='+', help='shard check files: use them instead of running V1/V4')
     args = ap.parse_args()
     t0 = time.time()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
     rows = load_rows(args.rows)
-    summary = json.loads(Path(args.summary).read_text('utf8'))
-    pages_by_part = card_crops(args.crops)
     rows_by_part = collections.defaultdict(list)
     for r in rows:
         rows_by_part[r['part']].append(r)
     for rs in rows_by_part.values():
         rs.sort(key=lambda r: (r['page'], r['cell']))
+    keys_path = args.draft_keys if args.draft_keys and Path(args.draft_keys).exists() else None
+
+    if args.shard:
+        i, n = map(int, args.shard.split('/'))
+        mine = sorted(rows_by_part)[i::n]
+        found, st = run_checks(rows_by_part, mine, args.crops, keys_path)
+        (out / f'check-{args.ac}.s{i}.json').write_text(json.dumps({
+            'parts': mine, 'stats': dict(st),
+            'disputed': [[p, pg, c, why] for (p, pg, c), why in sorted(found.items())]}))
+        print(f'AC {args.ac} shard {i}/{n}: {len(mine)} parts, {len(found)} disputed, {dict(st)}')
+        return 0
+
+    if args.checks:
+        found, st, covered = {}, collections.Counter(), set()
+        for f in args.checks:
+            c = json.loads(Path(f).read_text('utf8'))
+            covered.update(c['parts'])
+            st.update(c['stats'])
+            found.update({(p, pg, cl): why for p, pg, cl, why in c['disputed']})
+        if covered != set(rows_by_part):
+            raise SystemExit(f'shard checks cover {len(covered)} parts, rows have {len(rows_by_part)}: '
+                             f'missing {sorted(set(rows_by_part) - covered)[:10]}')
+    else:
+        found, st = run_checks(rows_by_part, sorted(rows_by_part), args.crops, keys_path)
+
+    summary = json.loads(Path(args.summary).read_text('utf8'))
+    pages_by_part = card_crops(args.crops)
 
     def crop_of(r):
         pages = pages_by_part.get(r['part'])
@@ -194,34 +287,10 @@ def main() -> int:
     disputed, part_flags = v2_structure(rows_by_part, summary)
     v3 = v3_totals(rows_by_part, summary, part_flags, disputed)
 
-    keys = None
-    if args.draft_keys and Path(args.draft_keys).exists():
-        keys = np.sort(np.load(args.draft_keys).astype(np.uint64))
     published = [r for r in rows if r['epicOk']]
-    corr = V.corroborated([r['epic'] for r in published], keys)
-    stats = collections.Counter()
-    for part, rs in rows_by_part.items():
-        pub = [(r, crop_of(r)) for r in rs if r['epicOk']]
-        pub = [(r, c) for r, c in pub if c is not None]
-        reads = [V.proto_read(c) for _, c in pub]
-        for (r, _), reason in zip(pub, V.v1([(c, r['epic']) for r, c in pub], reads=reads)):
-            if reason:
-                disputed.setdefault((part, r['page'], r['cell']), reason)
-        for (r, c), read in zip(pub, reads):
-            stats['v1_checked'] += 1
-    for r, k in zip(published, corr):
-        if k is None:
-            stats['v4_no_draft'] += 1
-            continue
-        if k:
-            stats['v4_corroborated'] += 1
-            continue
-        stats['v4_new'] += 1
-        c = crop_of(r)
-        reason = V.v4(c, r['epic']) if c is not None else 'v4:nocrop'
-        if reason:
-            disputed.setdefault((r['part'], r['page'], r['cell']), reason)
-
+    for k, why in found.items():
+        disputed.setdefault(k, why)
+    stats = st
     n_pub = len(published)
     n_disputed = sum(1 for r in published if (r['part'], r['page'], r['cell']) in disputed)
     reasons_count = collections.Counter(v.split(':')[0] + ':' + v.split(':')[1] for v in disputed.values())
