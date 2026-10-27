@@ -312,7 +312,10 @@ def serial_marker(crop: Image.Image | None) -> str | None:
     if len(cols) < 2:
         return None
     gaps = np.diff(cols)
-    wide = np.where(gaps > max(30, 2 * crop.height))[0]
+    # Digits sit 2-5 px apart (crops ~13 px tall). The mark is 129+ px from the
+    # number in a main-list box but only ~10 px in the additions list's narrower
+    # box, where a 30 px threshold missed added-then-deleted entries (AC 174).
+    wide = np.where(gaps > max(7, 0.55 * crop.height))[0]
     if not len(wide):
         return None
     blob = g[:, cols[0]:cols[wide[0]] + 1]
