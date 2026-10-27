@@ -49,30 +49,40 @@ def repo() -> str:
     return _REPO
 
 
+_CREATED = None
+
+
 def find() -> dict | None:
-    """Drafts have no tag yet, so /releases/tags/<tag> cannot see them; list instead."""
+    """Drafts have no tag yet, so /releases/tags/<tag> cannot see them; list instead.
+
+    If two drafts ever carry the tag, the oldest is the one `gh release upload`
+    writes to, so that is the one returned."""
+    found = []
     for page in range(1, 20):
         batch = json.loads(gh('api', f'repos/{repo()}/releases?per_page=100&page={page}'))
-        for rel in batch:
-            if rel['tag_name'] == TAG:
-                return rel
+        found += [rel for rel in batch if rel['tag_name'] == TAG]
         if len(batch) < 100:
-            return None
-    return None
+            break
+    return min(found, key=lambda r: r['id']) if found else None
 
 
 def ensure() -> dict:
-    rel = find()
+    global _CREATED
+    rel = find() or _CREATED
     if rel:
         if not rel['draft']:
             raise SystemExit(f'release {TAG} is published, not a draft — refusing to put EPIC data in it')
         return rel
     # The listing can lag a just-created release by a few seconds, so use the
-    # creation response itself.
-    return json.loads(gh('api', '-X', 'POST', f'repos/{repo()}/releases',
-                         '-f', f'tag_name={TAG}', '-f', f'name={TAG} (private transfer, do not publish)',
-                         '-F', 'draft=true', '-f', 'body=Crops and OCR rows in transit between home and Actions. '
-                         'Draft on purpose: never publish this release.'))
+    # creation response itself, and remember it: the next ensure() in this
+    # process (the manifest upload, straight after) would otherwise miss it in
+    # the listing and create a second draft with the same tag — which happened
+    # on the final roll's first run, and the OCR job then read the empty one.
+    _CREATED = json.loads(gh('api', '-X', 'POST', f'repos/{repo()}/releases',
+                             '-f', f'tag_name={TAG}', '-f', f'name={TAG} (private transfer, do not publish)',
+                             '-F', 'draft=true', '-f', 'body=Crops and OCR rows in transit between home and Actions. '
+                             'Draft on purpose: never publish this release.'))
+    return _CREATED
 
 
 def assets() -> dict[str, dict]:
