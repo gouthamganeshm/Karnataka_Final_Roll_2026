@@ -160,8 +160,9 @@ def read_summary(img: Image.Image | None) -> dict | None:
 def read_totals(cover: Image.Image | None, summary: Image.Image | None) -> dict | None:
     """The cover's reading, cross-checked against the summary page when both read."""
     c, s = read_cover(cover), read_summary(summary)
+    # The cover leaves `deleted` out when its Ending misreads; then the summary's stands.
     if c and s and (c['total'] != s['total'] or
-                    ('deleted' in s and c['deleted'] != s['deleted'])):
+                    ('deleted' in s and c.get('deleted', s['deleted']) != s['deleted'])):
         return {'conflict': True, 'cover': c, 'summary': s}
     if c:
         return {**c, 'from': 'cover', 'confirmed': bool(s)}
