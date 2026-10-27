@@ -30,6 +30,7 @@ Resumable: shipped ACs are recorded in cache/shipped-<release>.json and skipped.
 from __future__ import annotations
 
 import argparse
+import collections
 import io
 import json
 import re
@@ -141,10 +142,17 @@ def discover(acs: list[int] | None) -> dict:
 
 
 def run_order(parts_by_ac: dict[int, list[int]], tranche: str) -> list[int]:
-    """Bengaluru's ACs first, then everything else; largest first within each."""
+    """Bengaluru's ACs first (largest first), then district by district, the
+    district with the most electors first (CEO's final-roll statement), its
+    ACs in number order, so whole districts go live one after another."""
     district = {c['acNumber']: c['district'] for c in SEED['constituencies']}
     blr = sorted((a for a in parts_by_ac if district.get(a) in BENGALURU), key=lambda a: -len(parts_by_ac[a]))
-    rest = sorted((a for a in parts_by_ac if district.get(a) not in BENGALURU), key=lambda a: -len(parts_by_ac[a]))
+    official = json.loads((ROOT / 'reference' / 'ceo-final-2026.json').read_text('utf8'))['acs']
+    size = collections.Counter()
+    for a in parts_by_ac:
+        size[district.get(a)] += official.get(str(a), {}).get('electors', 0)
+    rest = sorted((a for a in parts_by_ac if district.get(a) not in BENGALURU),
+                  key=lambda a: (-size[district.get(a)], district.get(a) or '', a))
     return {'blr': blr, 'rest': rest}.get(tranche, blr + rest)
 
 
@@ -317,7 +325,17 @@ def main() -> int:
     # At most two finished tars wait for upload, so a slow uplink cannot fill
     # the disk; it only makes the download pause.
     def ship(ac, parts, tar_path, rec):
-        res = send_ac(ac, parts, tar_path, rec, args)
+        # The upload or dispatch can fail on a dropped connection (AC 164's
+        # upload was left half-done, never dispatched, and nobody knew): retry.
+        for wait in (30, 120, 300, 0):
+            try:
+                res = send_ac(ac, parts, tar_path, rec, args)
+                break
+            except Exception as err:          # noqa: BLE001
+                if not wait:
+                    raise
+                print(f'\n  AC {ac}: shipping failed ({err}); retrying in {wait}s', flush=True)
+                time.sleep(wait)
         with lock:
             # Another run.py (a re-fetch beside the queue) writes this file too:
             # merge with what is on disk, or each erases the other's ACs.
@@ -333,6 +351,9 @@ def main() -> int:
                 continue
             parts = sorted(parts_by_ac[ac])[: args.limit] if args.limit else sorted(parts_by_ac[ac])
             tar_path, rec = cut_ac(ac, parts, args, pool)
+            for f in waiting:
+                if f.done():
+                    f.result()            # a failure stops the run; the queue restarts it
             waiting = [f for f in waiting if not f.done()]
             while len(waiting) >= 2:
                 waiting.pop(0).result()
