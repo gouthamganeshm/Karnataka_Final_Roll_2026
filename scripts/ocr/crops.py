@@ -310,7 +310,7 @@ def _lined_up(t: str, glyph: str, lo: int, hi: int, need: int) -> bool:
     return sum(a == b for a, b in zip(t[lo:hi], glyph[lo:hi])) >= need
 
 
-def fuse(detail, sheet: str, alone: str | None, proto=None) -> str | None:
+def fuse(detail, sheet: str, alone: str | None, proto=None, prefix: str | None = None) -> str | None:
     """One EPIC from the glyph reader's per-character detail, the Tesseract
     readings (each used only if it is a well-formed EPIC) and, when given, the
     prototype reader's per-character reading. None = withhold.
@@ -339,6 +339,9 @@ def fuse(detail, sheet: str, alone: str | None, proto=None) -> str | None:
       a cut it found for itself (`own_cut`). On the template reader's cut the
       two were one witness, not two: 'FLV…' was cut as 'FIW…' and both read
       it so, against two Tesseract passes reading FLV.
+
+    Pinned letters (`prefix`) skip the letter logic entirely: `series_pass.py` uses them for a series
+    the whole AC confirms, where a thin glyph margin or a shifted Tesseract read withholds the card.
     """
     valid = lambda e: bool(e and R.EPIC_RE.match(e))  # noqa: E731
     tess = [t for t in (sheet, alone) if valid(t)]
@@ -354,6 +357,9 @@ def fuse(detail, sheet: str, alone: str | None, proto=None) -> str | None:
     out = []
     for i, (g, _, margin) in enumerate(detail):
         p, p_margin = (proto[i][0], proto[i][2]) if proto else (None, 0.0)
+        if i < 3 and prefix:
+            out.append(prefix[i])    # letters settled by the series (series_pass.py); digits still need two readers
+            continue
         if i < 3:
             votes = [t[i] for t in letter_tess]
             if g in votes:

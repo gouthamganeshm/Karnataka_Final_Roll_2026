@@ -136,7 +136,9 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
     def mark(ac: int) -> None:
         sent[str(ac)] = time.time()
 
-    def retry(ac: int, why: str) -> bool:
+    def retry(ac: int, why: str, conclusion: str) -> bool:
+        if conclusion == 'cancelled':
+            return True               # superseded or cancelled by hand: not a failure of the AC
         n = retries.get(str(ac), 0)
         if n >= MAX_RETRY:
             if ac not in gave_up:
@@ -147,7 +149,8 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
         log(f'AC {ac}: retry {n + 1}/{MAX_RETRY}: {why}')
         return True
 
-    # PDF sets in either release: dispatch, retry, or drop.
+    # PDF sets in either release: ready to dispatch, already read, or dropped.
+    ready = {}
     for tag, found in ((WORK, work), (MAIN, main)):
         for ac, s in pdf_sets(found).items():
             n = max(s['shards']) + 1
@@ -168,12 +171,9 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
                     if ac in live:
                         delete(tag, names)    # merge normally drops them; a leftover
                     continue                  # (not live: held by the checks)
-                if not retry(ac, f'run {last["conclusion"]}'):
+                if not retry(ac, f'run {last["conclusion"]}', last['conclusion']):
                     continue
-            log(f'AC {ac}: dispatching OCR for its {n} PDF shards in {tag}')
-            dispatch(ac, 'pdf', n)
-            mark(ac)
-            active += 1
+            ready[ac] = (n, tag)
 
     # Failed runs whose inputs are gone: fetch again (pdf) or re-read the home crops (kan).
     sets_now = set(pdf_sets(work)) | set(pdf_sets(main))
@@ -184,11 +184,11 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
             continue
         kind = TITLE.match(last['displayTitle'])[2]
         if kind == 'kan' and f'crops-{ac}.tar' in main:
-            if retry(ac, f'kan run {last["conclusion"]}'):
+            if retry(ac, f'kan run {last["conclusion"]}', last['conclusion']):
                 dispatch(ac, 'kan')
                 mark(ac)
                 active += 1
-        elif str(ac) in shipped and retry(ac, f'run {last["conclusion"]}, PDFs gone: re-fetch'):
+        elif str(ac) in shipped and retry(ac, f'run {last["conclusion"]}, PDFs gone: re-fetch', last['conclusion']):
             shipped.pop(str(ac), None)
     if DRY:
         log(f'(dry) {active} active runs; retries {retries}; shipped {len(shipped)}')
@@ -196,11 +196,23 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
         save(run.SHIPPED, shipped)
         save(STATE, state)
 
-    # Feed Actions: fetch the next AC while the queue is short.
+    # Feed Actions while the queue is short (a deep one starves every merge job
+    # of a runner): PDFs already uploaded first, in queue order, then a new fetch.
+    rank = {a: i for i, a in enumerate(order)}
+    for ac in sorted(ready, key=lambda a: rank.get(a, 0)):
+        if active >= target:
+            return True
+        n, tag = ready[ac]
+        log(f'AC {ac}: dispatching OCR for its {n} PDF shards in {tag} ({active} runs active)')
+        dispatch(ac, 'pdf', n)
+        mark(ac)
+        active += 1
+    if not DRY:
+        save(STATE, state)
     todo = [a for a in order if str(a) not in shipped and a not in live and a not in gave_up and a not in sets_now]
     if not todo:
         return active > 0
-    if active >= target or len(work) > 800:
+    if active >= target or ready or len(work) > 800:
         return True
     ac = todo[0]
     log(f'AC {ac}: fetching ({active} OCR runs active, {len(todo)} ACs to go)')
