@@ -11,7 +11,9 @@
 # artifacts: on a public repo any signed-in user can download those. Files in
 # transit (a VM's part PDFs, shard rows and crops) use a second draft,
 # <tag>-work, so they never count against the 1,000-asset limit of the release
-# that keeps every AC's crops, rows and live files.
+# that keeps every AC's live files. A VM AC's joined crops go to a third,
+# <tag>-crops, kept for the full verification; once an AC is promoted its
+# rows/summary/verify (the same bytes as its live-* copies) are dropped.
 name: OCR constituency
 run-name: OCR AC ${{ inputs.ac }} (${{ inputs.kind || 'kan' }})
 
@@ -188,7 +190,7 @@ jobs:
               info = tarfile.TarInfo('meta.json'); info.size = len(meta)
               out.addfile(info, io.BytesIO(meta))
           EOF
-          python scripts/release.py upload "work/crops-$AC.tar"
+          ROLL_RELEASE="$ROLL_RELEASE-crops" python scripts/release.py upload "work/crops-$AC.tar"
           ROLL_RELEASE="$WORK" python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar pdfs-$AC.s$i.tar"; done)
           python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "pdfs-$AC.s$i.tar"; done)
 
@@ -213,6 +215,7 @@ jobs:
               cp "work/$OUT.summary.json" "live/live-rows-$AC.summary.json"
               cp "out/verify-$AC.json" "live/live-verify-$AC.json"
               python scripts/release.py replace live/live-rows-$AC.jsonl.gz live/live-rows-$AC.summary.json live/live-verify-$AC.json
+              python scripts/release.py delete "$OUT.jsonl.gz" "$OUT.summary.json" "verify-$AC.json"
               echo "AC $AC promoted to live (per-card checks paused)"
             else
               echo "AC $AC held by the whole-AC checks: its live version (if any) stays as it is"
