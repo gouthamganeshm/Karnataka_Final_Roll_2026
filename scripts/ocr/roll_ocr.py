@@ -367,7 +367,14 @@ def serial_marker(crop: Image.Image | None) -> str | None:
     wide = np.where(gaps > max(7, 0.55 * crop.height))[0]
     if not len(wide):
         return None
-    blob = g[:, cols[0]:cols[wide[0]] + 1]
+    # Only the mark's first symbol: a modified entry can read "#1" (AC 153
+    # part 13), which as a whole is no '#' and was taken for a deletion code,
+    # striking a live voter off. Symbols are split at any blank column.
+    end = wide[0]
+    split = np.where(gaps[:end] > 1)[0]
+    if len(split):
+        end = split[0]
+    blob = g[:, cols[0]:cols[end] + 1]
     ys, xs = np.where(blob > 64)
     blob = blob[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
     v = np.asarray(Image.fromarray(blob.astype(np.uint8)).resize((16, 20), Image.BILINEAR)).astype(np.float32).ravel()
