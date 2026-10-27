@@ -7,8 +7,11 @@
 #
 # The parts are split over `shards` parallel jobs (default 20; one 4-core runner
 # alone reads a 600-part AC in ~1.5 h); `merge` joins their rows into exactly what one job
-# writes. Shard rows travel through the draft release, never as Actions
-# artifacts: on a public repo any signed-in user can download those.
+# writes. Shard rows travel through a draft release, never as Actions
+# artifacts: on a public repo any signed-in user can download those. Files in
+# transit (a VM's part PDFs, shard rows and crops) use a second draft,
+# <tag>-work, so they never count against the 1,000-asset limit of the release
+# that keeps every AC's crops, rows and live files.
 name: OCR constituency
 run-name: OCR AC ${{ inputs.ac }} (${{ inputs.kind || 'kan' }})
 
@@ -68,6 +71,7 @@ jobs:
       KIND: ${{ inputs.kind || 'kan' }}
       SHARD: ${{ matrix.shard }}
       SHARDS: ${{ needs.plan.outputs.shards }}
+      WORK: ${{ inputs.tag }}-work
     steps:
       - uses: actions/checkout@v4
 
@@ -97,7 +101,13 @@ jobs:
           fi
 
       - name: Fetch crops
-        run: python scripts/release.py download "$TAR" work
+        run: |
+          if [ "$KIND" = pdf ]; then
+            # PDFs shipped before the work release existed are still on the main one.
+            ROLL_RELEASE="$WORK" python scripts/release.py download "$TAR" work || python scripts/release.py download "$TAR" work
+          else
+            python scripts/release.py download "$TAR" work
+          fi
 
       - name: OCR
         run: |
@@ -109,6 +119,7 @@ jobs:
 
       - name: Return shard rows
         run: |
+          export ROLL_RELEASE="$WORK"
           python scripts/release.py upload "work/$OUT.s$SHARD.jsonl.gz" "work/$OUT.s$SHARD.summary.json"
           if [ "$KIND" = pdf ]; then python scripts/release.py upload "work/crops-$AC.s$SHARD.tar"; fi
 
@@ -122,6 +133,7 @@ jobs:
       AC: ${{ inputs.ac }}
       KIND: ${{ inputs.kind || 'kan' }}
       SHARDS: ${{ needs.plan.outputs.shards }}
+      WORK: ${{ inputs.tag }}-work
     steps:
       - uses: actions/checkout@v4
 
@@ -144,7 +156,7 @@ jobs:
 
       - name: Fetch shard rows
         run: |
-          python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
+          ROLL_RELEASE="$WORK" python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
 
       - name: Merge
         run: python scripts/ci/ocr_ac.py merge "work/$OUT.jsonl.gz" work/$OUT.s*.jsonl.gz
@@ -154,14 +166,14 @@ jobs:
 
       - name: Remove shard rows
         run: |
-          python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
+          ROLL_RELEASE="$WORK" python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
 
       # Raw PDFs from a VM: join the shards' crops into the crops-<ac>.tar the
       # verifier reads (as home would have shipped it), then drop the PDFs.
       - name: Join crops
         if: inputs.kind == 'pdf'
         run: |
-          python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar"; done)
+          ROLL_RELEASE="$WORK" python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar"; done)
           python - <<'EOF'
           import io, json, os, tarfile
           ac, n = os.environ['AC'], int(os.environ['SHARDS'])
@@ -177,7 +189,8 @@ jobs:
               out.addfile(info, io.BytesIO(meta))
           EOF
           python scripts/release.py upload "work/crops-$AC.tar"
-          python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar pdfs-$AC.s$i.tar"; done)
+          ROLL_RELEASE="$WORK" python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar pdfs-$AC.s$i.tar"; done)
+          python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "pdfs-$AC.s$i.tar"; done)
 
       # The Kannada crops stay for the verifier, which re-reads every card.
       # With the repo variable VERIFY=paused the per-card checks are skipped:

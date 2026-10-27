@@ -32,6 +32,7 @@ import release  # noqa: E402
 import run  # noqa: E402
 
 SHARDS = 20
+WORK = f'{release.TAG}-work'    # ocr.yml reads the PDFs from here
 OUT = run.CACHE / 'vm-out'
 
 
@@ -88,7 +89,9 @@ def ship(ac: int, paths: list[Path]) -> None:
     for wait in (30, 120, 300, 0):
         try:
             t = time.time()
-            release.upload(*map(str, paths))
+            # Into the work release: in-flight PDFs must not count against the
+            # 1,000-asset limit of the release holding every AC's results.
+            release.gh('release', 'upload', WORK, *map(str, paths), '--clobber', '-R', release.repo())
             release.gh('workflow', 'run', 'ocr.yml', '-R', release.repo(), '-f', f'ac={ac}',
                        '-f', f'tag={release.TAG}', '-f', 'kind=pdf', '-f', f'shards={SHARDS}')
             print(f'  AC {ac}: uploaded {sum(p.stat().st_size for p in paths) / 1e6:.0f} MB in '
@@ -148,7 +151,7 @@ def main() -> int:
         mine = [g for i, g in enumerate(reversed(groups) if args.small else groups) if i % n == k - 1]
         order = [a for g in mine for a in g]
         print(f'VM {k}/{n}: districts {[district.get(g[0]) for g in mine]}', flush=True)
-    release.ensure()
+    release.ensure()      # the work release is made once from home: ROLL_RELEASE=<tag>-work release.py ensure
     lock = threading.Lock()
     pending = []
     with ThreadPoolExecutor(1) as shipper:
