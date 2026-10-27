@@ -134,4 +134,19 @@ jobs:
           python scripts/release.py upload out/verify-$AC.json out/*.png
           python scripts/release.py delete "crops-$AC.tar"
           for i in $(seq 0 $((SHARDS - 1))); do python scripts/release.py delete "check-$AC.s$i.json"; done
+
+      # The site is built only from live-* files: what passed verification. A
+      # hold, or rows replaced by a re-run, leave the AC's last good version live.
+      - name: Promote to live
+        run: |
+          if python -c "import json,sys; sys.exit(json.load(open('out/verify-$AC.json'))['verdict'] != 'pass')"; then
+            mkdir -p live
+            cp "work/rows-$AC.jsonl.gz" "live/live-rows-$AC.jsonl.gz"
+            cp "work/rows-$AC.summary.json" "live/live-rows-$AC.summary.json"
+            cp "out/verify-$AC.json" "live/live-verify-$AC.json"
+            python scripts/release.py replace live/live-rows-$AC.jsonl.gz live/live-rows-$AC.summary.json live/live-verify-$AC.json
+            echo "AC $AC promoted to live"
+          else
+            echo "AC $AC held: its live version (if any) stays as it is"
+          fi
           gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"

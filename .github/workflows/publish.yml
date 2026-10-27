@@ -13,6 +13,11 @@ on:
       tag:
         description: Draft release carrying the rows (blank = roll-source.json)
         required: false
+      allow_drop:
+        description: Deploy even if a live constituency would drop off the site
+        type: boolean
+        required: false
+        default: false
   push:
     branches: [main]
     paths: ['site/**', 'scripts/ci/build.mjs']
@@ -41,19 +46,37 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Collect OCR rows
+      # Only live-* files: rows and verdicts that passed verification (promoted
+      # by verify.yml). A download failure fails the build: never deploy a
+      # partial site.
+      - name: Collect verified rows
         env:
           ROLL_RELEASE: ${{ inputs.tag }}
         run: |
           [ -n "$ROLL_RELEASE" ] || unset ROLL_RELEASE
-          python scripts/release.py download-all rows rows- verify- eng- manifest.json > /dev/null || true
-          ls rows 2>/dev/null | grep -c 'jsonl.gz' || echo 0
+          python scripts/release.py download-all rows live- eng- manifest.json > /dev/null
+          for f in rows/live-*; do mv "$f" "rows/${f#rows/live-}"; done
+          ls rows | grep -c '^rows-.*jsonl.gz$'
 
       - name: Build buckets
         run: |
-          mkdir -p rows
           node --max-old-space-size=8192 scripts/ci/build.mjs rows _site
           du -sh _site
+
+      # Every AC verified on the live site must still be verified in this build.
+      - name: Never drop a live constituency
+        if: ${{ !inputs.allow_drop }}
+        run: |
+          curl -fsS "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/data/manifest.json?x=$RANDOM" -o live.json
+          python - <<'EOF'
+          import json, sys
+          live = {a['ac'] for a in json.load(open('live.json', encoding='utf8'))['acs'] if a['status'] == 'verified'}
+          new = {a['ac'] for a in json.load(open('_site/data/manifest.json', encoding='utf8'))['acs'] if a['status'] == 'verified'}
+          gone = sorted(live - new)
+          print(f'live {len(live)} verified ACs, this build {len(new)}')
+          if gone:
+              sys.exit(f'refusing to deploy: ACs {gone} are live but not verified in this build (dispatch with allow_drop to override)')
+          EOF
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

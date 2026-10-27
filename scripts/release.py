@@ -103,6 +103,25 @@ def upload(*paths: str) -> None:
     gh('release', 'upload', TAG, *paths, '--clobber', '-R', repo())
 
 
+def replace(*paths: str) -> None:
+    """Upload each file, swapping out any asset of the same name with no gap:
+    upload as <name>.next, delete the old asset, rename. `upload --clobber`
+    deletes first, so a reader in between (a publish build) saw no file."""
+    import shutil
+    import tempfile
+    ensure()
+    for path in paths:
+        name = Path(path).name
+        with tempfile.TemporaryDirectory() as tmp:
+            nxt = Path(tmp) / f'{name}.next'
+            shutil.copyfile(path, nxt)
+            gh('release', 'upload', TAG, str(nxt), '--clobber', '-R', repo())
+        a = assets()
+        if name in a:
+            gh('api', '-X', 'DELETE', f'repos/{repo()}/releases/assets/{a[name]["id"]}')
+        gh('api', '-X', 'PATCH', f'repos/{repo()}/releases/assets/{a[f"{name}.next"]["id"]}', '-f', f'name={name}')
+
+
 def download(name: str, dest: str = '.', asset: dict | None = None) -> Path:
     a = asset or assets().get(name)
     if not a:
@@ -141,6 +160,8 @@ if __name__ == '__main__':
             print(f'{a["size"]:>12,}  {n}')
     elif cmd == 'upload':
         upload(*rest)
+    elif cmd == 'replace':
+        replace(*rest)
     elif cmd == 'download':
         print(download(rest[0], rest[1] if len(rest) > 1 else '.'))
     elif cmd == 'download-all':
