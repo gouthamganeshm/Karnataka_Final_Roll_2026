@@ -18,7 +18,7 @@ Every published record gets, on top of the readers that produced it:
       less the cards marked deleted; and those deletions equal the printed
       count — if they do not, or there are more live cards than the
       total, a deleted elector may be unmarked, so every record of the
-      part is disputed
+      part is disputed (unless the total is implausibly small: a misread)
   V4  EPICs the draft roll does not corroborate must have their letters
       confirmed by the prototype reader                         -> else disputed
 
@@ -113,11 +113,18 @@ def v3_totals(rows_by_part: dict[int, list[dict]], summary: dict, part_flags: di
         if not t or t.get('conflict'):
             part_flags[part].append('v3:unreadable' if not t else 'v3:cover-summary-conflict')
             continue
-        checked += 1
-        printed += t['total']
         rows = rows_by_part.get(part, [])
         deleted = sum(bool(r.get('deleted')) for r in rows)
         cards = len(rows) - deleted
+        if cards - t['total'] > 0.2 * t['total']:
+            # Far more live cards than the total: the summary's net row did not
+            # read and another row (additions, ~30) was taken for it — seen on
+            # 8 of AC 162's 191 parts. Unmarked deletions leave a surplus of a
+            # few cards, never this; the total is treated as unreadable.
+            part_flags[part].append(f"v3:implausible-total:{cards}/{t['total']}")
+            continue
+        checked += 1
+        printed += t['total']
         deletions_ok = cards <= t['total'] and t.get('deleted', deleted) == deleted
         if (cards == t['total'] and deletions_ok
                 and ('end' not in t or max((r['serial'] for r in rows), default=0) == t['end'])):
