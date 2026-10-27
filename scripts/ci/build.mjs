@@ -54,6 +54,10 @@ if (!rowsDir || !outDir) {
 
 const EPIC_RE = /^[A-Z]{3}[0-9]{7}$/;
 const REC = 10; // bucket byte + 9-byte record, while grouping
+// Bumped whenever the record layout changes meaning (2: part's top bit = deleted).
+// site/app.js carries the same number and reloads itself if the data is newer.
+const FORMAT = 2;
+const BUILT = new Date().toISOString();
 const V5_MIN_AGREE = 0.997;
 
 const source = JSON.parse(readFileSync(join(ROOT, 'roll-source.json'), 'utf8'));
@@ -151,6 +155,11 @@ for (const f of rowFiles) {
 // ------------------------------------------------------------------ write
 rmSync(outDir, { recursive: true, force: true });
 cpSync(join(ROOT, 'site'), outDir, { recursive: true });
+// Pages lets browsers cache scripts for 10 minutes; a stale app.js reading new
+// data showed a deleted card as a live one. Every build gets its own URLs.
+const index = join(outDir, 'index.html');
+writeFileSync(index, readFileSync(index, 'utf8').replace(/(src|href)="(app\.js|scenes\.js|styles\.css)"/g,
+  (_, attr, file) => `${attr}="${file}?v=${encodeURIComponent(BUILT)}"`));
 const dataDir = join(outDir, 'data');
 mkdirSync(join(dataDir, 'roll'), { recursive: true });
 let records = 0, files = 0, dupes = 0;
@@ -200,8 +209,9 @@ writeFileSync(join(dataDir, 'manifest.json'), JSON.stringify({
   label: shipped?.label ?? source.label,
   labelKn: shipped?.labelKn ?? source.labelKn,
   url: shipped?.url ?? source.url,
-  builtAt: new Date().toISOString(),
+  builtAt: BUILT,
   record: 9,
+  format: FORMAT,
   electors: acs.reduce((n, a) => n + a.electors, 0),
   deleted: acs.reduce((n, a) => n + a.deleted, 0),
   parts, partsRead,

@@ -6,6 +6,7 @@
  */
 (() => {
   const REC = 9;
+  const FORMAT = 2; // record layout this script reads; see scripts/ci/build.mjs
   const EPIC_RE = /^[A-Z]{3}[0-9]{7}$/;
   const $ = (id) => document.getElementById(id);
   let manifest = null;
@@ -47,6 +48,12 @@
     const r = await fetch('data/manifest.json', { cache: 'no-cache' });
     if (!r.ok) throw new Error('manifest ' + r.status);
     manifest = await r.json();
+    if ((manifest.format ?? 1) > FORMAT) {
+      // Newer data than this (cached) script understands: fetch the page again, once.
+      let tried = null;
+      try { tried = sessionStorage.getItem('reloaded'); sessionStorage.setItem('reloaded', manifest.builtAt); } catch { /* ignore */ }
+      if (tried !== manifest.builtAt) { location.reload(); return new Promise(() => {}); }
+    }
     manifest.byAc = new Map(manifest.acs.map((a) => [a.ac, a]));
     renderMeta();
   }
