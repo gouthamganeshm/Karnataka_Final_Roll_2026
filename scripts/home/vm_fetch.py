@@ -103,6 +103,18 @@ def ship(ac: int, paths: list[Path]) -> None:
         p.unlink()
 
 
+def in_flight(ac: int) -> bool:
+    """An OCR run for this AC is already queued or running (an earlier ship, or another machine's):
+    uploading again would replace the tars it is about to read."""
+    try:
+        out = release.gh('run', 'list', '-R', release.repo(), '--workflow', 'ocr.yml', '--json',
+                         'displayTitle,status', '-L', '100')
+        return any(r['status'] in ('queued', 'in_progress') and r['displayTitle'].startswith(f'OCR AC {ac} (')
+                   for r in json.loads(out))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--ac', help='comma-separated ACs (default: every AC not shipped, in queue order)')
@@ -137,6 +149,9 @@ def main() -> int:
         for ac in order:
             shipped = json.loads(run.SHIPPED.read_text('utf8')) if run.SHIPPED.exists() else {}
             if str(ac) in shipped and not args.ac:
+                continue
+            if in_flight(ac):
+                print(f'  AC {ac}: an OCR run is already queued or running; skipped', flush=True)
                 continue
             paths, failed = fetch_ac(ac, parts_by_ac[ac], args.threads)
             for f in pending:
