@@ -1,8 +1,8 @@
 {
   "_comment": "The one place the roll's source is described. When the final roll is published, change rollType, label and url here (check one real part in a browser first), then run scripts/home/run.py. {ac} and {part} are filled in per file.",
-  "rollType": "S10-2026-DR",
-  "label": "SIR Draft Roll 2026",
-  "labelKn": "ಎಸ್‌ಐಆರ್ ಕರಡು ಮತದಾರರ ಪಟ್ಟಿ 2026",
-  "url": "https://voters.eci.gov.in/eroll/2026/s10/sir-draftroll/{ac}/2026-EROLLGEN-S10-{ac}-SIR-DraftRoll-Revision1-KAN-{part}-WI.pdf",
-  "release": "crops-S10-2026-DR"
+  "rollType": "S10-2026-FR",
+  "label": "SIR Final Roll 2026",
+  "labelKn": "ಎಸ್‌ಐಆರ್ ಅಂತಿಮ ಮತದಾರರ ಪಟ್ಟಿ 2026",
+  "url": "https://voters.eci.gov.in/eroll/2026/s10/sir-finalroll/{ac}/2026-EROLLGEN-S10-{ac}-SIR-FinalRoll-Revision1-KAN-{part}-WI.pdf",
+  "release": "crops-S10-2026-FR"
 }
