@@ -107,6 +107,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--ac', help='comma-separated ACs (default: every AC not shipped, in queue order)')
     ap.add_argument('--threads', type=int, default=16)
+    ap.add_argument('--share', metavar='K/N', help='this VM is number K of N and takes every N-th district in queue '
+                    'order (largest first)')
     ap.add_argument('--small', metavar='K/N', help='take the smallest districts first (home takes the largest); '
                     'with K/N this VM is number K of N and takes every N-th district of that order')
     args = ap.parse_args()
@@ -116,8 +118,8 @@ def main() -> int:
     if args.ac:
         want = {int(a) for a in args.ac.split(',')}
         order = [a for a in order if a in want]
-    if args.small:
-        k, n = map(int, args.small.split('/'))
+    if args.small or args.share:
+        k, n = map(int, (args.small or args.share).split('/'))
         district = {c['acNumber']: c['district'] for c in run.SEED['constituencies']}
         groups = []                              # districts in run_order, each a list of ACs
         for a in order:
@@ -125,7 +127,7 @@ def main() -> int:
                 groups[-1].append(a)
             else:
                 groups.append([a])
-        mine = [g for i, g in enumerate(reversed(groups)) if i % n == k - 1]
+        mine = [g for i, g in enumerate(reversed(groups) if args.small else groups) if i % n == k - 1]
         order = [a for g in mine for a in g]
         print(f'VM {k}/{n}: districts {[district.get(g[0]) for g in mine]}', flush=True)
     release.ensure()
