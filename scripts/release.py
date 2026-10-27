@@ -120,7 +120,10 @@ def download(name: str, dest: str = '.', asset: dict | None = None) -> Path:
 
 
 def download_all(dest: str, prefixes: tuple[str, ...]) -> list[Path]:
-    return [download(n, dest, a) for n, a in sorted(assets().items()) if n.startswith(prefixes)]
+    # An asset still being uploaded (state "starter", e.g. rows being replaced)
+    # is skipped: the publish build read one half-written and failed on it.
+    return [download(n, dest, a) for n, a in sorted(assets().items())
+            if n.startswith(prefixes) and a.get('state', 'uploaded') == 'uploaded']
 
 
 def delete(name: str) -> None:
