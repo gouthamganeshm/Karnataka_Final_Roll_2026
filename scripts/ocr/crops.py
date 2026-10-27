@@ -438,10 +438,8 @@ def ocr_page(epic_crops: list, serial_crops: list, style: str = 'kan', text: lis
     if not any(c is not None for c in epic_crops):
         return [], [], [], [], []
 
-    epic_sheet = R.contact_sheet(epic_crops)
-    serial_sheet = R.contact_sheet(serial_crops)
-    epic_lines = R.ocr_lines(epic_sheet) if epic_sheet else []
-    serial_lines = R.ocr_lines(serial_sheet) if serial_sheet else []
+    epic_lines = R.sheet_lines(epic_crops)
+    serial_lines = R.sheet_lines(serial_crops)
 
     n = len(epic_crops)
     epic_lines += [''] * (n - len(epic_lines))

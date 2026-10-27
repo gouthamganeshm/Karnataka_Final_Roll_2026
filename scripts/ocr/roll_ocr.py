@@ -282,7 +282,43 @@ def contact_sheet(crops: list[Image.Image | None], pad: int = 20) -> Image.Image
         if c is not None:
             sheet.paste(c, (pad, pad + i * (h + pad)))
     scale = max(2, min(6, round(TARGET_GLYPH_PX / max(1, h))))
-    return sheet.resize((sheet.width * scale, sheet.height * scale), Image.LANCZOS)
+    out = sheet.resize((sheet.width * scale, sheet.height * scale), Image.LANCZOS)
+    out.info['slots'] = (len(crops), pad * scale, (h + pad) * scale)   # for sheet_lines
+    return out
+
+
+def sheet_lines(crops: list[Image.Image | None], psm: int = 6) -> list[str]:
+    """One reading per crop of a contact sheet, placed by where Tesseract saw it.
+
+    Taking Tesseract's lines in order and counting them off against the crops
+    went wrong whenever a crop came out as two lines, or a blank slot as none:
+    every later card on the page got its neighbour's reading (AC 153 part 378:
+    32 lines for 30 cards, so a voter's EPIC was read for the card two below
+    and theirs was withheld; ~40% of withheld cards had such a reading). Each
+    word now goes to the slot its centre falls in.
+    """
+    sheet = contact_sheet(crops)
+    if sheet is None:
+        return [''] * len(crops)
+    n, top, step = sheet.info['slots']
+    global TESSERACT
+    if TESSERACT is None:
+        TESSERACT = _tesseract_cmd()
+    buf = io.BytesIO()
+    sheet.save(buf, format='PNG')
+    proc = subprocess.run([TESSERACT, 'stdin', 'stdout', '--psm', str(psm), 'tsv'],
+                          input=buf.getvalue(), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                          check=True, env=TESS_ENV)
+    words = [[] for _ in range(n)]
+    for line in proc.stdout.decode('utf8', 'replace').split('\n')[1:]:
+        f = line.split('\t')
+        if len(f) < 12 or f[0] != '5' or not f[11].strip():
+            continue
+        left, y, hgt = int(f[6]), int(f[7]), int(f[9])
+        slot = int((y + hgt / 2 - top / 2) // step)
+        if 0 <= slot < n:
+            words[slot].append((left, f[11].strip()))
+    return [' '.join(t for _, t in sorted(ws)) for ws in words]
 
 
 # ------------------------------------------------------------------ grammar
@@ -424,10 +460,8 @@ def read_page_raw(img: Image.Image) -> tuple[list[str], list[str], list]:
     if not any(c is not None for c in epic_crops):
         return [], [], []
 
-    epic_sheet = contact_sheet(epic_crops)
-    serial_sheet = contact_sheet(serial_crops)
-    epic_lines = ocr_lines(epic_sheet) if epic_sheet else []
-    serial_lines = ocr_lines(serial_sheet) if serial_sheet else []
+    epic_lines = sheet_lines(epic_crops)
+    serial_lines = sheet_lines(serial_crops)
 
     n = len(epic_crops)
     epic_lines += [''] * (n - len(epic_lines))
