@@ -194,6 +194,22 @@ def cut_ac(ac: int, parts: list[int], args, pool) -> tuple[Path, dict]:
                 size += len(bundle)
             print(f'\r  AC {ac}: {i}/{len(parts)} parts cut, {size/1e6:.0f} MB, '
                   f'{len(failed)} unreadable', end='', flush=True)
+        # A part that failed (mostly a timeout on a saturated line) would ship
+        # as unread and its booth stay off the site, so try again after a
+        # pause, a few times, before giving up on it.
+        for wait in (30, 120, 300):
+            if not failed:
+                break
+            print(f'\n  AC {ac}: retrying {len(failed)} unreadable parts in {wait}s', flush=True)
+            time.sleep(wait)
+            retry, failed = failed, []
+            for part, bundle, secs in pool.map(cut, [(ac, p, '', 'kan') for p in retry]):
+                if bundle is None:
+                    failed.append(part)
+                else:
+                    _add(tar, f'{part}.zip', bundle)
+                    size += len(bundle)
+            print(f'  AC {ac}: {len(retry) - len(failed)} recovered, {len(failed)} still unreadable {failed}', flush=True)
         _add(tar, 'meta.json', json.dumps({'ac': ac, 'parts': parts, 'failed': failed, 'lang': 'kan'}).encode())
     took = time.time() - t0
     print(f'  ({took:.0f}s, {len(parts)/max(took,1)*60:.1f} parts/min)')
@@ -303,7 +319,10 @@ def main() -> int:
     def ship(ac, parts, tar_path, rec):
         res = send_ac(ac, parts, tar_path, rec, args)
         with lock:
-            shipped[str(ac)] = res
+            # Another run.py (a re-fetch beside the queue) writes this file too:
+            # merge with what is on disk, or each erases the other's ACs.
+            on_disk = json.loads(SHIPPED.read_text('utf8')) if SHIPPED.exists() else {}
+            shipped.update({**on_disk, str(ac): res})
             SHIPPED.write_text(json.dumps(shipped, indent=1), 'utf8')
 
     lock = threading.Lock()

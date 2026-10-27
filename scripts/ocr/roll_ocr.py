@@ -123,6 +123,13 @@ def _mids(idx: np.ndarray, gap: int = 6) -> list[int]:
     return [(s + e) // 2 for s, e in _runs(idx, gap)]
 
 
+def _longest_run(row: np.ndarray) -> int:
+    """Longest unbroken stretch of ink in one pixel row."""
+    edges = np.diff(np.concatenate(([0], row.astype(np.int8), [0])))
+    starts, ends = np.where(edges == 1)[0], np.where(edges == -1)[0]
+    return int((ends - starts).max()) if len(starts) else 0
+
+
 def _ink_box(img: Image.Image | None) -> Image.Image | None:
     """Trim to the ink. Keeps rules and padding away from Tesseract."""
     if img is None or img.width < 3 or img.height < 3:
@@ -162,8 +169,14 @@ def find_grid(dark: np.ndarray) -> Grid | None:
     # A page holding nothing but that one card (the final roll's additions
     # list can end that way) has no full rule at all, so the search then
     # starts at the top of the page.
+    # Only a solid run of ink counts as a rule: on such a page the bold header
+    # line above the card is dark across a quarter of the width too, was taken
+    # for the card's top, and the card was cut from the wrong place and lost
+    # (found 2026-10-27: one card per affected part, by the coverage audit).
     start = rows[-1] + 2 * gap if rows else 0
-    tail = [start + y for y in _mids(np.where(dark[start:].sum(axis=1) > 0.25 * w)[0], gap)]
+    ruled = [y for y in np.where(dark[start:].sum(axis=1) > 0.25 * w)[0]
+             if _longest_run(dark[start + y]) > 0.25 * w]
+    tail = [start + y for y in _mids(np.array(ruled, dtype=int), gap)]
     if tail:
         ends = [y for y in tail[1:] if y - tail[0] > min_band]
         if ends:

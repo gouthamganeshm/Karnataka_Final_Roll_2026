@@ -60,7 +60,9 @@ def main() -> int:
         log(f'waiting for AC {args.wait_for} to ship')
         while args.wait_for not in shipped() and pythons(r'run\.py.*go'):
             time.sleep(20)
-    for pid in pythons(r'run\.py.*go'):
+    # Only another queue's downloader; a targeted re-fetch (run.py go --ac ...)
+    # beside the queue is left running.
+    for pid in pythons(r'run\.py.*go.*--tranche'):
         subprocess.run(['taskkill', '/PID', str(pid), '/T', '/F'], capture_output=True, **QUIET)
         log(f'stopped downloader {pid}')
     time.sleep(5)
@@ -70,8 +72,7 @@ def main() -> int:
             try:
                 f.unlink()
             except OSError:
-                log(f'{f.name} is in use; is another downloader running?')
-                return 1
+                log(f'{f.name} is in use (a re-fetch beside the queue); left alone')
         attempt += 1
         log(f'run {attempt}: {len(set(shipped()) & all_acs)}/{len(all_acs)} ACs shipped')
         with open(CACHE / 'queue-run.log', 'a', encoding='utf8') as out:
