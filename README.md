@@ -20,7 +20,7 @@ rebuilt so a statewide import takes hours, not a week.
 
 ```
 home PC                            GitHub (draft release, private)   GitHub Actions                          GitHub Pages
-fetch part PDF ─► cut crops ─►     crops-<ac>.tar ─────────────────► ocr.yml    12 shard jobs + merge
+fetch part PDF ─► cut crops ─►     crops-<ac>.tar ─────────────────► ocr.yml    16 shard jobs + merge
 (scripts/home/roll_queue.py                                          verify.yml 12 shard jobs + verdict
  → run.py)                                                           publish.yml ─► hashed buckets ────────► site
 ```
@@ -32,7 +32,7 @@ fetch part PDF ─► cut crops ─►     crops-<ac>.tar ───────�
   downloads. The download (~20 parts/min, an 8 MB PDF each) is the bottleneck:
   it fills a ~30 Mbps home line, so more workers do not help. About two
   days for the state.
-* **Actions OCRs, split twelve ways.** `ocr.yml` splits an AC's parts over 12
+* **Actions OCRs, split sixteen ways.** `ocr.yml` splits an AC's parts over 16
   parallel jobs (`ocr_ac.py --shard i/N`); a merge job joins them into exactly
   what one job writes (`ocr_ac.py merge`). A 600-part AC takes under 10 min
   instead of ~1.5 h.
@@ -104,8 +104,12 @@ AC, which dispatches `verify.yml`, which dispatches `publish.yml`.
 `cache/shipped-<release>.json` and are skipped on re-run. Re-run one AC's OCR
 with `gh workflow run ocr.yml -f ac=N -f tag=<release>` (needs its crop tar on
 the release), or re-ship it with `run.py go --ac N --force`. `shards` is an
-input of both `ocr.yml` and `verify.yml` (default 12, at most 20: GitHub's
-free plan runs 20 jobs at once). If ECI throttles, lower
+input of both `ocr.yml` (default 16) and `verify.yml` (default 12), at most 20
+(GitHub's free plan runs 20 jobs at once). Per-card verification is paused
+while the state is imported (`gh variable set VERIFY --body paused`; anything
+else turns it back on): each AC then goes live after the whole-AC checks and
+the official-count check, and `verify.yml` can be run over every AC later,
+its crops kept on the release. If ECI throttles, lower
 `--workers` (never above 8).
 
 ## Privacy

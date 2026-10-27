@@ -61,9 +61,13 @@
   const buckets = new Map();
   async function bucket(ab, cd) {
     const key = ab + cd;
+    const get = () => fetch(`data/roll/${ab}/${cd}.bin?v=${encodeURIComponent(manifest.builtAt)}`)
+      .then((r) => (r.status === 404 ? new ArrayBuffer(0) : r.ok ? r.arrayBuffer() : Promise.reject(new Error('bucket ' + r.status))));
     if (!buckets.has(key)) {
-      buckets.set(key, fetch(`data/roll/${ab}/${cd}.bin?v=${encodeURIComponent(manifest.builtAt)}`)
-        .then((r) => (r.status === 404 ? new ArrayBuffer(0) : r.ok ? r.arrayBuffer() : Promise.reject(new Error('bucket ' + r.status)))));
+      // One retry after a pause; a failure is not remembered, so the next
+      // search tries again instead of failing until the page is reloaded.
+      buckets.set(key, get().catch(() => new Promise((ok) => setTimeout(ok, 1500)).then(get))
+        .catch((err) => { buckets.delete(key); throw err; }));
     }
     return new DataView(await buckets.get(key));
   }
