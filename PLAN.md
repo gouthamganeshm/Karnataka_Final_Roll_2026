@@ -213,7 +213,7 @@ crop tars of up to ~1 GB can wait for upload), no other heavy downloads.
 | 9 | Final: coverage ≥ 98%, all ACs verified, the "not found" wording becomes final | Announce the state | — |
 
 **If something breaks:** `run.py go` resumes on re-run, because finished ACs
-are in `cache/shipped.json`. Re-running one AC's OCR:
+are in `cache/shipped-<release>.json`. Re-running one AC's OCR:
 `gh workflow run ocr.yml -f ac=N -f tag=<release>` (needs its crop tar on the
 release; otherwise `run.py go --ac N --force`). A bad publish rolls back by
 re-running the previous `publish.yml` run. ECI throttling or errors: lower

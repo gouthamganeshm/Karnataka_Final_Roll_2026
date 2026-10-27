@@ -77,7 +77,7 @@ Kannada roll is what gets published, and the English part per AC (only a
 cross-check) is skipped and fetched later with `run.py eng-audit`.
 
 **If something breaks:** `run.py go` skips ACs already in
-`cache/shipped.json`. Re-run one AC's OCR with
+`cache/shipped-<release>.json`. Re-run one AC's OCR with
 `gh workflow run ocr.yml -f ac=N -f tag=<release>`, or re-ship it with
 `run.py go --ac N --force`. If ECI throttles, lower `--workers` (default 4,
 never above 8).

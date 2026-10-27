@@ -25,7 +25,7 @@ may come first) this is skipped and can be run later with `eng-audit`.
     python scripts/home/run.py order                      # print the run order and stop
     python scripts/home/run.py status
 
-Resumable: shipped ACs are recorded in cache/shipped.json and skipped.
+Resumable: shipped ACs are recorded in cache/shipped-<release>.json and skipped.
 """
 from __future__ import annotations
 
@@ -51,7 +51,8 @@ SOURCE = json.loads((ROOT / 'roll-source.json').read_text('utf8'))
 SEED = json.loads((ROOT / 'seed' / 'ac-metadata.json').read_text('utf8'))
 CACHE = ROOT / 'cache'
 MANIFEST = CACHE / 'manifest.json'
-SHIPPED = CACHE / 'shipped.json'
+# One file per release, so ACs shipped for an earlier roll are not skipped.
+SHIPPED = CACHE / f"shipped-{SOURCE['release']}.json"
 UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')
 
