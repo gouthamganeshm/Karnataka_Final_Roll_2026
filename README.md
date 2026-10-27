@@ -2,15 +2,16 @@
 
 A voter types their EPIC number and gets their constituency, part and serial
 number on the Karnataka electoral roll, with a link to the official ECI PDF of
-their polling part. Unofficial; it reformats public data.
+their polling part. If the final roll strikes the EPIC off, the site says so
+and where. Unofficial; it reformats public data.
 
 **Site:** https://gouthamganeshm.github.io/Karnataka_Final_Roll_2026/
 
-**Status:** ready, waiting for the final roll to be published. The pipeline
-has run end to end on Actions with sample parts from the draft roll: 11 parts
-from 9 ACs, 7,457 of 7,466 cards published, none disputed, and the printed
-totals matched on every part. The first full-size constituency runs as the
-release-day pilot. Details are in [PLAN.md](PLAN.md).
+**Status:** the SIR final roll was published on 2026-10-27 (ECI roll
+`S10-2026-SIR-FIR-1`: 224 ACs, 60,923 parts) and the statewide run is under way,
+Bengaluru first. The site's coverage table shows which constituencies are
+live; each goes up about an hour after its download finishes. Details are in
+[PLAN.md](PLAN.md).
 
 Successor to [Karnataka_Draft_Roll_2026](https://github.com/gouthamganeshm/Karnataka_Draft_Roll_2026),
 rebuilt so a statewide import takes hours, not a week.
@@ -18,75 +19,107 @@ rebuilt so a statewide import takes hours, not a week.
 ## How it works
 
 ```
-home PC                          GitHub (draft release, private)    GitHub Actions                       GitHub Pages
-fetch part PDF ─► cut crops ─►   crops-<ac>.tar  ─────────────────► ocr.yml    (1 job per AC)
-(scripts/home/run.py)                                                verify.yml (checks every record)
-                                                                     publish.yml ─► hashed buckets ─────► site
+home PC                            GitHub (draft release, private)   GitHub Actions                          GitHub Pages
+fetch part PDF ─► cut crops ─►     crops-<ac>.tar ─────────────────► ocr.yml    6 shard jobs + merge
+(scripts/home/roll_queue.py                                          verify.yml 6 shard jobs + verdict
+ → run.py)                                                           publish.yml ─► hashed buckets ────────► site
 ```
 
-* **Home fetches.** The ECI CDN refuses GitHub's runners (`406` on every runner
-  type, re-checked 2026-10-10), so PDFs are downloaded at home. Home only does
-  the cheap half: cutting each card's serial box and EPIC (~1.5 s of CPU per
-  part). PDFs are never written to disk. Each AC uploads while the next one
-  downloads.
-* **Actions OCRs.** Tesseract (the expensive part, ~38 s per part per core)
-  runs one job per constituency, in parallel, as soon as that AC's crops
-  arrive.
+* **Home fetches.** The ECI CDN refuses GitHub's runners (`406`), so PDFs are
+  downloaded at home, Kannada roll only. Home does the cheap half: cutting
+  each card's serial box and EPIC. PDFs are never written to disk, and each
+  crop tar is deleted once uploaded. Each AC uploads while the next one
+  downloads. The download (~20 parts/min) is the bottleneck: about two days
+  for the state.
+* **Actions OCRs, split six ways.** `ocr.yml` splits an AC's parts over 6
+  parallel jobs (`ocr_ac.py --shard i/N`); a merge job joins them into exactly
+  what one job writes (`ocr_ac.py merge`). A 600-part AC takes ~15 min instead
+  of ~1.5 h.
 * **Four readers per EPIC.** Tesseract on a contact sheet, a glyph-template
   reader for the fixed EPIC font, Tesseract on the crop alone, and a
   prototype reader with different features. A character is published only
   when independent readers agree; anything unsettled is withheld, never
   guessed. Details and measurements in [PLAN.md](PLAN.md).
-* **A verifier before publishing.** `verify.yml` re-reads every record and
-  checks serial order, duplicates and the part's printed elector total. It
-  also looks each EPIC up in the draft roll (keys exported once by
-  `draft-keys.yml`, hash fragments only) and compares one English-roll part
-  per AC. A constituency goes public only when it passes; otherwise it shows
-  as "under review".
-* **Cut stage matches the draft pipeline.** `scripts/ocr/test_crops.py`
-  checks the split reproduces `roll_ocr.read_part_bytes` row for row. Crops
-  are lossless grayscale; bilevel crops were tried and changed ~60% of
-  readings.
-* **Private transfer.** Crops and rows travel through a *draft* release, which
-  only repo collaborators and the repo's workflows can see. Only hashed buckets
-  are published.
-* **Site fills in as it goes.** Each finished AC republishes the site. Until
+* **A verifier before publishing, also split six ways.** The per-card checks
+  run on every core in 6 parallel jobs: V1 re-reads every record, V4 confirms
+  the letters of EPICs the draft roll does not have (keys from
+  `draft-keys.yml`, hash fragments only). A verdict job then checks the whole
+  AC (V2: serial order, duplicates, missing cards; V3: the part's printed
+  totals and deletions), refuses unless the shards covered every part, and
+  holds the AC if more than 3% of records are disputed or 0.5% of cards are
+  missing. A held AC shows as "under review", never as "not found".
+* **Private transfer.** Crops, rows and shard results travel through a
+  *draft* release, which only repo collaborators and the repo's workflows can
+  see; never through Actions artifacts, which anyone signed in can download
+  on a public repo. Only hashed buckets are published.
+* **Site fills in as it goes.** Each verified AC republishes the site. Until
   ≥99% of booths are loaded a miss reads "can't say yet", never "not found".
 
-## Release day
+## What the final roll looks like (and how it is read)
 
-The full runbook is in [PLAN.md](PLAN.md) §7. In short:
+The final roll is the draft's layout (image-only pages, 10×3 cards) plus
+supplement sections, found on release day and handled in `scripts/ocr/`:
 
-1. Open three final-roll part PDFs in a browser (one Bengaluru, one large
-   rural, one small) and check the URL scheme and card layout. Run
-   `scripts/ocr/test_crops.py` and `scripts/ocr/evaluate.py` on them.
-2. Put the URL in `roll-source.json` as `url` (with `{ac}` and `{part}`), and
-   update `rollType`, `label`, `labelKn` and `release`. Commit and push.
-3. `python scripts/home/run.py discover` — part counts per AC.
-4. `python scripts/home/run.py go --ac 162` — the pilot. Check it, then
-   `python scripts/home/run.py go --tranche blr` (the 28 Bengaluru ACs) and
-   `go --tranche rest`. Resumable; re-run after any interruption. `status`
-   shows progress.
-5. Watch Actions. The site updates after every verified constituency.
+* **Deleted electors stay in the PDF.** The card keeps its serial, gets a
+  diagonal DELETED stamp and a reason code left of the serial (E dead, S
+  shifted, R repeated, M missing, Q disqualified). `#` in the same place means
+  *modified*, still on the roll. `roll_ocr.serial_marker` tells `#` (by a
+  template, `hash-mark.npy`) from any other mark, which counts as a deletion.
+* **Deleted cards are published, flagged** (top bit of the record's part). The
+  site says "Marked DELETED in the final roll" with AC, part, serial and the
+  PDF; a voter who moved shows the live entry plus a note naming the deleted
+  one. Deleted cards are never counted as electors.
+* **Additions list.** Added electors come after the main list, continuing the
+  serial run, with a second box after the serial ("868 | 7"); the serial is
+  read from the first box only. Their serial box is narrower, so a deletion
+  code there sits ~10 px from the number instead of 130+.
+* **Printed totals are net of deletions.** `totals.py` reads the deletion
+  count from the cover (Ending − Starting + 1 − Total) and the summary page
+  (rows I + II − III = net). V3 requires live cards = net total and detected =
+  printed deletions; if not, every record of the part is disputed, so an
+  unmarked deletion can never go out as a live elector.
+* **A page with one lone card** (the end of a section) is cut too.
 
-On the current home line (~22 Mbps down) Bengaluru takes ~8 h and the whole
-state ~55 h; the download is the bottleneck.
+## Running it
 
-If the Kannada roll is out before the English one, nothing changes: the
-Kannada roll is what gets published, and the English part per AC (only a
-cross-check) is skipped and fetched later with `run.py eng-audit`.
+The home stage runs unattended:
 
-**If something breaks:** `run.py go` skips ACs already in
-`cache/shipped-<release>.json`. Re-run one AC's OCR with
-`gh workflow run ocr.yml -f ac=N -f tag=<release>`, or re-ship it with
-`run.py go --ac N --force`. If ECI throttles, lower `--workers` (default 4,
-never above 8).
+```
+python scripts/home/run.py discover        # part counts per AC (cache/manifest.json)
+python scripts/home/roll_queue.py          # every AC, Bengaluru first, Kannada only
+```
 
-## Lookup
+`roll_queue.py` runs `run.py go --tranche all --no-eng --workers 6` and
+restarts it after any crash until every AC is shipped; only one copy runs at a
+time. A Windows Task Scheduler task, **Karnataka Final Roll queue**, starts it
+at logon, so a reboot resumes where it stopped. Logs: `cache/queue.log` and
+`cache/queue-run.log`. `python scripts/home/run.py status` shows what is on
+the release.
 
-`SHA-256(EPIC)`: bytes 0–1 choose `data/roll/<ab>/<cd>.bin`, bytes 2–5 are
-binary-searched in it. 9-byte records (`scripts/ci/build.mjs`): the whole state
-is ~400 MB, inside Pages' 1 GB limit. The EPIC never leaves the visitor's device.
+Everything after the upload is on Actions: `run.py` dispatches `ocr.yml` per
+AC, which dispatches `verify.yml`, which dispatches `publish.yml`.
+
+**If something breaks:** finished ACs are in
+`cache/shipped-<release>.json` and are skipped on re-run. Re-run one AC's OCR
+with `gh workflow run ocr.yml -f ac=N -f tag=<release>` (needs its crop tar on
+the release), or re-ship it with `run.py go --ac N --force`. `shards` is an
+input of both `ocr.yml` and `verify.yml` (default 6). If ECI throttles, lower
+`--workers` (never above 8).
+
+## Privacy
+
+There is no server. Search happens in the browser: `SHA-256(EPIC)` bytes 0–1
+choose `data/roll/<ab>/<cd>.bin` (one of 65,536 files, each shared by ~27 lakh
+possible EPICs), bytes 2–5 are binary-searched in it. The EPIC is never sent
+anywhere or put in the URL. No cookies, analytics or logs; the browser keeps
+only the language, theme and scenes seen. Fonts are self-hosted, so the page
+requests nothing from any third party; GitHub, as the host, sees visitors' IPs.
+The page carries the same explanation in Kannada and English.
+
+Records are 9 bytes (`scripts/ci/build.mjs`): hash suffix, AC, part (top bit:
+deleted), serial (top bit: serial not OCR-confirmed). The whole state is
+~400 MB, inside Pages' 1 GB limit. Script URLs carry the build time and the
+manifest a record format, so a cached page never misreads newer data.
 
 ## Layout
 
@@ -94,11 +127,12 @@ is ~400 MB, inside Pages' 1 GB limit. The EPIC never leaves the visitor's device
 |---|---|
 | `roll-source.json` | The one place the roll's URL, label and release tag are set |
 | `scripts/home/run.py` | Home: discover, fetch, cut, upload, dispatch OCR |
-| `scripts/ocr/` | Crop cutting and the EPIC readers, plus their tests |
-| `scripts/ci/` | Actions: OCR per AC, verifier, draft-roll keys, site build |
+| `scripts/home/roll_queue.py` | Unattended, single-instance queue over `run.py go` |
+| `scripts/ocr/` | Crop cutting, the EPIC readers, deletion marks, printed totals, tests |
+| `scripts/ci/` | Actions: OCR per AC (sharded), verifier (sharded), draft-roll keys, site build |
 | `scripts/release.py` | Draft-release helper (refuses to use a published release) |
 | `.github/workflows/` | `ocr.yml`, `verify.yml`, `publish.yml`, `draft-keys.yml` |
-| `site/` | The search page (Kannada and English, light and dark) |
+| `site/` | The search page (Kannada and English, light and dark, self-hosted fonts) |
 
 ## Requirements (home)
 
