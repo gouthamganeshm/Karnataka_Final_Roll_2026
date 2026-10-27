@@ -158,7 +158,7 @@ cpSync(join(ROOT, 'site'), outDir, { recursive: true });
 // Pages lets browsers cache scripts for 10 minutes; a stale app.js reading new
 // data showed a deleted card as a live one. Every build gets its own URLs.
 const index = join(outDir, 'index.html');
-writeFileSync(index, readFileSync(index, 'utf8').replace(/(src|href)="(app\.js|scenes\.js|styles\.css)"/g,
+writeFileSync(index, readFileSync(index, 'utf8').replace(/(src|href)="(app\.js|scenes\.js|styles\.css|fonts\.css)"/g,
   (_, attr, file) => `${attr}="${file}?v=${encodeURIComponent(BUILT)}"`));
 const dataDir = join(outDir, 'data');
 mkdirSync(join(dataDir, 'roll'), { recursive: true });
