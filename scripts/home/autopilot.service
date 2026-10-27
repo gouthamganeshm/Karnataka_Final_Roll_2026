@@ -1,0 +1,21 @@
+# Runs scripts/home/autopilot.py on the download VM, restarted after any crash
+# or reboot. Install (as ubuntu, repo at ~/roll, token in ~/.gh_token):
+#   sudo cp ~/roll/scripts/home/autopilot.service /etc/systemd/system/roll-autopilot.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now roll-autopilot
+# Log: journalctl -u roll-autopilot -f
+[Unit]
+Description=Karnataka final roll autopilot (fetch, dispatch, retry)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/roll
+# Pick up pushed fixes on every (re)start.
+ExecStartPre=/bin/bash -c 'git pull -q https://x-access-token:$(cat /home/ubuntu/.gh_token)@github.com/gouthamganeshm/Karnataka_Final_Roll_2026 main || true'
+ExecStart=/bin/bash -c 'GH_TOKEN=$(cat /home/ubuntu/.gh_token) exec /home/ubuntu/venv/bin/python -u scripts/home/autopilot.py'
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
