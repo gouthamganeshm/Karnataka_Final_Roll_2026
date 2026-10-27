@@ -121,7 +121,17 @@ def replace(*paths: str) -> None:
         a = assets()
         if name in a:
             gh('api', '-X', 'DELETE', f'repos/{repo()}/releases/assets/{a[name]["id"]}')
-        gh('api', '-X', 'PATCH', f'repos/{repo()}/releases/assets/{a[f"{name}.next"]["id"]}', '-f', f'name={name}')
+        # Between the delete and the rename the file is missing, so the rename
+        # is retried: a GitHub 502 there once left live-verify-152.json absent.
+        for wait in (0, 5, 20, 60, 120):
+            time.sleep(wait)
+            try:
+                gh('api', '-X', 'PATCH', f'repos/{repo()}/releases/assets/{a[f"{name}.next"]["id"]}',
+                   '-f', f'name={name}')
+                break
+            except RuntimeError:
+                if wait == 120:
+                    raise
 
 
 def download(name: str, dest: str = '.', asset: dict | None = None) -> Path:
