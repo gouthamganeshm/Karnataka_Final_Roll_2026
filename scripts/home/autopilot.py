@@ -262,7 +262,7 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
     shipped = load(run.SHIPPED, {})
     shipped[str(ac)] = {'parts': len(parts_by_ac[ac]), 'failed': failed, 'via': 'autopilot'}
     save(run.SHIPPED, shipped)
-    return True
+    return 'again'                            # look again at once: the queue may still have room
 
 
 def main() -> int:
@@ -288,7 +288,8 @@ def main() -> int:
             return 0
         if not busy:
             log('every AC is live, given up, or held by the checks; idle')
-        time.sleep(PAUSE)
+        if busy != 'again':
+            time.sleep(PAUSE)
 
 
 if __name__ == '__main__':
