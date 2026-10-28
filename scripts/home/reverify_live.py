@@ -62,8 +62,12 @@ def realign(rows: list[dict]) -> int:
 
 
 def published(rows: list[dict], verify: dict) -> dict:
+    """What the site shows for each published card: EPIC, serial, deleted (as build.mjs sees it)."""
     disputed = {tuple(d[:3]) for d in verify['disputed']}
-    return {(r['part'], r['page'], r['cell']): r['epic'] for r in rows
+    undeleted = {tuple(d) for d in verify.get('undeleted', [])}
+    return {(r['part'], r['page'], r['cell']):
+            (r['epic'], r['serial'], bool(r.get('deleted')) and (r['part'], r['page'], r['cell']) not in undeleted)
+            for r in rows
             if r['epicOk'] and EPIC.match(r['epic']) and (r['part'], r['page'], r['cell']) not in disputed}
 
 
