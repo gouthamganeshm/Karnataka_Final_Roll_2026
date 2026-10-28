@@ -116,9 +116,10 @@ function judge(sample, shown, expected, synced) {
   const inSync = (h) => synced.has(h.ac);
   const problems = [];
   if (!expected.some((h) => key(h) === key(sample))) problems.push('sample not in expected set (bug in test)');
-  if (!expected.every(inSync)) {
-    // The EPIC is also in an AC the site has not rebuilt yet: only the
-    // sampled place itself can be checked.
+  if (!expected.every(inSync) || shown.blocks.some((h) => !inSync(h))) {
+    // The EPIC is also in an AC the site has not rebuilt yet, or in one that
+    // went live after this round loaded its files (a voter who moved there):
+    // only the sampled place itself can be checked.
     const shownKeys = [...shown.blocks.map(key), ...shown.alsoDeleted.map((h) => `${h.ac}/${h.part}/${h.serial}`)];
     if (!shownKeys.includes(key(sample)) && !shownKeys.includes(`${sample.ac}/${sample.part}/${sample.serial}`)) problems.push(`missing ${key(sample)}`);
     return problems;
