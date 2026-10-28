@@ -112,13 +112,16 @@ def replace(*paths: str) -> None:
     import shutil
     import tempfile
     ensure()
+    with tempfile.TemporaryDirectory() as tmp:
+        nexts = []
+        for path in paths:
+            nxt = Path(tmp) / f'{Path(path).name}.next'
+            shutil.copyfile(path, nxt)
+            nexts.append(str(nxt))
+        gh('release', 'upload', TAG, *nexts, '--clobber', '-R', repo())
+    a = assets()                     # one listing for all: Actions may make 1,000 API calls an hour
     for path in paths:
         name = Path(path).name
-        with tempfile.TemporaryDirectory() as tmp:
-            nxt = Path(tmp) / f'{name}.next'
-            shutil.copyfile(path, nxt)
-            gh('release', 'upload', TAG, str(nxt), '--clobber', '-R', repo())
-        a = assets()
         if name in a:
             gh('api', '-X', 'DELETE', f'repos/{repo()}/releases/assets/{a[name]["id"]}')
         # Between the delete and the rename the file is missing, so the rename
@@ -158,19 +161,35 @@ def download(name: str, dest: str = '.', asset: dict | None = None) -> Path:
     return out
 
 
-def download_all(dest: str, prefixes: tuple[str, ...]) -> list[Path]:
+def download_all(dest: str, prefixes: tuple[str, ...], keep: bool = False) -> list[Path]:
+    """`keep`: dest holds an earlier download (publish restores it from its
+    cache) with the asset ids it came from; only new or replaced assets are
+    fetched, and files whose asset is gone are removed."""
     # An asset still being uploaded (state "starter", e.g. rows being replaced)
     # is skipped: the publish build read one half-written and failed on it.
     # Two listings are joined, so an asset one of them missed (see download)
     # is still fetched. One replaced since (new id) is looked up again.
     found = {**assets(), **assets()}
-    out = []
+    ids_file = Path(dest) / '.asset-ids.json'
+    had = json.loads(ids_file.read_text('utf8')) if keep and ids_file.exists() else {}
+    ids, out = {}, []
     for n, a in sorted(found.items()):
         if n.startswith(prefixes) and a.get('state', 'uploaded') == 'uploaded':
-            try:
-                out.append(download(n, dest, a))
-            except RuntimeError:
-                out.append(download(n, dest))
+            path = Path(dest) / n
+            if had.get(n) == a['id'] and path.exists() and path.stat().st_size == a['size']:
+                out.append(path)
+            else:
+                try:
+                    path = download(n, dest, a)
+                except RuntimeError:
+                    path = download(n, dest)
+                out.append(path)
+            ids[n] = a['id']
+    if keep:
+        for n in set(had) - set(ids):
+            (Path(dest) / n).unlink(missing_ok=True)
+        ids_file.parent.mkdir(parents=True, exist_ok=True)
+        ids_file.write_text(json.dumps(ids), 'utf8')
     return out
 
 
@@ -202,7 +221,9 @@ if __name__ == '__main__':
     elif cmd == 'download':
         print(download(rest[0], rest[1] if len(rest) > 1 else '.'))
     elif cmd == 'download-all':
-        for p in download_all(rest[0], tuple(rest[1:]) or ('rows-', 'manifest')):
+        keep = '--keep' in rest
+        rest = [r for r in rest if r != '--keep']
+        for p in download_all(rest[0], tuple(rest[1:]) or ('rows-', 'manifest'), keep):
             print(p)
     elif cmd == 'fetch':
         for p in fetch(rest[0], rest[1:]):

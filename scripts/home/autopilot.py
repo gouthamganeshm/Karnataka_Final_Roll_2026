@@ -41,7 +41,8 @@ import vm_fetch  # noqa: E402
 MAIN = release.TAG
 WORK = vm_fetch.WORK
 STATE = run.CACHE / 'autopilot.json'
-MAX_RETRY = 2
+MAX_RETRY = 4
+COOL = 900              # after a failed run, no new dispatch for this long (a rate-limit window)
 STALE_MIN = 20          # a partial PDF set this old is an upload that died
 PAUSE = 120             # seconds between looks
 DRY = False            # --dry: say what would be done, change nothing
@@ -129,6 +130,13 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
     retries = state.setdefault('retries', {})
     gave_up = state.setdefault('gaveUp', [])
     sent = state.setdefault('dispatched', {})
+    seen = set(state.setdefault('seenFailures', []))
+    new_fail = [r for r in all_runs if r['conclusion'] == 'failure' and r['databaseId'] not in seen]
+    if new_fail and seen:
+        state['coolUntil'] = time.time() + COOL
+        log(f'{len(new_fail)} new failed run(s); no new dispatch for {COOL // 60} min')
+    state['seenFailures'] = sorted(seen | {r['databaseId'] for r in all_runs if r['conclusion'] == 'failure'})[-500:]
+    cooling = time.time() < state.get('coolUntil', 0)
 
     def recent(ac: int) -> bool:
         return time.time() - sent.get(str(ac), 0) < 600
@@ -171,9 +179,11 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
                     if ac in live:
                         delete(tag, names)    # merge normally drops them; a leftover
                     continue                  # (not live: held by the checks)
-                if not retry(ac, f'run {last["conclusion"]}', last['conclusion']):
+                if ac in gave_up:
                     continue
-            ready[ac] = (n, tag)
+                ready[ac] = (n, tag, last['conclusion'])     # a retry, counted when dispatched
+                continue
+            ready[ac] = (n, tag, None)
 
     # Failed runs whose inputs are gone: fetch again (pdf) or re-read the home crops (kan).
     sets_now = set(pdf_sets(work)) | set(pdf_sets(main))
@@ -183,12 +193,12 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
         if ac in gave_up or recent(ac):
             continue
         kind = TITLE.match(last['displayTitle'])[2]
-        if kind == 'kan' and f'crops-{ac}.tar' in main:
+        if kind == 'kan' and f'crops-{ac}.tar' in main and not cooling:
             if retry(ac, f'kan run {last["conclusion"]}', last['conclusion']):
                 dispatch(ac, 'kan')
                 mark(ac)
                 active += 1
-        elif str(ac) in shipped and retry(ac, f'run {last["conclusion"]}, PDFs gone: re-fetch', last['conclusion']):
+        elif str(ac) in shipped and not cooling and retry(ac, f'run {last["conclusion"]}, PDFs gone: re-fetch', last['conclusion']):
             shipped.pop(str(ac), None)
     if DRY:
         log(f'(dry) {active} active runs; retries {retries}; shipped {len(shipped)}')
@@ -198,11 +208,17 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
 
     # Feed Actions while the queue is short (a deep one starves every merge job
     # of a runner): PDFs already uploaded first, in queue order, then a new fetch.
+    if cooling:
+        if not DRY:
+            save(STATE, state)
+        return True
     rank = {a: i for i, a in enumerate(order)}
     for ac in sorted(ready, key=lambda a: rank.get(a, 0)):
         if active >= target:
             return True
-        n, tag = ready[ac]
+        n, tag, failed = ready[ac]
+        if failed and not retry(ac, f'run {failed}', failed):
+            continue
         log(f'AC {ac}: dispatching OCR for its {n} PDF shards in {tag} ({active} runs active)')
         dispatch(ac, 'pdf', n)
         mark(ac)

@@ -5,7 +5,7 @@
 # kind=eng  crops-eng-<ac>.tar  -> eng-<ac>.jsonl.gz + summary (English cross-check
 #                                  part, V5), then a republish
 #
-# The parts are split over `shards` parallel jobs (default 20; one 4-core runner
+# The parts are split over `shards` parallel jobs (default 10; one 4-core runner
 # alone reads a 600-part AC in ~1.5 h); `merge` joins their rows into exactly what one job
 # writes. Shard rows travel through a draft release, never as Actions
 # artifacts: on a public repo any signed-in user can download those. Files in
@@ -33,7 +33,7 @@ on:
       shards:
         description: parallel OCR jobs for this AC
         required: false
-        default: '20'
+        default: '10'
 
 permissions:
   contents: write   # read/write assets on the draft release
@@ -52,7 +52,7 @@ jobs:
     steps:
       - id: n
         env:
-          WANT: ${{ inputs.kind == 'eng' && '1' || inputs.shards || '20' }}
+          WANT: ${{ inputs.kind == 'eng' && '1' || inputs.shards || '10' }}
         run: |
           n=$(( WANT < 1 ? 1 : (WANT > 20 ? 20 : WANT) ))
           echo "shards=$n" >> "$GITHUB_OUTPUT"
@@ -119,11 +119,14 @@ jobs:
             python scripts/ci/ocr_ac.py "work/$TAR" "work/$OUT.s$SHARD.jsonl.gz" --shard "$SHARD/$SHARDS"
           fi
 
+      # One file per shard (rows, summary, and for PDFs the crops it cut):
+      # every asset costs API calls to upload, list and delete.
       - name: Return shard rows
         run: |
-          export ROLL_RELEASE="$WORK"
-          python scripts/release.py upload "work/$OUT.s$SHARD.jsonl.gz" "work/$OUT.s$SHARD.summary.json"
-          if [ "$KIND" = pdf ]; then python scripts/release.py upload "work/crops-$AC.s$SHARD.tar"; fi
+          files="$OUT.s$SHARD.jsonl.gz $OUT.s$SHARD.summary.json"
+          if [ "$KIND" = pdf ]; then files="$files crops-$AC.s$SHARD.tar"; fi
+          tar cf "work/out-$OUT.s$SHARD.tar" -C work $files
+          ROLL_RELEASE="$WORK" python scripts/release.py upload "work/out-$OUT.s$SHARD.tar"
 
   merge:
     needs: [plan, ocr]
@@ -158,24 +161,27 @@ jobs:
 
       - name: Fetch shard rows
         run: |
-          ROLL_RELEASE="$WORK" python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
+          ROLL_RELEASE="$WORK" python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "out-$OUT.s$i.tar"; done)
+          for i in $(seq 0 $((SHARDS - 1))); do tar xf "work/out-$OUT.s$i.tar" -C work; rm "work/out-$OUT.s$i.tar"; done
 
       - name: Merge
         run: python scripts/ci/ocr_ac.py merge "work/$OUT.jsonl.gz" work/$OUT.s*.jsonl.gz
 
+      # Paused verification keeps no copy of a promoted AC's rows on the main
+      # release (its live-* files are that copy); see Hand over.
       - name: Return rows
+        if: vars.VERIFY != 'paused' || inputs.kind == 'eng'
         run: python scripts/release.py upload "work/$OUT.jsonl.gz" "work/$OUT.summary.json"
 
       - name: Remove shard rows
         run: |
-          ROLL_RELEASE="$WORK" python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "$OUT.s$i.jsonl.gz $OUT.s$i.summary.json"; done)
+          ROLL_RELEASE="$WORK" python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "out-$OUT.s$i.tar"; done)
 
       # Raw PDFs from a VM: join the shards' crops into the crops-<ac>.tar the
       # verifier reads (as home would have shipped it), then drop the PDFs.
       - name: Join crops
         if: inputs.kind == 'pdf'
         run: |
-          ROLL_RELEASE="$WORK" python scripts/release.py fetch work $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar"; done)
           python - <<'EOF'
           import io, json, os, tarfile
           ac, n = os.environ['AC'], int(os.environ['SHARDS'])
@@ -191,8 +197,7 @@ jobs:
               out.addfile(info, io.BytesIO(meta))
           EOF
           ROLL_RELEASE="$ROLL_RELEASE-crops" python scripts/release.py upload "work/crops-$AC.tar"
-          ROLL_RELEASE="$WORK" python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "crops-$AC.s$i.tar pdfs-$AC.s$i.tar"; done)
-          python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "pdfs-$AC.s$i.tar"; done)
+          ROLL_RELEASE="$WORK" python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "pdfs-$AC.s$i.tar"; done)
 
       # The Kannada crops stay for the verifier, which re-reads every card.
       # With the repo variable VERIFY=paused the per-card checks are skipped:
@@ -208,16 +213,15 @@ jobs:
             gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"
           elif [ "$VERIFY" = paused ]; then
             python scripts/ci/verify_ac.py "$AC" - "work/$OUT.jsonl.gz" "work/$OUT.summary.json" out --quick
-            python scripts/release.py upload "out/verify-$AC.json"
             if python -c "import json,sys; sys.exit(json.load(open('out/verify-$AC.json'))['verdict'] != 'pass')"; then
               mkdir -p live
               cp "work/$OUT.jsonl.gz" "live/live-rows-$AC.jsonl.gz"
               cp "work/$OUT.summary.json" "live/live-rows-$AC.summary.json"
               cp "out/verify-$AC.json" "live/live-verify-$AC.json"
               python scripts/release.py replace live/live-rows-$AC.jsonl.gz live/live-rows-$AC.summary.json live/live-verify-$AC.json
-              python scripts/release.py delete "$OUT.jsonl.gz" "$OUT.summary.json" "verify-$AC.json"
               echo "AC $AC promoted to live (per-card checks paused)"
             else
+              python scripts/release.py upload "work/$OUT.jsonl.gz" "work/$OUT.summary.json" "out/verify-$AC.json"
               echo "AC $AC held by the whole-AC checks: its live version (if any) stays as it is"
             fi
             gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"

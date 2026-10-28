@@ -31,7 +31,7 @@ sys.path.insert(0, str(ROOT / 'scripts' / 'home'))
 import release  # noqa: E402
 import run  # noqa: E402
 
-SHARDS = 20
+SHARDS = 10
 WORK = f'{release.TAG}-work'    # ocr.yml reads the PDFs from here
 OUT = run.CACHE / 'vm-out'
 
