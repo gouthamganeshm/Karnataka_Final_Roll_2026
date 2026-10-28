@@ -122,8 +122,11 @@ for (const f of rowFiles) {
   };
   for (const p of Object.values(sum?.perPart ?? {})) stat.printed += p.totals?.total ?? 0;
   const disputed = new Set((ver?.disputed ?? []).map(([p, pg, c]) => `${p}/${pg}/${c}`));
+  // Deletion marks V3 found false (the part prints no deletions and holds exactly its total).
+  const undeleted = new Set((ver?.undeleted ?? []).map(([p, pg, c]) => `${p}/${pg}/${c}`));
   const pending = [];
   for await (const r of rowsOf(join(rowsDir, f))) {
+    if (r.deleted && undeleted.has(`${r.part}/${r.page}/${r.cell}`)) r.deleted = false;
     stat.cards++;
     if (!r.deleted) stat.liveCards++;
     if (!EPIC_RE.test(r.epic) || r.epicOk === false) { stat.withheld++; continue; }

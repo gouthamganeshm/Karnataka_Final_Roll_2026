@@ -28,7 +28,11 @@ Every published record gets, on top of the readers that produced it:
       less the cards marked deleted; and those deletions equal the printed
       count — if they do not, or there are more live cards than the
       total, a deleted elector may be unmarked, so every record of the
-      part is disputed (unless the total is implausibly small: a misread)
+      part is disputed (unless the total is implausibly small: a misread).
+      Two exceptions: a part printing no deletions whose cards number
+      exactly its total has false marks (listed in "undeleted", published
+      live); one whose unmarked cards equal the total disputes only the
+      marked cards
   V4  EPICs the draft roll does not corroborate must have their letters
       confirmed by the prototype reader                         -> else disputed
 
@@ -43,6 +47,7 @@ hand-checked audit, V6) and OUT_DIR/review-<ac>.png (disputed records).
 from __future__ import annotations
 
 import argparse
+import bisect
 import collections
 import gzip
 import json
@@ -139,18 +144,39 @@ def run_checks(rows_by_part: dict, parts: list[int], tar_path: str, keys_path: s
     return disputed, stats
 
 
+def increasing_run(serials: list[int]) -> set[int]:
+    """Indexes of one longest strictly increasing subsequence of `serials`."""
+    tails, ends, prev = [], [], [-1] * len(serials)   # tails[k]: index ending the best run of length k+1
+    for i, s in enumerate(serials):
+        k = bisect.bisect_left(ends, s)
+        if k:
+            prev[i] = tails[k - 1]
+        if k == len(tails):
+            tails.append(i)
+            ends.append(s)
+        else:
+            tails[k], ends[k] = i, s
+    run, i = set(), tails[-1] if tails else -1
+    while i >= 0:
+        run.add(i)
+        i = prev[i]
+    return run
+
+
 def v2_structure(rows_by_part: dict[int, list[dict]], summary: dict) -> tuple[dict, dict]:
     disputed, part_flags = {}, collections.defaultdict(list)
     for part, rows in rows_by_part.items():
         seen = collections.Counter(r['serial'] for r in rows)
-        prev = 0
-        for r in rows:
+        # Out of order = off the longest increasing run. Comparing each serial
+        # with the largest so far let one misread (serial 1 read as 2010 in AC
+        # 46 part 142) dispute every card after it: 8,894 cards in 37 booths.
+        in_order = increasing_run([r['serial'] for r in rows])
+        for i, r in enumerate(rows):
             key = (part, r['page'], r['cell'])
             if seen[r['serial']] > 1:
                 disputed[key] = 'v2:serial-twice'
-            elif r['serial'] <= prev:
+            elif i not in in_order:
                 disputed[key] = 'v2:serial-order'
-            prev = max(prev, r['serial'])
         # A hole — an empty cell before the page's last card — means a card's
         # header could not be cut. Trailing empty cells are normal: the last
         # page of a part, or of a section that ends mid-page.
@@ -174,7 +200,7 @@ def v2_structure(rows_by_part: dict[int, list[dict]], summary: dict) -> tuple[di
 
 
 def v3_totals(rows_by_part: dict[int, list[dict]], summary: dict, part_flags: dict,
-              disputed: dict) -> dict:
+              disputed: dict, undeleted: set) -> dict:
     checked = matched = 0
     missing = 0
     printed = 0
@@ -209,9 +235,27 @@ def v3_totals(rows_by_part: dict[int, list[dict]], summary: dict, part_flags: di
                 and ('end' not in t or max((r['serial'] for r in rows), default=0) == t['end'])):
             matched += 1
             continue
+        printed_del = t.get('deleted')
+        if (printed_del == 0 and deleted and len(rows) == t['total']
+                and ('end' not in t or max((r['serial'] for r in rows), default=0) == t['end'])):
+            # The roll prints no deletions and holds exactly its total in cards:
+            # every card is a live elector and the marks found are false.
+            matched += 1
+            part_flags[part].append(f'v3:false-deletion-marks:{deleted}')
+            undeleted.update((part, r['page'], r['cell']) for r in rows if r.get('deleted'))
+            continue
         part_flags[part].append(f"v3:count:{cards}/{t['total']}")
         missing += max(0, t['total'] - cards)
-        if not deletions_ok:
+        if not deletions_ok and printed_del is not None and cards == t['total'] and deleted > printed_del:
+            # More marks than printed deletions, and the unmarked cards are
+            # exactly the printed total: those are the live electors. Only
+            # the marked cards are unsettled (a real deletion left unmarked
+            # would need a live card falsely marked to cancel it out).
+            part_flags[part].append(f"v3:deleted:{deleted}/{printed_del}")
+            for r in rows:
+                if r.get('deleted'):
+                    disputed.setdefault((part, r['page'], r['cell']), 'v3:deleted:extra-mark')
+        elif not deletions_ok:
             part_flags[part].append(f"v3:deleted:{deleted}/{t.get('deleted', '?')}")
             for r in rows:
                 disputed.setdefault((part, r['page'], r['cell']), 'v3:deleted:unsettled')
@@ -300,7 +344,8 @@ def main() -> int:
         return pages[r['page']][0][r['cell']] if pages else None
 
     disputed, part_flags = v2_structure(rows_by_part, summary)
-    v3 = v3_totals(rows_by_part, summary, part_flags, disputed)
+    undeleted = set()
+    v3 = v3_totals(rows_by_part, summary, part_flags, disputed, undeleted)
 
     published = [r for r in rows if r['epicOk']]
     for k, why in found.items():
@@ -324,6 +369,7 @@ def main() -> int:
                   'disputedBy': dict(reasons_count), 'v3': v3, 'v2MissingCards': missing_v2,
                   **dict(stats), 'secs': round(time.time() - t0)},
         'disputed': [[p, pg, c, why] for (p, pg, c), why in sorted(disputed.items())],
+        'undeleted': sorted([p, pg, c] for p, pg, c in undeleted),
         'parts': {str(p): f for p, f in sorted(part_flags.items()) if f},
         'checks': 'quick' if args.quick else 'full',
     }

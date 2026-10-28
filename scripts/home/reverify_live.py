@@ -108,7 +108,10 @@ def main() -> int:
         ver['disputed'] += [d for d in keep if tuple(d[:3]) not in have]
         ver['checks'] = old_ver.get('checks', 'full') + '+reverified'
         after = published(rows, ver)
-        lost = [k for k, e in before.items() if after.get(k) != e]
+        # A card off its part's serial run (2010 read for serial 1) was published
+        # with that wrong serial before V2 compared serials with the run.
+        misread = {tuple(d[:3]) for d in ver['disputed'] if d[3] == 'v2:serial-order'}
+        lost = [k for k, e in before.items() if after.get(k) != e and k not in misread]
         ok = ver['verdict'] == 'pass' and not lost
         print(f'AC {ac:3}: published {len(before):,} -> {len(after):,} (+{len(after) - len(before):,}; '
               f'{gained_realign} realigned) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
