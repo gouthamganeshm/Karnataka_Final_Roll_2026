@@ -14,6 +14,10 @@ Two recoveries, neither needing the crops (deleted after verification):
            longer withholds a booth whose printed deletions match the marks
            found. Per-card disputes from an earlier full verification (V1/V4)
            are kept.
+  totals   `--totals FILE` (lines of {"ac", "part", "new"}: totals.py re-run on
+           the part's PDF) replaces a part's printed totals in the summary when
+           the new reading is the cover's, confirmed by the summary page; the
+           summary is then replaced along with the rows and verify files.
 
 An AC is replaced only if it still passes and every card published now stays
 published with the same EPIC; then live-* is swapped and the site republished.
@@ -76,9 +80,19 @@ def main() -> int:
     ap.add_argument('--apply', action='store_true')
     ap.add_argument('--ac')
     ap.add_argument('--skip', default='')
+    ap.add_argument('--totals', help='re-read totals (JSON lines) to patch into the summaries')
     args = ap.parse_args()
     skip = {int(a) for a in args.skip.split(',') if a}
     only = {int(a) for a in args.ac.split(',')} if args.ac else None
+    reread = collections.defaultdict(dict)
+    if args.totals:
+        for line in Path(args.totals).read_text('utf8').splitlines():
+            t = json.loads(line)
+            if (t['new'] and not t['new'].get('conflict') and t['new'].get('from') == 'cover'
+                    and t['new'].get('confirmed') and 'deleted' in t['new']):
+                reread[t['ac']][str(t['part'])] = t['new']
+        if only is None:
+            only = set(reread)
     DIR.mkdir(parents=True, exist_ok=True)
     assets = release.assets()
     acs = sorted(int(n[10:-9]) for n in assets if re.fullmatch(r'live-rows-\d+\.jsonl\.gz', n))
@@ -95,6 +109,15 @@ def main() -> int:
                 if attempt == 2:
                     raise
         rows_p, sum_p, ver_p = (DIR / n for n in names)
+        patched = 0
+        if reread.get(ac):
+            summary = json.loads(sum_p.read_text('utf8'))
+            for part, t in reread[ac].items():
+                if summary['perPart'].get(part, {}).get('totals') != t:
+                    summary['perPart'].setdefault(part, {})['totals'] = t
+                    patched += 1
+            sum_p = DIR / f'new-sum-{ac}.json'
+            sum_p.write_text(json.dumps(summary), 'utf8')
         old_ver = json.loads(ver_p.read_text('utf8'))
         rows = load(rows_p)
         before = published(rows, old_ver)
@@ -118,14 +141,18 @@ def main() -> int:
         lost = [k for k, e in before.items() if after.get(k) != e and k not in misread]
         ok = ver['verdict'] == 'pass' and not lost
         print(f'AC {ac:3}: published {len(before):,} -> {len(after):,} (+{len(after) - len(before):,}; '
-              f'{gained_realign} realigned) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
+              f'{gained_realign} realigned, {patched} totals re-read) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
               f'verdict {ver["verdict"]}; lost {len(lost)}' + ('' if ok else '  -> NOT APPLIED'), flush=True)
         if args.apply and ok and len(after) > len(before):
             live = DIR / 'live'
             live.mkdir(exist_ok=True)
             (live / names[0]).write_bytes(new_rows.read_bytes())
             (live / names[2]).write_text(json.dumps(ver), 'utf8')
-            release.replace(str(live / names[0]), str(live / names[2]))
+            files = [str(live / names[0]), str(live / names[2])]
+            if patched:
+                (live / names[1]).write_text(sum_p.read_text('utf8'), 'utf8')
+                files.append(str(live / names[1]))
+            release.replace(*files)
             changed += 1
     if args.apply and changed:
         release.gh('workflow', 'run', 'publish.yml', '-R', release.repo(), '-f', f'tag={release.TAG}')

@@ -102,6 +102,38 @@ def _candidates(cells: list) -> list[set]:
     return out
 
 
+def _more_candidates(cells: list, cands: list[set]) -> list[set]:
+    """`cands` plus readings of each cell upscaled 4, 6 and 8 times, raw and
+    thresholded. A row's cells are ~16 px tall (the page images are what the
+    PDF holds: rendering finer adds nothing), and Tesseract reads one scale's
+    "511" as "311" and its "0" as "@" or "8" (AC 12 part 234, on the cover and
+    the summary alike, so neither table checked and the part's printed
+    deletions went unread). Used only when `cands` yield no checked reading:
+    a row that checks today is read exactly as before. A new reading must come
+    from at least two of the variants, so one stray misread does not count."""
+    import collections
+    import crops as C
+    votes = [collections.Counter() for _ in cells]
+    present = [i for i, c in enumerate(cells) if c is not None]
+    for f in (4, 6, 8):
+        for th in (None, 160, 200):
+            imgs = []
+            for i in present:
+                g = cells[i].convert('L')
+                g = g.resize((g.width * f, g.height * f), Image.BICUBIC)
+                if th:
+                    g = g.point(lambda v, th=th: 255 if v > th else 0)
+                pad = Image.new('L', (g.width + 40, g.height + 40), 255)
+                pad.paste(g, (20, 20))
+                imgs.append(pad)
+            for psm, extra in ((7, ()), (8, DIGITS)):
+                for i, t in zip(present, C.read_each(imgs, psm=psm, extra=extra)):
+                    n = _as_int(t)
+                    if n is not None:
+                        votes[i][n] += 1
+    return [set(c) | {n for n, k in v.items() if k >= 2} for c, v in zip(cands, votes)]
+
+
 def _consistent(cands: list[set], check) -> tuple | None:
     """The one reading of the row that passes `check`, or None if there is no
     such reading or more than one disagreeing on the total."""
@@ -120,15 +152,29 @@ def read_cover(img: Image.Image | None) -> dict | None:
     rules = _rules(dark, 0.6)
     if len(rules) < 2:
         return None
-    cands = _candidates(_row_cells(img, rules[-2], rules[-1]))
+    cells = _row_cells(img, rules[-2], rules[-1])
+    cands = _candidates(cells)
     if len(cands) != 6:
         return None
-    row = _consistent(cands, lambda s, e, m, f, g, t: t and t == m + f + g and e >= s)
+    check = lambda s, e, m, f, g, t: t and t == m + f + g and e >= s  # noqa: E731
+    row = _consistent(cands, check)
+    if row is None:
+        row = _consistent(_more_candidates(cells, cands), check)
     if row is None:
         return None
     start, end, male, female, tg, total = row
-    out = {'start': start, 'end': end, 'male': male, 'female': female, 'tg': tg, 'total': total}
-    if end - start + 1 >= total:     # less is a misread Ending, not a count
+    if not 0 <= end - start + 1 - total <= total:
+        # Nothing checks Ending but Ending >= Starting, and among readings
+        # agreeing on the rest the smallest won: "1149" read as 149, "757" as
+        # 157; or "578" as 3578, 3000 deletions. It prints Total plus the
+        # deletions, which never exceed Total (62% is the most seen, AC 133
+        # part 204), so take the one reading that fits, else none.
+        ends = {e for e in _more_candidates(cells[1:2], cands[1:2])[0]
+                if 0 <= e - start + 1 - total <= total}
+        end = ends.pop() if len(ends) == 1 else None
+    out = {'start': start, 'male': male, 'female': female, 'tg': tg, 'total': total}
+    if end is not None:
+        out['end'] = end
         out['deleted'] = end - start + 1 - total
     return out
 
@@ -140,20 +186,39 @@ def read_summary(img: Image.Image | None) -> dict | None:
     dark = np.asarray(img.convert('L')) < 128
     rules = _rules(dark, 0.5)
     for k, (y0, y1) in reversed(list(enumerate(zip(rules, rules[1:])))):
-        cands = _candidates(_row_cells(img, y0, y1))[-4:]
-        if len(cands) == 4:
-            row = _consistent(cands, lambda m, f, g, t: t and t == m + f + g)
-            if row:
-                male, female, tg, total = row
-                out = {'male': male, 'female': female, 'tg': tg, 'total': total}
-                # Rows I, II, III are the ruled rows 4, 3 and 2 above the net row.
-                if k >= 4:
-                    last = [(_candidates(_row_cells(img, rules[k - j], rules[k - j + 1])) or [set()])[-1]
-                            for j in (4, 3, 2)]
-                    fits = {d for a in last[0] for b in last[1] for d in last[2] if a + b - d == total}
-                    if len(fits) == 1:
-                        out['deleted'] = fits.pop()
-                return out
+        cells = _row_cells(img, y0, y1)[-4:]
+        cands = _candidates(cells)
+        if len(cands) != 4:
+            continue
+        check = lambda m, f, g, t: t and t == m + f + g  # noqa: E731
+        row = _consistent(cands, check)
+        if row:
+            male, female, tg, total = row
+            out = {'male': male, 'female': female, 'tg': tg, 'total': total}
+            # Rows I, II, III are the ruled rows 4, 3 and 2 above the net row.
+            if k >= 4:
+                last = [(_candidates(_row_cells(img, rules[k - j], rules[k - j + 1])) or [set()])[-1]
+                        for j in (4, 3, 2)]
+                fits = {d for a in last[0] for b in last[1] for d in last[2] if a + b - d == total}
+                if len(fits) == 1:
+                    out['deleted'] = fits.pop()
+            return out
+        # Read again from more variants, and taken only if rows I + II - III
+        # (read the same way) give this net total: on its own a 4-cell sum is
+        # met by the additions row too (15 + 18 + 0 = 33 was taken for 1004).
+        if k < 4:
+            continue
+        row = _consistent(_more_candidates(cells, cands), check)
+        if not row:
+            continue
+        male, female, tg, total = row
+        last = []
+        for j in (4, 3, 2):
+            c = _row_cells(img, rules[k - j], rules[k - j + 1])[-1:]
+            last.append(_more_candidates(c, _candidates(c))[0] if c else set())
+        fits = {d for a in last[0] for b in last[1] for d in last[2] if a + b - d == total}
+        if len(fits) == 1:
+            return {'male': male, 'female': female, 'tg': tg, 'total': total, 'deleted': fits.pop()}
     return None
 
 
