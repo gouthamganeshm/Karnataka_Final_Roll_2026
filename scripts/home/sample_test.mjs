@@ -151,18 +151,19 @@ async function round(browser) {
   const live = manifest.acs.filter((a) => a.status === 'verified' && (!ONLY || ONLY.includes(a.ac)));
   const all = manifest.acs.filter((a) => a.status === 'verified');
 
-  // Expected records for every live AC (also for duplicates across ACs), and
-  // which ACs' live files match what the site was built from.
-  const recsByAc = new Map();
+  // One AC's records at a time: the whole state's ~4.5 crore records do not
+  // fit in memory (the tester died of it at ~95 ACs). First which ACs' live
+  // files match what the site was built from, then the samples, then, for the
+  // sampled EPICs only, every record of theirs across all live ACs.
   const synced = new Set();
+  const paths = new Map();
   for (const a of all) {
     if (!ids[`live-rows-${a.ac}.jsonl.gz`]) continue;
     const [rp, vp] = fetchLive(a.ac, ids);
+    paths.set(a.ac, [rp, vp]);
     const { recs } = await published(a.ac, rp, vp);
-    recsByAc.set(a.ac, recs);
     const electors = recs.filter((r) => !r.deleted).length;
-    const deleted = recs.length - electors;
-    if (electors === a.electors && deleted === a.deleted) synced.add(a.ac);
+    if (electors === a.electors && recs.length - electors === a.deleted) synced.add(a.ac);
   }
   const sig = (a) => `${manifest.builtAt}|${a.electors}|${a.deleted}`;
   const todo = live.filter((a) => synced.has(a.ac) && (RETEST || state[a.ac]?.sig?.split('|').slice(1).join('|') !== sig(a).split('|').slice(1).join('|')));
@@ -170,15 +171,9 @@ async function round(browser) {
   if (waiting.length) log(`waiting for the site to catch up with: ${waiting.join(', ')}`);
   if (!todo.length) return 0;
 
-  const byEpic = new Map();
-  for (const recs of recsByAc.values()) for (const r of recs) {
-    if (!byEpic.has(r.epic)) byEpic.set(r.epic, []);
-    byEpic.get(r.epic).push(r);
-  }
-  // Only EPICs whose every record is in a synced AC give a firm expectation.
   const samples = [];
   for (const a of todo) {
-    const recs = recsByAc.get(a.ac);
+    const { recs } = await published(a.ac, ...paths.get(a.ac));
     const byPart = new Map();
     for (const r of recs) { if (!byPart.has(r.part)) byPart.set(r.part, []); byPart.get(r.part).push(r); }
     const empty = [];
@@ -190,6 +185,12 @@ async function round(browser) {
     const gone = recs.filter((r) => r.deleted);
     for (let i = 0; i < Math.min(DELETED_PER_AC, gone.length); i++) samples.push({ ...gone[randomInt(gone.length)], why: 'deleted' });
     if (empty.length) log(`AC ${a.ac}: ${empty.length} booths have no published card to sample (${empty.slice(0, 15).join(', ')}${empty.length > 15 ? '…' : ''})`);
+  }
+  // Every record of a sampled EPIC, in any live AC (a voter moved between booths or ACs).
+  const byEpic = new Map(samples.map((x) => [x.epic, []]));
+  for (const [ac, [rp, vp]] of paths) {
+    const { recs } = await published(ac, rp, vp);
+    for (const r of recs) byEpic.get(r.epic)?.push(r);
   }
   log(`testing ${samples.length} samples from ${todo.length} ACs (${todo.map((a) => a.ac).join(', ')}) on ${PAGES} tabs`);
 
