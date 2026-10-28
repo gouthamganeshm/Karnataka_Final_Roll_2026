@@ -1,0 +1,71 @@
+# Re-read a live constituency's unsettled round letters (C/O/G/Q) from its
+# kept crops, by the EPIC series the rest of the AC confirms, and put the result
+# live if the whole-AC checks still pass. New ACs get this in ocr.yml's merge;
+# this is for ACs that went live before it (scripts/ocr/series_pass.py).
+name: Series pass
+run-name: Series pass AC ${{ inputs.ac }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      ac:
+        description: Assembly constituency number (live)
+        required: true
+      tag:
+        description: Draft release carrying the live files
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: ocr-${{ inputs.ac }}-kan     # never beside an OCR run of the same AC
+  cancel-in-progress: false
+
+jobs:
+  series:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ secrets.ROLL_TOKEN || github.token }}
+      ROLL_RELEASE: ${{ inputs.tag }}
+      AC: ${{ inputs.ac }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/ocr/requirements.txt
+      - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
+
+      - name: Fetch live rows and crops
+        run: |
+          python scripts/release.py fetch work "live-rows-$AC.jsonl.gz" "live-rows-$AC.summary.json" "live-verify-$AC.json"
+          # Home-cut ACs keep their crops on the main release, VM ones on <tag>-crops.
+          ROLL_RELEASE="$ROLL_RELEASE-crops" python scripts/release.py download "crops-$AC.tar" work \
+            || python scripts/release.py download "crops-$AC.tar" work
+
+      - name: Series pass
+        run: |
+          cp "work/live-rows-$AC.jsonl.gz" "work/rows-$AC.jsonl.gz"
+          cp "work/live-rows-$AC.summary.json" "work/rows-$AC.summary.json"
+          python scripts/ocr/series_pass.py "work/crops-$AC.tar" "work/rows-$AC.jsonl.gz" "work/new-$AC.jsonl.gz"
+
+      - name: Check and promote
+        run: |
+          python scripts/ci/verify_ac.py "$AC" - "work/new-$AC.jsonl.gz" "work/new-$AC.summary.json" out --quick
+          if python -c "import json,sys; sys.exit(json.load(open('out/verify-$AC.json'))['verdict'] != 'pass')"; then
+            mkdir -p live
+            cp "work/new-$AC.jsonl.gz" "live/live-rows-$AC.jsonl.gz"
+            cp "work/new-$AC.summary.json" "live/live-rows-$AC.summary.json"
+            cp "out/verify-$AC.json" "live/live-verify-$AC.json"
+            python scripts/release.py replace live/live-rows-$AC.jsonl.gz live/live-rows-$AC.summary.json live/live-verify-$AC.json
+            echo "AC $AC: series pass promoted"
+            gh workflow run publish.yml -R "$GITHUB_REPOSITORY" -f tag="$ROLL_RELEASE"
+          else
+            echo "AC $AC: the series pass failed the whole-AC checks; live stays as it was"
+            cat "out/verify-$AC.json"
+            exit 1
+          fi

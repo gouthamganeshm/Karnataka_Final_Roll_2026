@@ -171,7 +171,7 @@ jobs:
   merge:
     needs: [plan, ocr]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       GH_TOKEN: ${{ secrets.ROLL_TOKEN || github.token }}
       ROLL_RELEASE: ${{ inputs.tag }}
@@ -238,6 +238,15 @@ jobs:
           EOF
           ROLL_RELEASE="$ROLL_RELEASE-crops" python scripts/release.py upload "work/crops-$AC.tar"
           ROLL_RELEASE="$WORK" python scripts/release.py delete $(for i in $(seq 0 $((SHARDS - 1))); do echo "pdfs-$AC.s$i.tar"; done)
+
+      # Round letters (C/O/G/Q) the per-card readers could not settle, decided
+      # by the series the rest of the AC confirms (scripts/ocr/series_pass.py).
+      - name: Series pass
+        if: inputs.kind == 'pdf' && vars.VERIFY == 'paused'
+        run: |
+          python scripts/ocr/series_pass.py "work/crops-$AC.tar" "work/$OUT.jsonl.gz" "work/$OUT.series.jsonl.gz"
+          mv "work/$OUT.series.jsonl.gz" "work/$OUT.jsonl.gz"
+          mv "work/$OUT.series.summary.json" "work/$OUT.summary.json"
 
       # The Kannada crops stay for the verifier, which re-reads every card.
       # With the repo variable VERIFY=paused the per-card checks are skipped:
