@@ -17,8 +17,12 @@ For each fused or withheld card:
 
   * its read prefix is a series -> pin it (a withheld card the readers could not
     settle on a thin margin);
-  * its read prefix has no direct card (under UNSEEN) and exactly one series
-    differs from it in one letter -> pin that series (IQQ, IQO -> IQG);
+  * exactly one series differs from its read prefix in one letter and the read
+    prefix has under 1/RATIO of that series' direct cards -> pin that series
+    (IQQ, IQO -> IQG; ZOI -> ZCI). This holds for direct cards too: in AC 4
+    both readers read twelve ZCI cards as ZOI (checked on the crops), and a
+    lone ZOI beside 154,895 ZCI is no series. A real small series next to a
+    big one (IKF 4, HKF 121) is left alone;
   * otherwise leave the card as it was.
 
 Only the letters are pinned: the digits go through the same two-reader rule as
@@ -42,16 +46,16 @@ import crops  # noqa: E402
 import roll_ocr as R  # noqa: E402
 
 MIN_DIRECT = 100     # direct cards that make a prefix a series of this AC
-UNSEEN = 3           # a read prefix with fewer direct cards is not supported by the AC
+RATIO = 200          # a prefix under 1/RATIO of a one-letter neighbour series is a misread of it
 
 
 def pin(prefix: str, direct: collections.Counter, big: set) -> str | None:
     if prefix in big:
         return prefix
-    if direct[prefix] >= UNSEEN:
-        return None
     near = [b for b in big if sum(x != y for x, y in zip(prefix, b)) == 1]
-    return near[0] if len(near) == 1 else None
+    if len(near) == 1 and direct[prefix] * RATIO < direct[near[0]]:
+        return near[0]
+    return None
 
 
 def reread(job: tuple) -> list[tuple[int, str | None]]:
@@ -75,9 +79,10 @@ def main(tar_path: str, rows_path: str, out_path: str) -> int:
     big = {p for p, n in direct.items() if n >= MIN_DIRECT}
     todo = collections.defaultdict(list)
     for i, r in enumerate(rows):
-        if r['how'] in ('fused', 'withheld') and R_VALID(r['epic']):
+        if R_VALID(r['epic']):
             s = pin(r['epic'][:3], direct, big)
-            if s:
+            # Withheld cards are re-read on any series; published ones only to change their series.
+            if s and (r['how'] == 'withheld' or s != r['epic'][:3]):
                 todo[r['part']].append((i, s, r['page'], r['cell'], r['rd'][0], r['rd'][2]))
     stats = collections.Counter()
     jobs = [(tar_path, part, items) for part, items in sorted(todo.items())]
