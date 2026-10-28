@@ -15,8 +15,11 @@ downloaded afresh and the sampled pages re-cut and re-read:
   epic     the published EPIC against the English card in the same cell, when
            the English readers agree outright ('direct'): an independent
            witness. Else against the fresh Kannada reading (same image: it
-           catches a card published from the wrong cell, not a misread).
-  serial   the published serial against the serial printed on either card
+           catches a card published from the wrong cell, not a misread). A
+           difference only in a round letter (C/O/G/Q) the fresh Kannada
+           reading backs is counted apart: the English readers' known slip.
+  serial   the published serial against each page's serials as read on
+           either roll, fitted to their consecutive run
   deleted  the published deleted mark against the mark beside the serial
   cells    the cards on the page against the rows the page produced
 
@@ -65,7 +68,11 @@ def get_pdf(url: str, dest: Path) -> bytes | None:
 
 
 def page_reads(data: bytes, pages: list[int], style: str) -> dict:
-    """page -> cell -> (epic, how, raw serial, mark, epic crop) for the sampled pages."""
+    """page -> cell -> (epic, how, serial, mark, epic crop) for the sampled pages.
+
+    The serial is the page's readings fitted to the consecutive run they form
+    (`roll_ocr.repair_serials`, as the pipeline does), None where the fit is
+    unsure: one card's raw reading confuses 5 with 9 on both rolls alike."""
     import fitz
     import crops as C
     import roll_ocr as R
@@ -76,15 +83,19 @@ def page_reads(data: bytes, pages: list[int], style: str) -> dict:
             continue
         epics, serials = C.cut_page(img)
         e, ok, s, scrops, info = C.ocr_page(epics, serials, style)
-        out[p] = {d['cell']: (e[j] if ok[j] else None, d.get('how'), s[j], R.serial_marker(scrops[j]),
-                              epics[d['cell']])
+        fitted, sure = R.repair_serials(s) if s else ([], [])
+        out[p] = {d['cell']: (e[j] if ok[j] else None, d.get('how'), fitted[j] if sure[j] else None,
+                              R.serial_marker(scrops[j]), epics[d['cell']])
                   for j, d in enumerate(info)}
     return out
 
 
-def digits(s: str | None) -> int | None:
-    found = re.findall(r'\d+', s or '')
-    return int(found[-1]) if found else None
+ROUND = str.maketrans('COGQ', 'OOOO')
+
+
+def round_only(a: str, b: str) -> bool:
+    """a and b differ only in round letters (C/O/G/Q) of the series."""
+    return a != b and a[3:] == b[3:] and a[:3].translate(ROUND) == b[:3].translate(ROUND)
 
 
 def review(path: Path, kan, eng, label: str) -> None:
@@ -167,6 +178,10 @@ def verify_ac(ac: int, n_booths: int, n_pages: int, out: Path) -> dict:
                     count['epic_vs_eng'] += 1
                     if e[0] == r['epic']:
                         count['epic_eng_agree'] += 1
+                    elif k and k[0] == r['epic'] and k[1] == 'direct' and round_only(e[0], r['epic']):
+                        # The English readers' C/O/G/Q slip (AC 4: ZCI read ZOI;
+                        # both crops print ZCI): kept for eyes, counted apart.
+                        problems.append('epic-eng-round')
                     else:
                         problems.append('epic-eng')
                 elif k and k[0]:
@@ -177,12 +192,12 @@ def verify_ac(ac: int, n_booths: int, n_pages: int, out: Path) -> dict:
                         problems.append('epic-kan')
                 else:
                     count['epic_unchecked'] += 1
-                seen = {digits(x[2]) for x in (k, e) if x} - {None}
+                seen = {x[2] for x in (k, e) if x} - {None}
                 if seen:
                     count['serial_checked'] += 1
                     if r['serial'] in seen:
                         count['serial_agree'] += 1
-                    elif len(seen) == 1 and k and e:
+                    elif len(seen) == 1 and k and e and k[2] is not None and e[2] is not None:
                         problems.append('serial')
                     else:
                         count['serial_unsettled'] += 1
