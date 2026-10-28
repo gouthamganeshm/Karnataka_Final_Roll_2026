@@ -60,6 +60,7 @@ STATE = run.CACHE / 'eng-pilot.json'
 TMP = run.CACHE / 'eng-pilot'
 MANUAL = ROOT / 'reference' / 'manual'
 MAX_RETRY = 3
+STALE_MIN = 20         # a partial PDF set this old is an upload that died
 MAX_SETS = 6           # English PDF sets waiting in the work release, all VMs together
 PAUSE = 180
 PER_SHEET = 12
@@ -88,6 +89,12 @@ def on(tag: str, fn, *args):
         return fn(*args)
     finally:
         release.TAG = MAIN
+
+
+def age_min(stamp: str) -> float:
+    import datetime as dt
+    t = dt.datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+    return (dt.datetime.now(dt.timezone.utc) - t).total_seconds() / 60
 
 
 def runs() -> list[dict]:
@@ -287,11 +294,12 @@ def tick(mine: list[int], target: int, state: dict, parts_by_ac: dict) -> None:
             latest[int(m[1])] = r
     main, work, eng = release.assets(), on(WORK, release.assets), on(ENG, release.assets)
     crops_rel = on(CROPS, release.assets)
-    sets = {}
-    for n in work:
+    sets, newest = {}, {}
+    for n, a in work.items():
         m = re.match(r'epdfs-(\d+)\.s(\d+)\.tar$', n)
         if m:
             sets.setdefault(int(m[1]), set()).add(int(m[2]))
+            newest[int(m[1])] = max(newest.get(int(m[1]), ''), a.get('updated_at') or a.get('created_at') or '')
     retries, gave_up = state.setdefault('retries', {}), state.setdefault('gaveUp', [])
     subprocess.run(['git', 'pull', '-q'], cwd=ROOT, check=False)      # manual decisions
     fetched = False
@@ -320,6 +328,13 @@ def tick(mine: list[int], target: int, state: dict, parts_by_ac: dict) -> None:
         last = latest.get(ac)
         if last and last['status'] != 'completed':
             continue
+        if ac in sets and len(sets[ac]) < vm_fetch.SHARDS:
+            if age_min(newest[ac]) > STALE_MIN:          # an upload cut short: drop it, fetch again
+                log(f'AC {ac}: partial English PDF set ({len(sets[ac])} of {vm_fetch.SHARDS}); dropped')
+                on(WORK, release.delete, *[f'epdfs-{ac}.s{i}.tar' for i in sorted(sets[ac])])
+                del sets[ac]
+            else:
+                continue
         if ac in sets:
             if len(sets[ac]) == vm_fetch.SHARDS and (not last or last['conclusion'] != 'success'):
                 n = retries.get(str(ac), 0)
