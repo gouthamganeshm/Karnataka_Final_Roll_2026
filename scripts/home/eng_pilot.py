@@ -50,6 +50,7 @@ sys.path.insert(0, str(ROOT / 'scripts' / 'ocr'))
 import release  # noqa: E402
 import run  # noqa: E402
 import vm_fetch  # noqa: E402
+import xcheck  # noqa: E402
 
 MAIN = release.TAG
 WORK = vm_fetch.WORK
@@ -245,14 +246,17 @@ def apply(ac: int, led: dict, pages: list) -> bool:
         log(f'AC {ac}: live rows changed since the check; checking again (decisions carry over)')
         on(ENG, release.delete, f'xcheck-{ac}.zip')
         return False
-    edits = [list(a[:5]) for a in led['auto']]
-    pub = {key(m): m['published'] for m in led['manual']}
+    edits = [list(a[:6]) for a in led['auto']]
+    items = {key(m): m for m in led['manual']}
     for k, v in dec.items():
-        p = pub.get(k)
-        if p and v.get('epic') == p[0] and v.get('deleted', p[1]) == p[1]:
+        m = items.get(k)
+        if m is None:
+            continue                                  # a card a redone check no longer lists
+        p = m['published']
+        if p and v.get('epic') == p[0] and v.get('deleted', p[1]) == p[1] and 'serial' not in v:
             continue                                  # the published card stands
-        if k in pub:
-            edits.append([*map(int, k.split('/')), v.get('epic'), v.get('deleted')])
+        serial = v.get('serial', m.get('serial') if m['cat'] in ('kannada-missing', 'serial') else None)
+        edits.append([*map(int, k.split('/')), v.get('epic'), v.get('deleted'), serial])
     out = {'applied': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'edits': len(edits)}
     if edits:
         f = d / 'epics.json'
@@ -300,6 +304,10 @@ def tick(mine: list[int], target: int, state: dict, parts_by_ac: dict) -> None:
             if state.setdefault('done', {}).get(str(ac)) == when:
                 continue
             led, pages = ledger(ac, asset)
+            if led.get('version') != xcheck.VERSION and not (led.get('apply') or {}).get('applied'):
+                log(f'AC {ac}: ledger from older comparison rules; checking again (decisions carry over)')
+                on(ENG, release.delete, f'xcheck-{ac}.zip')
+                continue
             outcome = led.get('apply') or {}
             if outcome.get('applied') or outcome.get('failed'):
                 state['done'][str(ac)] = when         # applied, or failed and listed for a person

@@ -14,6 +14,9 @@ eng_pilot applies an AC as soon as every card it left for review is decided.
   ID=keep        the published card is right as it is
   ID=withhold    not settled from the crops: keep it off the site
   ID=EPIC/del    ... and it is marked deleted; ID=EPIC/live: it is not
+  ID=...@474     ... and its serial is 474 (a serial card, or one the Kannada
+                 rows lack, takes the ledger's serial from the card's place
+                 in its part unless one is given)
 
 The sheets hold EPICs: they stay in cache/ (git-ignored), never in git.
 """
@@ -110,7 +113,7 @@ def show(ac: int) -> int:
     sheets = sorted({m['id'] // BATCH + 1 for m in left[:BATCH * 3]})
     for m in left[:BATCH * 3]:
         k, e = m['kan'] or {}, m['eng'] or {}
-        print(f"#{m['id']} sheet {m['id'] // BATCH + 1:03d} {card(m)} {m['cat']}: published {m['published']} "
+        print(f"#{m['id']} sheet {m['id'] // BATCH + 1:03d} {card(m)} {m['cat']}{' ' + m['note'] if m.get('note') else ''}: published {m['published']} "
               f"| KAN {k.get('epic')} {k.get('how')} rd={k.get('rd')} | ENG {e.get('epic')} {e.get('how')} "
               f"del {k.get('deleted')}/{e.get('deleted')}")
     print('sheets:', ' '.join(str(CACHE / str(ac) / f'sheet-{s:03d}.png') for s in sheets))
@@ -136,6 +139,7 @@ def decide(ac: int, items: list[str]) -> int:
     for it in items:
         i, v = it.split('=', 1)
         m = by_id[int(i)]
+        v, _, serial = v.partition('@')
         val, _, mark = v.partition('/')
         if val == 'keep':
             if not m['published']:
@@ -149,6 +153,8 @@ def decide(ac: int, items: list[str]) -> int:
             raise SystemExit(f'#{i}: {v!r} is not an EPIC, keep or withhold')
         if mark:
             d['deleted'] = mark == 'del'
+        if serial:
+            d['serial'] = int(serial)
         d['cat'] = m['cat']
         rec['decisions'][card(m)] = d
     MANUAL.mkdir(parents=True, exist_ok=True)

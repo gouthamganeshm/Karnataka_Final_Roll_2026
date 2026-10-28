@@ -6,14 +6,17 @@ The English roll is the same roll set separately in English: same parts, pages
 and cells. Every Kannada card (the site's source) is joined with the English
 card in its cell, and every card lands in one bucket:
 
-  confirmed   published, and the English roll reads the same EPIC (any English
-              reading: it is a second roll) with the same deleted mark
+  confirmed   published, and an English reader reads the same EPIC (it is a
+              second roll) with the same deleted mark
   kan-only    published, the English card unreadable, the Kannada readers
               agreed outright ('direct'): the publish rule both rolls started
               from; counted, not reviewed
   auto        decided from two rolls without a person: a published card the
               English roll corrects, or a withheld one it recovers, to an EPIC
-              that is also a reading of the Kannada card
+              that is also a reading of the Kannada card; or a serial set to
+              the card's place in its part (English roll complete) that the
+              English reading confirms (a cell the Kannada cut skipped shifts
+              every serial after it)
   manual      anything else: the rolls disagree, neither reads it, a deleted
               mark differs, or a card is in one roll only
 
@@ -37,7 +40,7 @@ import time
 from pathlib import Path
 
 EPIC = re.compile(r'^[A-Z]{3}[0-9]{7}$')
-VERSION = 1
+VERSION = 2
 
 
 def valid(e) -> bool:
@@ -89,6 +92,24 @@ def join(kan: list[dict], eng: list[dict]) -> tuple[dict, dict]:
     return out, how
 
 
+def true_serials(eng: list[dict], ksum: dict, esum: dict) -> dict:
+    """(part, page, cell) -> serial from the card's place in its part, for parts the
+    English roll has completely (as many cards as the printed Start..Ending)."""
+    by_part = collections.defaultdict(list)
+    for r in eng:
+        by_part[r['part']].append(r)
+    out = {}
+    for part, rows in by_part.items():
+        t = (ksum.get('perPart', {}).get(str(part), {}).get('totals') or
+             esum.get('perPart', {}).get(str(part), {}).get('totals') or {})
+        if t.get('start') is None or t.get('end') is None or len(rows) != t['end'] - t['start'] + 1:
+            continue
+        rows.sort(key=lambda r: (r['page'], r['cell']))
+        for i, r in enumerate(rows):
+            out[(part, r['page'], r['cell'])] = t['start'] + i
+    return out
+
+
 def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict], esum: dict) -> dict:
     pub, disputed = published(kan, verify)
     ejoin, joined = join(kan, eng)
@@ -101,57 +122,76 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
             'epic': r['epic'], 'epicOk': r['epicOk'], 'how': r.get('how'), 'rd': r.get('rd'),
             'serial': r['serial'], 'ok': r['ok'], 'deleted': bool(r.get('deleted'))}
 
-    def flag(cat, key, k, e, note=''):
-        manual.append({'id': len(manual), 'key': list(key), 'cat': cat, 'note': note,
+    def flag(cat, key, k, e, note='', serial=None):
+        manual.append({'id': len(manual), 'key': list(key), 'cat': cat, 'note': note, 'serial': serial,
                        'published': list(pub[key]) if key in pub else None,
                        'disputed': disputed.get(key), 'kan': card(k), 'eng': card(e)})
         counts[f'manual:{cat}'] += 1
 
     eng_parts = {r['part'] for r in eng}
+    truth = true_serials(eng, ksum, esum)
+
+    def done(key, epic, deleted, serial, why):
+        auto.append([*key, epic, deleted, serial, why])
+        counts[f'auto:{why}'] += 1
+
     for k in kan:
         key = (k['part'], k['page'], k['cell'])
         if k['part'] not in eng_parts:
             counts['part-not-in-english'] += 1
             continue
         e = ejoin.get(key)
-        kreads = {x for x in [k['epic'], *(k.get('rd') or [])[:2]] if valid(x)}
-        eread = e['epic'] if e is not None and valid(e['epic']) else None
+        kreads = {x for x in [k['epic'], *(k.get('rd') or [])[:3]] if valid(x)}
+        ereads = collections.Counter(x for x in ([e['epic'], *(e.get('rd') or [])[:3]] if e else []) if valid(x))
+        eread = e['epic'] if e is not None and e['epicOk'] and valid(e['epic']) else None
         edel = bool(e and e.get('deleted'))
+        # The serial: the card's place in its part, when the English roll has
+        # every card of the part (a skipped cell shifts the readings after it).
+        t = truth.get(key)
+        fix = None
+        if t is not None and k['serial'] != t:
+            if e is not None and e['serial'] == t:
+                fix = t
+            else:
+                flag('serial', key, k, e, f'place in part says {t}', serial=t)
+                continue
         if key in pub:
             epic, kdel = pub[key]
             if e is None:
-                flag('no-english-card', key, k, e)
-            elif eread == epic:
+                if k.get('how') == 'direct' and fix is None:
+                    counts['kan-only'] += 1
+                else:
+                    flag('no-english-card', key, k, e)
+            elif epic in ereads:                        # an English reader read this very EPIC
                 if edel != kdel:
                     flag('deleted-mark', key, k, e)
-                elif e['ok'] and k['ok'] and e['serial'] != k['serial']:
-                    flag('serial', key, k, e)
+                elif fix is not None:
+                    done(key, epic, kdel, fix, 'serial')
                 else:
                     counts['confirmed'] += 1
-            elif eread is None or not e['epicOk']:
-                # English unsure. Its best guess still disagrees, or it has none.
-                if k.get('how') == 'direct' and edel == kdel:
-                    counts['kan-only'] += 1
+            elif eread is None:
+                if k.get('how') == 'direct' and edel == kdel and fix is None:
+                    counts['kan-only'] += 1             # English unreadable; both Kannada readers agreed
                 else:
                     flag('english-unread', key, k, e)
             elif eread in kreads and k.get('how') != 'direct' and edel == kdel and epic_seen[eread] == 0:
-                auto.append([*key, eread, kdel, 'corrected'])
-                counts['auto:corrected'] += 1
+                done(key, eread, kdel, fix, 'corrected')
             else:
                 flag('conflict', key, k, e)
         else:
             # Withheld: unread, the readers disagreed, or the verifier disputed it.
-            if e is not None and e['epicOk'] and eread in kreads and edel == bool(k.get('deleted')) \
-                    and epic_seen[eread] == 0:
-                auto.append([*key, eread, edel, 'recovered'])
-                epic_seen[eread] += 1
-                counts['auto:recovered'] += 1
+            common = [x for x in ereads if x in kreads]
+            pick = eread if eread in kreads else (
+                common[0] if len(common) == 1 and ereads[common[0]] >= 2 else None)
+            if pick and e is not None and edel == bool(k.get('deleted')) and epic_seen[pick] == 0:
+                done(key, pick, edel, fix, 'recovered')
+                epic_seen[pick] += 1
             else:
                 flag('withheld', key, k, e)
     # Cards the English roll has and the Kannada rows do not: a voter possibly missed.
     for key, e in ejoin.items():
         if key not in kkeys and joined.get(key[0]) == 'cell':
-            flag('kannada-missing', key, None, e)
+            flag('kannada-missing', key, None, e, serial=truth.get(key, e['serial']))
     parts = {}
     for p, v in ksum.get('perPart', {}).items():
         t = (v.get('totals') or {}).get('total')
