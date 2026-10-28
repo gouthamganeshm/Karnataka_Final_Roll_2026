@@ -14,10 +14,13 @@ Two recoveries, neither needing the crops (deleted after verification):
            longer withholds a booth whose printed deletions match the marks
            found. Per-card disputes from an earlier full verification (V1/V4)
            are kept.
-  epics    `--epics FILE` ({"ac": [[part, page, cell, epic or null], ...]}):
-           cards checked against the English roll (series_decide.py): each
-           one's EPIC is set to the given one (`how == "english"`), or the card
-           is withheld when null. Every other published card must stay as it is.
+  epics    `--epics FILE` ({"ac": [[part, page, cell, epic or null, deleted?], ...]}):
+           cards checked against the English roll (series_decide.py,
+           eng_pilot.py): each one's EPIC is set to the given one (`how ==
+           "english"`), and its deleted mark when given, or the card is
+           withheld when null. Both rolls (or a person) settled such a card,
+           so a whole-booth dispute no longer withholds it. Every other
+           published card must stay as it is.
   totals   `--totals FILE` (lines of {"ac", "part", "new"}: totals.py re-run on
            the part's PDF) replaces a part's printed totals in the summary when
            the new reading is the cover's, confirmed by the summary page; the
@@ -86,10 +89,11 @@ def main() -> int:
     ap.add_argument('--ac')
     ap.add_argument('--skip', default='')
     ap.add_argument('--totals', help='re-read totals (JSON lines) to patch into the summaries')
-    ap.add_argument('--epics', help='JSON {ac: [[part, page, cell, epic or null]]}: EPICs the English roll settled')
+    ap.add_argument('--epics', help='JSON {ac: [[part, page, cell, epic or null, deleted?]]}: EPICs the English roll settled')
+    ap.add_argument('--no-publish', action='store_true', help='replace live files only; the caller publishes')
     args = ap.parse_args()
-    args.edits = ({int(a): {tuple(e[:3]): e[3] for e in v} for a, v in json.loads(Path(args.epics).read_text()).items()}
-                  if args.epics else {})
+    args.edits = ({int(a): {tuple(e[:3]): (e[3], e[4] if len(e) > 4 else None) for e in v}
+                   for a, v in json.loads(Path(args.epics).read_text()).items()} if args.epics else {})
     if args.edits and not args.ac:
         args.ac = ','.join(map(str, sorted(args.edits)))
     skip = {int(a) for a in args.skip.split(',') if a}
@@ -118,7 +122,9 @@ def main() -> int:
         except (RuntimeError, SystemExit, OSError, subprocess.CalledProcessError) as exc:
             print(f'AC {ac:3}: FAILED {exc!r}'[:300], flush=True)
             failed.append(ac)
-    if args.apply and changed:
+    if args.apply and changed and args.no_publish:
+        print(f'{changed} ACs replaced')
+    elif args.apply and changed:
         release.gh('workflow', 'run', 'publish.yml', '-R', release.repo(), '-f', f'tag={release.TAG}')
         print(f'{changed} ACs replaced; publish dispatched')
     if failed:
@@ -153,10 +159,13 @@ def one_ac(ac: int, args, reread: dict) -> int:
     for r in rows:
         key = (r['part'], r['page'], r['cell'])
         if key in edits:
-            if edits[key]:
-                r.update(epic=edits[key], epicOk=True, how='english')
+            epic, deleted = edits[key]
+            if epic:
+                r.update(epic=epic, epicOk=True, how='english')
             else:
                 r.update(epicOk=False, how='withheld')
+            if deleted is not None:
+                r['deleted'] = bool(deleted)
     if len(edits) != sum((r['part'], r['page'], r['cell']) in edits for r in rows):
         raise RuntimeError(f'AC {ac}: an --epics card is not in its rows')
     gained_realign = realign(rows)
@@ -172,13 +181,16 @@ def one_ac(ac: int, args, reread: dict) -> int:
     have = {tuple(d[:3]) for d in ver['disputed']}
     ver['disputed'] += [d for d in keep if tuple(d[:3]) not in have]
     ver['checks'] = old_ver.get('checks', 'full') + '+reverified'
+    settled = {k for k, (e, _) in edits.items() if e}
+    ver['disputed'] = [d for d in ver['disputed'] if tuple(d[:3]) not in settled]
+    ver['undeleted'] = [u for u in ver.get('undeleted', []) if tuple(u) not in edits or edits[tuple(u)][1] is None]
     after = published(rows, ver)
     # A card off its part's serial run (2010 read for serial 1) was published
     # with that wrong serial before V2 compared serials with the run.
     misread = {tuple(d[:3]) for d in ver['disputed'] if d[3] == 'v2:serial-order'}
     lost = [k for k, e in before.items() if after.get(k) != e and k not in misread and k not in edits]
-    fixed = sum(after.get(k, (None,))[0] == e for k, e in edits.items() if e)
-    ok = ver['verdict'] == 'pass' and not lost and fixed == sum(1 for e in edits.values() if e)
+    fixed = sum(after.get(k, (None,))[0] == e for k, (e, _) in edits.items() if e)
+    ok = ver['verdict'] == 'pass' and not lost and fixed == len(settled)
     print(f'AC {ac:3}: published {len(before):,} -> {len(after):,} (+{len(after) - len(before):,}; '
           f'{gained_realign} realigned, {patched} totals re-read, {fixed}/{len(edits)} EPICs set) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
           f'verdict {ver["verdict"]}; lost {len(lost)}' + ('' if ok else '  -> NOT APPLIED'), flush=True)

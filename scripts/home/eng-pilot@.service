@@ -1,0 +1,21 @@
+# Runs scripts/home/eng_pilot.py --vm K on VM K (eci-K), restarted after any
+# crash or reboot. Install (as ubuntu, repo at ~/verify, token in ~/.gh_token):
+#   sudo cp ~/verify/scripts/home/eng-pilot@.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now eng-pilot@K
+# Log: journalctl -u eng-pilot@K -f
+[Unit]
+Description=Karnataka final roll: full English cross-check, VM %i
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/verify
+# Pick up pushed fixes (and manual decisions) on every (re)start.
+ExecStartPre=/bin/bash -c 'git pull -q || true'
+ExecStart=/bin/bash -c 'GH_TOKEN=$(cat /home/ubuntu/.gh_token) exec nice -n 5 /home/ubuntu/venv/bin/python -u scripts/home/eng_pilot.py --vm %i'
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
