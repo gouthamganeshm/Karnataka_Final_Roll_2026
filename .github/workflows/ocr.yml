@@ -50,6 +50,7 @@ jobs:
       shards: ${{ steps.n.outputs.shards }}
       list: ${{ steps.n.outputs.list }}
       ids: ${{ steps.ids.outputs.ids }}
+      work_id: ${{ steps.ids.outputs.work_id }}
     steps:
       - id: n
         env:
@@ -91,6 +92,8 @@ jobs:
               if len(ids) == n:
                   break
           print('ids=' + json.dumps(ids))
+          release.TAG = f'{tag}-work'
+          print(f"work_id={release.ensure()['id']}")
           EOF
 
   ocr:
@@ -102,7 +105,10 @@ jobs:
       matrix:
         shard: ${{ fromJSON(needs.plan.outputs.list) }}
     env:
-      GH_TOKEN: ${{ secrets.ROLL_TOKEN || github.token }}
+      # Shards spend Actions' own API allowance (2 calls each: fetch by id,
+      # upload by release id); plan, merge and publish spend ROLL_TOKEN's.
+      GH_TOKEN: ${{ github.token }}
+      WORK_ID: ${{ needs.plan.outputs.work_id }}
       ROLL_RELEASE: ${{ inputs.tag }}
       AC: ${{ inputs.ac }}
       KIND: ${{ inputs.kind || 'kan' }}
@@ -166,7 +172,8 @@ jobs:
           files="$OUT.s$SHARD.jsonl.gz $OUT.s$SHARD.summary.json"
           if [ "$KIND" = pdf ]; then files="$files crops-$AC.s$SHARD.tar"; fi
           tar cf "work/out-$OUT.s$SHARD.tar" -C work $files
-          ROLL_RELEASE="$WORK" python scripts/release.py upload "work/out-$OUT.s$SHARD.tar"
+          # One call by release id; a leftover of the same name (a retried AC) falls back to replacing it.
+          gh api -X POST "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$WORK_ID/assets?name=out-$OUT.s$SHARD.tar"             -H 'Content-Type: application/x-tar' --input "work/out-$OUT.s$SHARD.tar" > /dev/null             || ROLL_RELEASE="$WORK" python scripts/release.py upload "work/out-$OUT.s$SHARD.tar"
 
   merge:
     needs: [plan, ocr]
