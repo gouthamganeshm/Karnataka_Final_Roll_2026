@@ -45,6 +45,10 @@ MAX_RETRY = 4
 COOL = 900              # after a failed run, no new dispatch for this long (a rate-limit window)
 STALE_MIN = 20          # a partial PDF set this old is an upload that died
 PAUSE = 120             # seconds between looks
+# Final phase, once every AC is live: Bengaluru ACs cut before the lone-card fix
+# (1a477c8) and read before the contact-sheet fix (965c299), whose crops were
+# deleted when per-card verification still ran, so only a fresh download helps.
+REDO = [150, 151, 152, 153, 154, 155, 158, 160, 162, 167, 171, 175, 176, 177, 196]
 DRY = False            # --dry: say what would be done, change nothing
 TITLE = re.compile(r'^OCR AC (\d+) \((\w+)\)$')
 
@@ -227,7 +231,24 @@ def tick(target: int, state: dict, parts_by_ac: dict[int, list[int]], order: lis
         save(STATE, state)
     todo = [a for a in order if str(a) not in shipped and a not in live and a not in gave_up and a not in sets_now]
     if not todo:
-        return active > 0
+        held = {a for a, r in latest.items() if r['status'] == 'completed' and r['conclusion'] == 'success'}
+        waiting = [a for a in order if a not in live and a not in gave_up and a not in held]
+        redone = state.setdefault('redone', [])
+        redo = [a for a in REDO if a not in redone]
+        if waiting or not redo:
+            return active > 0 or bool(waiting)
+        if active >= target or ready or len(work) > 800:
+            return True
+        ac = redo[0]
+        log(f'AC {ac}: final phase, downloading again (crops from before the lone-card and sheet fixes)')
+        if DRY:
+            return True
+        paths, failed = vm_fetch.fetch_ac(ac, parts_by_ac[ac], 16)
+        vm_fetch.ship(ac, paths)
+        mark(ac)
+        redone.append(ac)
+        save(STATE, state)
+        return True
     if active >= target or ready or len(work) > 800:
         return True
     ac = todo[0]
