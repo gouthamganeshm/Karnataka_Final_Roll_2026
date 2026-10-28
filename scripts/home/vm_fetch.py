@@ -42,17 +42,19 @@ def _add(tar, name, data):
     tar.addfile(info, io.BytesIO(data))
 
 
-def fetch_ac(ac: int, parts: list[int], threads: int) -> tuple[list[Path], list[int]]:
+def fetch_ac(ac: int, parts: list[int], threads: int, lang: str = 'kan') -> tuple[list[Path], list[int]]:
+    """lang='eng': the English roll, as epdfs-<ac>.s<i>.tar (ocr.yml kind=epdf)."""
     OUT.mkdir(parents=True, exist_ok=True)
     order = sorted(parts)
     shard_of = {p: k % SHARDS for k, p in enumerate(order)}
-    paths = [OUT / f'pdfs-{ac}.s{i}.tar' for i in range(SHARDS)]
+    prefix = 'epdfs' if lang == 'eng' else 'pdfs'
+    paths = [OUT / f'{prefix}-{ac}.s{i}.tar' for i in range(SHARDS)]
     tars = [tarfile.open(p, 'w') for p in paths]
     lock = threading.Lock()
     t0, done, size = time.time(), 0, 0
 
     def one(p):
-        return p, run.fetch(run.url(ac, p))
+        return p, run.fetch(run.url(ac, p, lang))
 
     todo, failed = order, []
     for wait in (0, 30, 120, 300):
@@ -75,7 +77,7 @@ def fetch_ac(ac: int, parts: list[int], threads: int) -> tuple[list[Path], list[
                     print(f'  AC {ac}: {done}/{len(order)} parts, {size / 1e6:.0f} MB, '
                           f'{size / 1e6 / (time.time() - t0):.1f} MB/s', flush=True)
         todo = failed
-    meta = json.dumps({'ac': ac, 'parts': order, 'failed': failed, 'lang': 'kan', 'source': 'vm-pdf'}).encode()
+    meta = json.dumps({'ac': ac, 'parts': order, 'failed': failed, 'lang': lang, 'source': 'vm-pdf'}).encode()
     for t in tars:
         _add(t, 'meta.json', meta)
         t.close()
@@ -85,7 +87,7 @@ def fetch_ac(ac: int, parts: list[int], threads: int) -> tuple[list[Path], list[
     return paths, failed
 
 
-def ship(ac: int, paths: list[Path]) -> None:
+def ship(ac: int, paths: list[Path], kind: str = 'pdf') -> None:
     for wait in (30, 120, 300, 0):
         try:
             t = time.time()
@@ -93,7 +95,7 @@ def ship(ac: int, paths: list[Path]) -> None:
             # 1,000-asset limit of the release holding every AC's results.
             release.gh('release', 'upload', WORK, *map(str, paths), '--clobber', '-R', release.repo())
             release.gh('workflow', 'run', 'ocr.yml', '-R', release.repo(), '-f', f'ac={ac}',
-                       '-f', f'tag={release.TAG}', '-f', 'kind=pdf', '-f', f'shards={SHARDS}')
+                       '-f', f'tag={release.TAG}', '-f', f'kind={kind}', '-f', f'shards={SHARDS}')
             print(f'  AC {ac}: uploaded {sum(p.stat().st_size for p in paths) / 1e6:.0f} MB in '
                   f'{time.time() - t:.0f}s, OCR dispatched', flush=True)
             break

@@ -2,6 +2,7 @@
 
     python scripts/ci/ocr_ac.py crops-177.tar rows-177.jsonl.gz
     python scripts/ci/ocr_ac.py crops-eng-177.tar eng-177.jsonl.gz     # the English cross-check part
+    python scripts/ci/ocr_ac.py epdfs-177.s2.tar engfull-177.s2.jsonl.gz --shard 2/20   # English PDFs
     python scripts/ci/ocr_ac.py crops-177.tar rows-177.s2.jsonl.gz --shard 2/6
     python scripts/ci/ocr_ac.py merge rows-177.jsonl.gz rows-177.s*.jsonl.gz
 
@@ -41,13 +42,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ocr'))
 
 
-def cut_pdf(item: tuple[str, bytes, int]) -> tuple[str, bytes]:
+def cut_pdf(item: tuple[str, bytes, int, str]) -> tuple[str, bytes]:
     """A raw part PDF (fetched by a cloud VM) cut into the bundle home would make."""
     import crops
-    name, data, ac = item
+    name, data, ac, lang = item
     part = int(name.split('.')[0])
     cp = crops.cut_part(data)
-    return f'{part}.zip', crops.write_bundle(cp['pages'], ac, part, cp, lang='kan')
+    return f'{part}.zip', crops.write_bundle(cp['pages'], ac, part, cp, lang=lang)
 
 
 def ocr_bundle(item: tuple[str, bytes]):
@@ -87,7 +88,7 @@ def main(tar_path: str, out_path: str, shard: str | None = None, crops_out: str 
 
     ac = meta['ac']
     workers = os.cpu_count() or 4
-    pdfs = [(name, data, ac) for name, data in items if name.endswith('.pdf')]
+    pdfs = [(name, data, ac, meta.get('lang', 'kan')) for name, data in items if name.endswith('.pdf')]
     if pdfs:
         # Raw PDFs from a cloud VM: cut here, and keep the crops (crops_out)
         # for the verifier, exactly as home would have shipped them.
