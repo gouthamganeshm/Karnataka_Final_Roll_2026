@@ -41,16 +41,16 @@ jobs:
     steps:
       # Actions may make 1,000 GitHub API calls an hour per repo, and OCR runs
       # need most of them: a build per finished AC, each fetching every live
-      # file again, used them all up. So: at most one build per 20 minutes
+      # file again, used them all up. So: at most one build per 30 minutes
       # (newer dispatches wait as the one queued run), and the live files are
       # kept between builds in an encrypted Actions cache (EPICs in plain text
       # must never sit where a fork's workflow could restore them), so only
       # files replaced since the last build are downloaded.
-      - name: At most one build every 20 minutes
+      - name: At most one build every 30 minutes
         run: |
           last=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publish.yml --status success -L 1 --json createdAt -q '.[0].createdAt' || true)
           if [ -n "$last" ]; then
-            wait=$(( $(date -d "$last" +%s) + 1200 - $(date +%s) ))
+            wait=$(( $(date -d "$last" +%s) + 1800 - $(date +%s) ))
             if [ "$wait" -gt 0 ]; then echo "last build $last; waiting ${wait}s"; sleep "$wait"; fi
           fi
 
