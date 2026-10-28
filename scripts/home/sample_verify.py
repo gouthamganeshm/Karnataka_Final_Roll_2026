@@ -111,7 +111,10 @@ def review(path: Path, kan, eng, label: str) -> None:
     out.save(path)
 
 
-def verify_ac(ac: int, n_booths: int, n_pages: int, out: Path) -> dict:
+def verify_ac(ac: int, n_booths: int, n_pages: int, out: Path, targets: list | None = None) -> dict:
+    """`targets`: [[part, page, cell], ...] to check instead of a random sample;
+    every card on their pages is still compared, and each target's readings
+    are recorded whatever the outcome."""
     data = out / 'data'
     data.mkdir(parents=True, exist_ok=True)
     names = [f'live-rows-{ac}.jsonl.gz', f'live-verify-{ac}.json']
@@ -137,13 +140,21 @@ def verify_ac(ac: int, n_booths: int, n_pages: int, out: Path) -> dict:
 
     rng = random.Random(f'sample-verify-{ac}')
     parts = sorted({p for p, _ in by_page})
-    booths = sorted(rng.sample(parts, min(n_booths, len(parts))))
+    want = {tuple(t) for t in targets or []}
+    if targets:
+        booths = sorted({t[0] for t in targets})
+    else:
+        booths = sorted(rng.sample(parts, min(n_booths, len(parts))))
+    seen_targets = []
     count = collections.Counter()
     issues = []
     (out / 'review').mkdir(exist_ok=True)
     for part in booths:
         pages = sorted(pg for p, pg in by_page if p == part)
-        pick = sorted(rng.sample(pages, min(n_pages, len(pages))))
+        if targets:
+            pick = sorted({t[1] for t in targets if t[0] == part})
+        else:
+            pick = sorted(rng.sample(pages, min(n_pages, len(pages))))
         kan_pdf = get_pdf(URL_KAN.format(ac=ac, part=part), out / f'k-{ac}-{part}.pdf')
         eng_pdf = get_pdf(URL_ENG.format(ac=ac, part=part), out / f'e-{ac}-{part}.pdf')
         if kan_pdf is None:
@@ -166,6 +177,9 @@ def verify_ac(ac: int, n_booths: int, n_pages: int, out: Path) -> dict:
                 deleted = bool(r.get('deleted')) and key not in undeleted
                 k = k_page.get(r['cell'])
                 e = e_page.get(r['cell'])
+                if key in want:
+                    seen_targets.append([*key, r['epic'], (r.get('rd') or [None])[0],
+                                         list(k[:3]) if k else None, list(e[:3]) if e else None])
                 count['cards'] += 1
                 if not pub:
                     count['unpublished'] += 1
@@ -218,7 +232,7 @@ def verify_ac(ac: int, n_booths: int, n_pages: int, out: Path) -> dict:
                            k[4] if k else None, e[4] if e else None,
                            f'AC {ac} part {part} serial {r["serial"]}  published {r["epic"]}  '
                            f'kan {k[0] if k else "-"}  eng {e[0] if e else "-"}  {problems}')
-    res = {'ac': ac, 'booths': booths, 'count': dict(count), 'issues': issues,
+    res = {'ac': ac, 'booths': booths, 'count': dict(count), 'issues': issues, 'targets': seen_targets,
            'at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
     (out / f'result-{ac}.json').write_text(json.dumps(res), 'utf8')
     return res
@@ -231,8 +245,10 @@ def main() -> int:
     ap.add_argument('--booths', type=int, default=12)
     ap.add_argument('--pages', type=int, default=3)
     ap.add_argument('--out', default=str(ROOT / 'cache' / 'sample-verify'))
+    ap.add_argument('--targets', help='JSON {ac: [[part, page, cell], ...]}: check these cards, not a sample')
     args = ap.parse_args()
-    acs = [int(a) for a in args.ac.split(',')] if args.ac else list(range(1, 225))
+    targets = {int(a): v for a, v in json.loads(Path(args.targets).read_text()).items()} if args.targets else {}
+    acs = [int(a) for a in args.ac.split(',')] if args.ac else sorted(targets) or list(range(1, 225))
     if args.shard:
         i, n = map(int, args.shard.split('/'))
         acs = acs[i - 1::n]
@@ -243,7 +259,7 @@ def main() -> int:
             continue
         t = time.time()
         try:
-            c = verify_ac(ac, args.booths, args.pages, out)['count']
+            c = verify_ac(ac, args.booths, args.pages, out, targets.get(ac) if targets else None)['count']
         except Exception as exc:  # noqa: BLE001 - one AC's failure must not stop the shard
             log(f'AC {ac}: FAILED {exc!r}')
             continue
