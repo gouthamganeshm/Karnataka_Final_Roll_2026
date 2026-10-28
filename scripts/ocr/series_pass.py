@@ -17,12 +17,15 @@ For each fused or withheld card:
 
   * its read prefix is a series -> pin it (a withheld card the readers could not
     settle on a thin margin);
-  * exactly one series differs from its read prefix in one letter and the read
-    prefix has under 1/RATIO of that series' direct cards -> pin that series
-    (IQQ, IQO -> IQG; ZOI -> ZCI). This holds for direct cards too: in AC 4
-    both readers read twelve ZCI cards as ZOI (checked on the crops), and a
-    lone ZOI beside 154,895 ZCI is no series. A real small series next to a
-    big one (IKF 4, HKF 121) is left alone;
+  * exactly one series differs from its read prefix in one round letter
+    (C/O/G/Q both ways) and the read prefix has under 1/RATIO of that series'
+    direct cards -> pin that series (IQQ, IQO -> IQG; ZOI -> ZCI). This holds
+    for direct cards too: in AC 4 both readers read twelve ZCI cards as ZOI
+    (checked on the crops), and a lone ZOI beside 154,895 ZCI is no series.
+    Any other letter is left alone, however small its series: small real
+    series sit one letter from big ones (BZE beside BZC, MKW beside MQW,
+    JIG beside JTG), and in 2026-10 every such pin checked against the
+    English roll had changed a correct EPIC;
   * otherwise leave the card as it was.
 
 Only the letters are pinned: the digits go through the same two-reader rule as
@@ -47,15 +50,22 @@ import roll_ocr as R  # noqa: E402
 
 MIN_DIRECT = 100     # direct cards that make a prefix a series of this AC
 RATIO = 200          # a prefix under 1/RATIO of a one-letter neighbour series is a misread of it
+ROUND = set('COGQ')  # the letters the readers confuse with each other
 
 
 def pin(prefix: str, direct: collections.Counter, big: set) -> str | None:
     if prefix in big:
         return prefix
-    near = [b for b in big if sum(x != y for x, y in zip(prefix, b)) == 1]
+    near = [b for b in big if round_neighbour(prefix, b)]
     if len(near) == 1 and direct[prefix] * RATIO < direct[near[0]]:
         return near[0]
     return None
+
+
+def round_neighbour(a: str, b: str) -> bool:
+    """a and b differ in exactly one letter, and both of those letters are round."""
+    diff = [(x, y) for x, y in zip(a, b) if x != y]
+    return len(diff) == 1 and set(diff[0]) <= ROUND
 
 
 def reread(job: tuple) -> list[tuple[int, str | None]]:

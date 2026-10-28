@@ -14,13 +14,18 @@ Two recoveries, neither needing the crops (deleted after verification):
            longer withholds a booth whose printed deletions match the marks
            found. Per-card disputes from an earlier full verification (V1/V4)
            are kept.
+  epics    `--epics FILE` ({"ac": [[part, page, cell, epic or null], ...]}):
+           cards checked against the English roll (series_decide.py): each
+           one's EPIC is set to the given one (`how == "english"`), or the card
+           is withheld when null. Every other published card must stay as it is.
   totals   `--totals FILE` (lines of {"ac", "part", "new"}: totals.py re-run on
            the part's PDF) replaces a part's printed totals in the summary when
            the new reading is the cover's, confirmed by the summary page; the
            summary is then replaced along with the rows and verify files.
 
 An AC is replaced only if it still passes and every card published now stays
-published with the same EPIC; then live-* is swapped and the site republished.
+published with the same EPIC (bar the `--epics` cards); then live-* is swapped
+and the site republished.
 """
 from __future__ import annotations
 
@@ -81,7 +86,12 @@ def main() -> int:
     ap.add_argument('--ac')
     ap.add_argument('--skip', default='')
     ap.add_argument('--totals', help='re-read totals (JSON lines) to patch into the summaries')
+    ap.add_argument('--epics', help='JSON {ac: [[part, page, cell, epic or null]]}: EPICs the English roll settled')
     args = ap.parse_args()
+    args.edits = ({int(a): {tuple(e[:3]): e[3] for e in v} for a, v in json.loads(Path(args.epics).read_text()).items()}
+                  if args.epics else {})
+    if args.edits and not args.ac:
+        args.ac = ','.join(map(str, sorted(args.edits)))
     skip = {int(a) for a in args.skip.split(',') if a}
     only = {int(a) for a in args.ac.split(',')} if args.ac else None
     reread = collections.defaultdict(dict)
@@ -139,6 +149,16 @@ def one_ac(ac: int, args, reread: dict) -> int:
     old_ver = json.loads(ver_p.read_text('utf8'))
     rows = load(rows_p)
     before = published(rows, old_ver)
+    edits = args.edits.get(ac, {})
+    for r in rows:
+        key = (r['part'], r['page'], r['cell'])
+        if key in edits:
+            if edits[key]:
+                r.update(epic=edits[key], epicOk=True, how='english')
+            else:
+                r.update(epicOk=False, how='withheld')
+    if len(edits) != sum((r['part'], r['page'], r['cell']) in edits for r in rows):
+        raise RuntimeError(f'AC {ac}: an --epics card is not in its rows')
     gained_realign = realign(rows)
     new_rows = DIR / f'new-rows-{ac}.jsonl.gz'
     with gzip.open(new_rows, 'wt', encoding='utf8') as f:
@@ -156,12 +176,13 @@ def one_ac(ac: int, args, reread: dict) -> int:
     # A card off its part's serial run (2010 read for serial 1) was published
     # with that wrong serial before V2 compared serials with the run.
     misread = {tuple(d[:3]) for d in ver['disputed'] if d[3] == 'v2:serial-order'}
-    lost = [k for k, e in before.items() if after.get(k) != e and k not in misread]
-    ok = ver['verdict'] == 'pass' and not lost
+    lost = [k for k, e in before.items() if after.get(k) != e and k not in misread and k not in edits]
+    fixed = sum(after.get(k, (None,))[0] == e for k, e in edits.items() if e)
+    ok = ver['verdict'] == 'pass' and not lost and fixed == sum(1 for e in edits.values() if e)
     print(f'AC {ac:3}: published {len(before):,} -> {len(after):,} (+{len(after) - len(before):,}; '
-          f'{gained_realign} realigned, {patched} totals re-read) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
+          f'{gained_realign} realigned, {patched} totals re-read, {fixed}/{len(edits)} EPICs set) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
           f'verdict {ver["verdict"]}; lost {len(lost)}' + ('' if ok else '  -> NOT APPLIED'), flush=True)
-    if args.apply and ok and len(after) > len(before):
+    if args.apply and ok and (len(after) > len(before) or edits):
         live = DIR / 'live'
         live.mkdir(exist_ok=True)
         (live / names[0]).write_bytes(new_rows.read_bytes())
