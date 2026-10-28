@@ -49,6 +49,7 @@ jobs:
     outputs:
       shards: ${{ steps.n.outputs.shards }}
       list: ${{ steps.n.outputs.list }}
+      ids: ${{ steps.ids.outputs.ids }}
     steps:
       - id: n
         env:
@@ -57,6 +58,40 @@ jobs:
           n=$(( WANT < 1 ? 1 : (WANT > 20 ? 20 : WANT) ))
           echo "shards=$n" >> "$GITHUB_OUTPUT"
           echo "list=$(python3 -c "print(list(range($n)))")" >> "$GITHUB_OUTPUT"
+
+      # Look the input files up once, here: a shard that lists the releases
+      # itself costs 10-30 API calls, and Actions may make 1,000 an hour.
+      - uses: actions/checkout@v4
+      - id: ids
+        env:
+          GH_TOKEN: ${{ secrets.ROLL_TOKEN || github.token }}
+          ROLL_RELEASE: ${{ inputs.tag }}
+          AC: ${{ inputs.ac }}
+          KIND: ${{ inputs.kind || 'kan' }}
+          SHARDS: ${{ steps.n.outputs.shards }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os, sys
+          sys.path.insert(0, 'scripts')
+          import release
+          ac, kind, n, tag = os.environ['AC'], os.environ['KIND'], int(os.environ['SHARDS']), os.environ['ROLL_RELEASE']
+          if kind == 'pdf':
+              names = [f'pdfs-{ac}.s{i}.tar' for i in range(n)]
+              tags = [f'{tag}-work', tag]
+          else:
+              names = [f'crops-eng-{ac}.tar' if kind == 'eng' else f'crops-{ac}.tar'] * n
+              tags = [tag]
+          ids = {}
+          for t in tags:
+              release.TAG = t
+              found = release.assets()
+              for i, name in enumerate(names):
+                  if str(i) not in ids and name in found:
+                      ids[str(i)] = found[name]['id']
+              if len(ids) == n:
+                  break
+          print('ids=' + json.dumps(ids))
+          EOF
 
   ocr:
     needs: plan
@@ -67,7 +102,7 @@ jobs:
       matrix:
         shard: ${{ fromJSON(needs.plan.outputs.list) }}
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.ROLL_TOKEN || github.token }}
       ROLL_RELEASE: ${{ inputs.tag }}
       AC: ${{ inputs.ac }}
       KIND: ${{ inputs.kind || 'kan' }}
@@ -103,8 +138,13 @@ jobs:
           fi
 
       - name: Fetch crops
+        env:
+          ID: ${{ fromJSON(needs.plan.outputs.ids)[format('{0}', matrix.shard)] }}
         run: |
-          if [ "$KIND" = pdf ]; then
+          if [ -n "$ID" ]; then
+            mkdir -p work
+            gh api -H 'Accept: application/octet-stream' "repos/$GITHUB_REPOSITORY/releases/assets/$ID" > "work/$TAR"
+          elif [ "$KIND" = pdf ]; then
             # PDFs shipped before the work release existed are still on the main one.
             ROLL_RELEASE="$WORK" python scripts/release.py download "$TAR" work || python scripts/release.py download "$TAR" work
           else
@@ -133,7 +173,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.ROLL_TOKEN || github.token }}
       ROLL_RELEASE: ${{ inputs.tag }}
       AC: ${{ inputs.ac }}
       KIND: ${{ inputs.kind || 'kan' }}
