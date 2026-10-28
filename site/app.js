@@ -188,7 +188,7 @@
              `ಈವರೆಗೆ ಲೋಡ್ ಆದ ${Math.floor(manifest.coverage * 100)}% ಮತಗಟ್ಟೆಗಳಲ್ಲಿ ಸಿಗಲಿಲ್ಲ. ಉಳಿದವು ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿವೆ — ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ.`)}</p>`);
       return;
     }
-    const blocks = hits.map(place).join('');
+    const blocks = hits.map((h, i) => place(h, i)).join('');
     const head = hits.length > 1
       ? t(`Found in ${hits.length} places`, `${hits.length} ಸ್ಥಳಗಳಲ್ಲಿ ಸಿಕ್ಕಿದೆ`)
       : t('You\'re on the roll', 'ನೀವು ಪಟ್ಟಿಯಲ್ಲಿದ್ದೀರಿ');
@@ -198,10 +198,10 @@
           t(' — an older entry struck off, usually because the voter moved.', ' — ಹಳೆಯ ನಮೂದು, ಸಾಮಾನ್ಯವಾಗಿ ಸ್ಥಳಾಂತರದಿಂದಾಗಿ ಅಳಿಸಲಾಗಿದೆ.')}</p>`
       : '';
     el.innerHTML = card('ok', '✓', head, `<div class="epic-echo">${epic}</div>${blocks}${struck}`);
-    el.querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', share));
+    el.querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', () => share(hits[+b.dataset.share], epic, b)));
   }
 
-  function place(h) {
+  function place(h, i) {
     const a = manifest.byAc.get(h.ac) || { name: '', nameKn: '', district: '' };
     const name = lang === 'kn' && a.nameKn ? a.nameKn : a.name;
     return `<div class="multi">
@@ -215,7 +215,7 @@
       ${h.approx ? `<p class="note">${t('~ The serial number could not be fully confirmed by the reader; it is very likely right, but check it in the PDF.', '~ ಕ್ರಮ ಸಂಖ್ಯೆಯನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ದೃಢೀಕರಿಸಲಾಗಲಿಲ್ಲ; PDF ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.')}</p>` : ''}
       <div class="actions">
         <a class="btn primary" href="${pdfUrl(h.ac, h.part)}" target="_blank" rel="noopener">${t('Open official PDF', 'ಅಧಿಕೃತ PDF ತೆರೆಯಿರಿ')} ↗</a>
-        ${h.deleted ? '' : `<button class="btn" type="button" data-share>${t('Share', 'ಹಂಚಿಕೊಳ್ಳಿ')}</button>`}
+        ${h.deleted || i === undefined ? '' : `<button class="btn" type="button" data-share="${i}">${t('Share', 'ಹಂಚಿಕೊಳ್ಳಿ')}</button>`}
       </div></div>`;
   }
 
@@ -223,13 +223,70 @@
     return `<div class="res ${kind}"><div class="res-head"><span class="dot">${icon}</span>${head}</div><div class="res-body">${body}</div></div>`;
   }
 
-  async function share() {
-    const u = location.origin + location.pathname;
-    const text = t('Check your name on the Karnataka electoral roll with your EPIC number:', 'ನಿಮ್ಮ EPIC ಸಂಖ್ಯೆಯಿಂದ ಕರ್ನಾಟಕ ಮತದಾರರ ಪಟ್ಟಿಯಲ್ಲಿ ನಿಮ್ಮ ಹೆಸರು ಪರಿಶೀಲಿಸಿ:');
+  // Share the result as a picture (sharecard.js), not just the address: the
+  // phone's share sheet where it takes files, else a preview to save or send.
+  async function share(h, epic, btn) {
+    const u = location.origin + location.pathname.replace(/index\.html$/, '');
+    const text = t('I found my name on the Karnataka electoral roll. Check yours with your EPIC number:',
+      'ಕರ್ನಾಟಕ ಮತದಾರರ ಪಟ್ಟಿಯಲ್ಲಿ ನನ್ನ ಹೆಸರು ಸಿಕ್ಕಿದೆ. ನಿಮ್ಮ EPIC ಸಂಖ್ಯೆಯಿಂದ ನಿಮ್ಮದನ್ನೂ ಪರಿಶೀಲಿಸಿ:');
+    const a = manifest.byAc.get(h.ac) || {};
+    btn.disabled = true;
+    let file = null;
     try {
-      if (navigator.share) await navigator.share({ title: document.title, text, url: u });
-      else { await navigator.clipboard.writeText(`${text} ${u}`); }
-    } catch { /* dismissed */ }
+      const png = await window.ShareCard.draw({
+        kn: lang === 'kn',
+        brand: t('Karnataka Roll Search', 'ಕರ್ನಾಟಕ ಮತದಾರರ ಪಟ್ಟಿ ಹುಡುಕಾಟ'),
+        roll: (lang === 'kn' && manifest.labelKn) ? manifest.labelKn : manifest.label,
+        headline: t('I\'m on the roll!', 'ನಾನು ಪಟ್ಟಿಯಲ್ಲಿದ್ದೇನೆ!'),
+        verified: t('Found on the final electoral roll', 'ಅಂತಿಮ ಮತದಾರರ ಪಟ್ಟಿಯಲ್ಲಿ ಸಿಕ್ಕಿದೆ'),
+        place: `${h.ac} · ${lang === 'kn' && a.nameKn ? a.nameKn : a.name || ''}`,
+        district: `${lang === 'kn' && a.districtKn ? a.districtKn : title(a.district)} ${t('district', 'ಜಿಲ್ಲೆ')}`,
+        tiles: [[t('Constituency', 'ಕ್ಷೇತ್ರ'), h.ac], [t('Part', 'ಭಾಗ'), h.part],
+          [t('Serial', 'ಕ್ರಮ ಸಂಖ್ಯೆ'), `${h.approx ? '~' : ''}${h.serial}`]],
+        epicLabel: 'EPIC',
+        epicMasked: `•••••• ${epic.slice(-4)}`,
+        cta: t('Are you on it? Check in seconds.', 'ನಿಮ್ಮ ಹೆಸರು ಇದೆಯೇ? ಕ್ಷಣದಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.'),
+        url: u.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+        privacy: t('Your EPIC number never leaves your phone.', 'ನಿಮ್ಮ EPIC ಸಂಖ್ಯೆ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಹೋಗುವುದಿಲ್ಲ.')
+      });
+      if (png) file = new File([png], `karnataka-roll-${h.ac}-${h.part}.png`, { type: 'image/png' });
+    } catch (err) { console.error(err); }
+    btn.disabled = false;
+    try {
+      if (file && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: document.title, text: `${text} ${u}` });
+        return;
+      }
+    } catch (err) { if (err.name === 'AbortError') return; }
+    sheet(file, text, u);
+  }
+
+  function sheet(file, text, u) {
+    document.querySelector('.sheet')?.remove();
+    const img = file ? URL.createObjectURL(file) : null;
+    const box = document.createElement('div');
+    box.className = 'sheet';
+    box.innerHTML = `<div class="sheet-card" role="dialog" aria-modal="true" aria-label="${t('Share', 'ಹಂಚಿಕೊಳ್ಳಿ')}">
+        <button class="chip icon sheet-x" type="button" aria-label="${t('Close', 'ಮುಚ್ಚಿ')}">✕</button>
+        <p class="sheet-title">${t('Share your result', 'ನಿಮ್ಮ ಫಲಿತಾಂಶ ಹಂಚಿಕೊಳ್ಳಿ')}</p>
+        ${img ? `<img class="sheet-img" src="${img}" alt="${t('Your result card', 'ನಿಮ್ಮ ಫಲಿತಾಂಶ ಕಾರ್ಡ್')}">` : ''}
+        <div class="actions">
+          ${img ? `<a class="btn primary" href="${img}" download="${file.name}">${t('Save image', 'ಚಿತ್ರ ಉಳಿಸಿ')}</a>` : ''}
+          <a class="btn" href="https://wa.me/?text=${encodeURIComponent(`${text} ${u}`)}" target="_blank" rel="noopener">WhatsApp ↗</a>
+          <button class="btn" type="button" data-copy>${t('Copy link', 'ಲಿಂಕ್ ನಕಲಿಸಿ')}</button>
+        </div>
+        ${img ? `<p class="note">${t('Save the image, then attach it to your post or chat.', 'ಚಿತ್ರವನ್ನು ಉಳಿಸಿ, ನಂತರ ನಿಮ್ಮ ಪೋಸ್ಟ್ ಅಥವಾ ಚಾಟ್‌ಗೆ ಸೇರಿಸಿ.')}</p>` : ''}
+      </div>`;
+    const close = () => { box.remove(); if (img) URL.revokeObjectURL(img); document.removeEventListener('keydown', onKey); };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    box.addEventListener('click', (e) => { if (e.target === box) close(); });
+    box.querySelector('.sheet-x').addEventListener('click', close);
+    box.querySelector('[data-copy]').addEventListener('click', async (e) => {
+      try { await navigator.clipboard.writeText(`${text} ${u}`); e.target.textContent = t('Copied ✓', 'ನಕಲಿಸಲಾಗಿದೆ ✓'); } catch { /* no clipboard */ }
+    });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(box);
+    box.querySelector('.sheet-x').focus();
   }
 
   // ------------------------------------------------------------- search

@@ -360,3 +360,12 @@ body.kn { line-height: 1.7; }
 }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font-size: 12px; font-weight: 600; }
 .tag.hold { background: var(--warn-bg); color: var(--warn); }
+
+/* share sheet: the result card as a picture, to save or send */
+.sheet { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(14, 16, 32, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: rise .2s ease; }
+.sheet-card { position: relative; width: min(420px, 100%); max-height: calc(100dvh - 32px); overflow: auto; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 18px 20px; }
+.sheet-card::before { content: ''; position: absolute; left: 0; top: 0; right: 0; height: 3px; background: var(--grad); }
+.sheet-title { margin: 2px 44px 12px 2px; font-weight: 800; font-size: 18px; }
+.sheet-x { position: absolute; top: 12px; right: 12px; }
+.sheet-img { display: block; width: 100%; height: auto; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); }
+.btn:disabled { opacity: .6; cursor: progress; }
