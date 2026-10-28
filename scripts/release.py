@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -31,10 +32,17 @@ TAG = os.environ.get('ROLL_RELEASE', SOURCE['release'])
 
 
 def gh(*args: str, capture: bool = True, binary: bool = False):
-    proc = subprocess.run(['gh', *args], capture_output=capture, check=False)
-    if proc.returncode != 0:
+    # GitHub answers 502/503/504 now and then; a repeat usually goes through.
+    # Uploads (POST) are left to their callers, which check what landed.
+    retry = 'POST' not in args and args[:2] != ('release', 'upload')
+    for wait in (5, 20, 60, None):
+        proc = subprocess.run(['gh', *args], capture_output=capture, check=False)
+        if proc.returncode == 0:
+            break
         err = proc.stderr.decode('utf8', 'replace') if capture else ''
-        raise RuntimeError(f'gh {" ".join(args[:3])} failed: {err.strip()}')
+        if not (retry and wait and re.search(r'HTTP 50[234]|Server Error|Gateway', err)):
+            raise RuntimeError(f'gh {" ".join(args[:3])} failed: {err.strip()}')
+        time.sleep(wait)
     if not capture:
         return None
     return proc.stdout if binary else proc.stdout.decode('utf8', 'replace')
@@ -228,10 +236,15 @@ def fetch(dest: str, names: list[str]) -> list[Path]:
 
 
 def delete(*names: str) -> None:
+    """Clean-up: a file that will not delete is reported, not fatal (the
+    autopilot drops leftovers), so a finished AC is never failed by it."""
     found = assets()
     for name in names:
         if name in found:
-            gh('api', '-X', 'DELETE', f'repos/{repo()}/releases/assets/{found[name]["id"]}')
+            try:
+                gh('api', '-X', 'DELETE', f'repos/{repo()}/releases/assets/{found[name]["id"]}')
+            except RuntimeError as err:
+                print(f'warning: could not delete {name}: {err}', file=sys.stderr)
 
 
 if __name__ == '__main__':
