@@ -2,7 +2,12 @@
 
     GH_TOKEN=... python scripts/home/eng_pilot.py --vm K [--target 4] [--once]
 
-Each look, for this VM's ACs (reference/vm-plan.json), in queue order:
+Order (the user's): Hassan, then every Bengaluru AC (the three BBMP districts,
+Bangalore Urban and Bangalore Rural), then the rest in the import's queue order.
+VM K of 4 takes every 4th AC of that order from the K-th, so all four work
+down the same list together.
+
+Each look, for this VM's ACs, in that order:
 
 1. fetch   the AC's English roll (vm_fetch, lang=eng) and dispatch ocr.yml
            kind=epdf, only while fewer than `target` OCR runs are active and
@@ -18,7 +23,8 @@ Each look, for this VM's ACs (reference/vm-plan.json), in queue order:
            --epics sets the two-roll and manual EPICs, under its rule that no
            other published card may change; the ledger is re-uploaded with
            the outcome. A ledger made from older live rows is redone first;
-           decisions are keyed by card, so they carry over.
+           decisions are keyed by card, so they carry over. Nothing is
+           applied while reference/manual/APPLY is absent (the gate).
 
 Everything is re-read from GitHub and git each look: safe to kill and restart.
 Local state (retries, given up): cache/eng-pilot.json. Log: stdout (journald).
@@ -57,6 +63,8 @@ MAX_SETS = 6           # English PDF sets waiting in the work release, all VMs t
 PAUSE = 180
 PER_SHEET = 12
 TITLE = re.compile(r'^OCR AC (\d+) \((\w+)\)$')
+FIRST = [{'HASSAN'}, run.BENGALURU | {'BANGALORE RURAL'}]
+VMS = 4
 
 
 def log(msg: str) -> None:
@@ -224,6 +232,8 @@ def ledger(ac: int, asset: dict) -> tuple[dict, list[tuple[str, bytes]]]:
 # ------------------------------------------------------------------- apply
 def apply(ac: int, led: dict, pages: list) -> bool:
     """Returns True once the AC is applied (or nothing was left to apply)."""
+    if not (MANUAL / 'APPLY').exists():
+        return False                    # the gate: applies start once the comparison is calibrated
     dec = decisions(ac)
     todo = [m for m in led['manual'] if key(m) not in dec]
     if todo:
@@ -335,9 +345,10 @@ def main() -> int:
     args = ap.parse_args()
     manifest = json.loads(run.MANIFEST.read_text('utf8'))
     parts_by_ac = {c['acNumber']: list(range(1, c['parts'] + 1)) for c in manifest['constituencies'] if c['parts']}
-    plan = json.loads((ROOT / 'reference' / 'vm-plan.json').read_text('utf8'))
+    district = {c['acNumber']: c['district'] for c in run.SEED['constituencies']}
     order = run.run_order(parts_by_ac, 'all')
-    mine = [a for a in order if a in set(plan[str(args.vm)])]
+    order = sorted(order, key=lambda a: next((i for i, ds in enumerate(FIRST) if district.get(a) in ds), len(FIRST)))
+    mine = order[args.vm - 1::VMS]
     TMP.mkdir(parents=True, exist_ok=True)
     state = load(STATE, {})
     log(f'eng pilot VM {args.vm}: {len(mine)} ACs, target {args.target} active OCR runs')

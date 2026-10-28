@@ -14,7 +14,8 @@ read it off the crops of both. Nothing that is uncertain is published.
 | Compare every card | VM, `xcheck.py` | `xcheck-<ac>.zip` on `<tag>-eng`: ledger + review sheets |
 | Apply | VM, `reverify_live.py --epics` | live-* replaced, site republished |
 
-Each VM owns the ACs `reference/vm-plan.json` gives it (whole districts).
+Order: Hassan, then every Bengaluru AC (BBMP, Bangalore Urban, Bangalore Rural), then the
+rest; VM K takes every 4th AC of that order, so all four work down one list.
 The pilot applies an AC only when every card left for a person is decided, and
 only if no other published card changes (else the ledger records the failure
 and the AC stays as it was).
