@@ -96,67 +96,82 @@ def main() -> int:
     DIR.mkdir(parents=True, exist_ok=True)
     assets = release.assets()
     acs = sorted(int(n[10:-9]) for n in assets if re.fullmatch(r'live-rows-\d+\.jsonl\.gz', n))
-    changed = 0
+    changed, failed = 0, []
     for ac in acs:
         if ac in skip or (only and ac not in only):
             continue
-        names = [f'live-rows-{ac}.jsonl.gz', f'live-rows-{ac}.summary.json', f'live-verify-{ac}.json']
-        for attempt in range(3):          # the home line is saturated: timeouts happen
-            try:
-                release.fetch(str(DIR), names)
-                break
-            except RuntimeError:
-                if attempt == 2:
-                    raise
-        rows_p, sum_p, ver_p = (DIR / n for n in names)
-        patched = 0
-        if reread.get(ac):
-            summary = json.loads(sum_p.read_text('utf8'))
-            for part, t in reread[ac].items():
-                if summary['perPart'].get(part, {}).get('totals') != t:
-                    summary['perPart'].setdefault(part, {})['totals'] = t
-                    patched += 1
-            sum_p = DIR / f'new-sum-{ac}.json'
-            sum_p.write_text(json.dumps(summary), 'utf8')
-        old_ver = json.loads(ver_p.read_text('utf8'))
-        rows = load(rows_p)
-        before = published(rows, old_ver)
-        gained_realign = realign(rows)
-        new_rows = DIR / f'new-rows-{ac}.jsonl.gz'
-        with gzip.open(new_rows, 'wt', encoding='utf8') as f:
-            for r in rows:
-                f.write(json.dumps(r, separators=(',', ':')) + '\n')
-        out = DIR / f'out-{ac}'
-        subprocess.run([sys.executable, 'scripts/ci/verify_ac.py', str(ac), '-', str(new_rows), str(sum_p),
-                        str(out), '--quick'], cwd=ROOT, check=True, capture_output=True)
-        ver = json.loads((out / f'verify-{ac}.json').read_text('utf8'))
-        keep = [d for d in old_ver['disputed'] if d[3].startswith(('v1', 'v4'))]
-        have = {tuple(d[:3]) for d in ver['disputed']}
-        ver['disputed'] += [d for d in keep if tuple(d[:3]) not in have]
-        ver['checks'] = old_ver.get('checks', 'full') + '+reverified'
-        after = published(rows, ver)
-        # A card off its part's serial run (2010 read for serial 1) was published
-        # with that wrong serial before V2 compared serials with the run.
-        misread = {tuple(d[:3]) for d in ver['disputed'] if d[3] == 'v2:serial-order'}
-        lost = [k for k, e in before.items() if after.get(k) != e and k not in misread]
-        ok = ver['verdict'] == 'pass' and not lost
-        print(f'AC {ac:3}: published {len(before):,} -> {len(after):,} (+{len(after) - len(before):,}; '
-              f'{gained_realign} realigned, {patched} totals re-read) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
-              f'verdict {ver["verdict"]}; lost {len(lost)}' + ('' if ok else '  -> NOT APPLIED'), flush=True)
-        if args.apply and ok and len(after) > len(before):
-            live = DIR / 'live'
-            live.mkdir(exist_ok=True)
-            (live / names[0]).write_bytes(new_rows.read_bytes())
-            (live / names[2]).write_text(json.dumps(ver), 'utf8')
-            files = [str(live / names[0]), str(live / names[2])]
-            if patched:
-                (live / names[1]).write_text(sum_p.read_text('utf8'), 'utf8')
-                files.append(str(live / names[1]))
-            release.replace(*files)
-            changed += 1
+        # A dropped connection fails this AC, not the run: replace() swaps file
+        # by file (upload .next, delete, rename), so an AC cut short keeps a
+        # full set of live files, old or new, and is simply run again.
+        try:
+            changed += one_ac(ac, args, reread)
+        except (RuntimeError, SystemExit, OSError, subprocess.CalledProcessError) as exc:
+            print(f'AC {ac:3}: FAILED {exc!r}'[:300], flush=True)
+            failed.append(ac)
     if args.apply and changed:
         release.gh('workflow', 'run', 'publish.yml', '-R', release.repo(), '-f', f'tag={release.TAG}')
         print(f'{changed} ACs replaced; publish dispatched')
+    if failed:
+        print(f'failed, run again: --ac {",".join(map(str, failed))}')
+    return 0
+
+
+def one_ac(ac: int, args, reread: dict) -> int:
+    """Re-verify one live AC; 1 if its live files were replaced."""
+    names = [f'live-rows-{ac}.jsonl.gz', f'live-rows-{ac}.summary.json', f'live-verify-{ac}.json']
+    for attempt in range(3):          # the home line is saturated: timeouts happen
+        try:
+            release.fetch(str(DIR), names)
+            break
+        except RuntimeError:
+            if attempt == 2:
+                raise
+    rows_p, sum_p, ver_p = (DIR / n for n in names)
+    patched = 0
+    if reread.get(ac):
+        summary = json.loads(sum_p.read_text('utf8'))
+        for part, t in reread[ac].items():
+            if summary['perPart'].get(part, {}).get('totals') != t:
+                summary['perPart'].setdefault(part, {})['totals'] = t
+                patched += 1
+        sum_p = DIR / f'new-sum-{ac}.json'
+        sum_p.write_text(json.dumps(summary), 'utf8')
+    old_ver = json.loads(ver_p.read_text('utf8'))
+    rows = load(rows_p)
+    before = published(rows, old_ver)
+    gained_realign = realign(rows)
+    new_rows = DIR / f'new-rows-{ac}.jsonl.gz'
+    with gzip.open(new_rows, 'wt', encoding='utf8') as f:
+        for r in rows:
+            f.write(json.dumps(r, separators=(',', ':')) + '\n')
+    out = DIR / f'out-{ac}'
+    subprocess.run([sys.executable, 'scripts/ci/verify_ac.py', str(ac), '-', str(new_rows), str(sum_p),
+                    str(out), '--quick'], cwd=ROOT, check=True, capture_output=True)
+    ver = json.loads((out / f'verify-{ac}.json').read_text('utf8'))
+    keep = [d for d in old_ver['disputed'] if d[3].startswith(('v1', 'v4'))]
+    have = {tuple(d[:3]) for d in ver['disputed']}
+    ver['disputed'] += [d for d in keep if tuple(d[:3]) not in have]
+    ver['checks'] = old_ver.get('checks', 'full') + '+reverified'
+    after = published(rows, ver)
+    # A card off its part's serial run (2010 read for serial 1) was published
+    # with that wrong serial before V2 compared serials with the run.
+    misread = {tuple(d[:3]) for d in ver['disputed'] if d[3] == 'v2:serial-order'}
+    lost = [k for k, e in before.items() if after.get(k) != e and k not in misread]
+    ok = ver['verdict'] == 'pass' and not lost
+    print(f'AC {ac:3}: published {len(before):,} -> {len(after):,} (+{len(after) - len(before):,}; '
+          f'{gained_realign} realigned, {patched} totals re-read) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
+          f'verdict {ver["verdict"]}; lost {len(lost)}' + ('' if ok else '  -> NOT APPLIED'), flush=True)
+    if args.apply and ok and len(after) > len(before):
+        live = DIR / 'live'
+        live.mkdir(exist_ok=True)
+        (live / names[0]).write_bytes(new_rows.read_bytes())
+        (live / names[2]).write_text(json.dumps(ver), 'utf8')
+        files = [str(live / names[0]), str(live / names[2])]
+        if patched:
+            (live / names[1]).write_text(sum_p.read_text('utf8'), 'utf8')
+            files.append(str(live / names[1]))
+        release.replace(*files)
+        return 1
     return 0
 
 
