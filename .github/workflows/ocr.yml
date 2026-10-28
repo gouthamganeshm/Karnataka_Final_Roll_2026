@@ -172,8 +172,8 @@ jobs:
           files="$OUT.s$SHARD.jsonl.gz $OUT.s$SHARD.summary.json"
           if [ "$KIND" = pdf ]; then files="$files crops-$AC.s$SHARD.tar"; fi
           tar cf "work/out-$OUT.s$SHARD.tar" -C work $files
-          # One call by release id; a leftover of the same name (a retried AC) falls back to replacing it.
-          gh api -X POST "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$WORK_ID/assets?name=out-$OUT.s$SHARD.tar"             -H 'Content-Type: application/x-tar' --input "work/out-$OUT.s$SHARD.tar" > /dev/null             || ROLL_RELEASE="$WORK" python scripts/release.py upload "work/out-$OUT.s$SHARD.tar"
+          # One call by release id (see release.put for timeouts and leftovers).
+          python scripts/release.py put "$WORK_ID" "work/out-$OUT.s$SHARD.tar"
 
   merge:
     needs: [plan, ocr]

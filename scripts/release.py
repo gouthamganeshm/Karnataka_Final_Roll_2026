@@ -105,6 +105,33 @@ def upload(*paths: str) -> None:
     gh('release', 'upload', TAG, *paths, '--clobber', '-R', repo())
 
 
+def put(release_id: str, path: str) -> None:
+    """Upload one file to a release by its id: one API call when all goes well
+    (OCR shards run on Actions' 1,000 calls an hour). GitHub can time out (504)
+    on an upload that still lands, so after a failure look before retrying: a
+    complete copy is kept, a partial one is deleted."""
+    name, size = Path(path).name, Path(path).stat().st_size
+    url = f'https://uploads.github.com/repos/{repo()}/releases/{release_id}/assets?name={name}'
+    for wait in (0, 15, 60, 180):
+        time.sleep(wait)
+        try:
+            gh('api', '-X', 'POST', url, '-H', 'Content-Type: application/octet-stream', '--input', path)
+            return
+        except RuntimeError as err:
+            print(f'upload of {name} failed ({str(err)[:200]}); looking before retrying', file=sys.stderr)
+        mine = []
+        for page in range(1, 50):
+            batch = json.loads(gh('api', f'repos/{repo()}/releases/{release_id}/assets?per_page=100&page={page}'))
+            mine += [a for a in batch if a['name'] == name]
+            if len(batch) < 100:
+                break
+        if any(a['state'] == 'uploaded' and a['size'] == size for a in mine):
+            return
+        for a in mine:
+            gh('api', '-X', 'DELETE', f'repos/{repo()}/releases/assets/{a["id"]}')
+    raise RuntimeError(f'upload of {name} failed four times')
+
+
 def replace(*paths: str) -> None:
     """Upload each file, swapping out any asset of the same name with no gap:
     upload as <name>.next, delete the old asset, rename. `upload --clobber`
@@ -216,6 +243,8 @@ if __name__ == '__main__':
             print(f'{a["size"]:>12,}  {n}')
     elif cmd == 'upload':
         upload(*rest)
+    elif cmd == 'put':
+        put(rest[0], rest[1])
     elif cmd == 'replace':
         replace(*rest)
     elif cmd == 'download':
