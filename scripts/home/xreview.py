@@ -36,6 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 import release  # noqa: E402
+import epic_format  # noqa: E402
 
 ENG = f'{release.TAG}-eng'
 CACHE = ROOT / 'cache' / 'xreview'
@@ -177,14 +178,15 @@ def decide(ac: int, items: list[str]) -> int:
         i, v = it.split('=', 1)
         m = by_id[int(i)]
         v, _, serial = v.partition('@')
-        val, _, mark = v.partition('/')
+        # A trailing /del or /live is the deleted mark: old-format EPICs have slashes of their own.
+        val, mark = (v.rsplit('/', 1) if v.endswith(('/del', '/live')) else (v, ''))
         if val == 'keep':
             if not m['published']:
                 raise SystemExit(f'#{i} is not published: give its EPIC or withhold')
             d = {'epic': m['published'][0], 'deleted': m['published'][1]}
         elif val == 'withhold':
             d = {'epic': None}
-        elif EPIC.match(val):
+        elif epic_format.valid(val):     # 8 digits or the old state format too: as printed
             d = {'epic': val}
         else:
             raise SystemExit(f'#{i}: {v!r} is not an EPIC, keep or withhold')

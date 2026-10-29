@@ -46,6 +46,8 @@ import time
 from pathlib import Path
 
 EPIC = re.compile(r'^[A-Z]{3}[0-9]{7}$')
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import epic_format  # noqa: E402
 VERSION = 4
 
 
@@ -76,7 +78,7 @@ def published(rows: list[dict], verify: dict) -> tuple[dict, dict]:
     pub = {}
     for r in rows:
         k = (r['part'], r['page'], r['cell'])
-        if r['epicOk'] and valid(r['epic']) and k not in disputed:
+        if r['epicOk'] and epic_format.valid(r['epic']) and k not in disputed:
             pub[k] = (r['epic'], bool(r.get('deleted')) and k not in undeleted)
     return pub, disputed
 

@@ -46,6 +46,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 import release  # noqa: E402
+import epic_format  # noqa: E402
 
 DIR = ROOT / 'cache' / 'reverify'
 EPIC = re.compile(r'^[A-Z]{3}[0-9]{7}$')
@@ -82,7 +83,7 @@ def published(rows: list[dict], verify: dict) -> dict:
     return {(r['part'], r['page'], r['cell']):
             (r['epic'], r['serial'], bool(r.get('deleted')) and (r['part'], r['page'], r['cell']) not in undeleted)
             for r in rows
-            if r['epicOk'] and EPIC.match(r['epic']) and (r['part'], r['page'], r['cell']) not in disputed}
+            if r['epicOk'] and epic_format.valid(r['epic']) and (r['part'], r['page'], r['cell']) not in disputed}
 
 
 def main() -> int:

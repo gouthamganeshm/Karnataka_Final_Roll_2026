@@ -56,7 +56,11 @@ if (!rowsDir || !outDir) {
   process.exit(2);
 }
 
-const EPIC_RE = /^[A-Z]{3}[0-9]{7}$/;
+// 3 letters + 7 digits; a few series have 8 digits; old state-format cards are
+// kept as printed (KA/01/234/567890). See scripts/epic_format.py.
+const EPIC_RE = /^(?:[A-Z]{3}[0-9]{7,8}|[A-Z]{2}\/[0-9]{2}\/[0-9]{3}\/[0-9]{6,7})$/;
+// What the site hashes: the letters and digits a visitor typed (site/app.js).
+const epicKey = (e) => e.replace(/[^A-Z0-9]/g, '');
 const REC = 10; // bucket byte + 9-byte record, while grouping
 // Bumped whenever the record layout changes meaning (2: part's top bit = deleted).
 // site/app.js carries the same number and reloads itself if the data is newer.
@@ -149,7 +153,7 @@ for (const f of rowFiles) {
   }
   if (stat.status === 'verified') {
     for (const r of pending) {
-      const h = createHash('sha256').update(r.epic, 'utf8').digest();
+      const h = createHash('sha256').update(epicKey(r.epic), 'utf8').digest();
       rec[0] = h[1];
       h.copy(rec, 1, 2, 6);
       rec.writeUInt8(r.ac, 5);
