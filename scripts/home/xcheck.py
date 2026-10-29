@@ -11,6 +11,9 @@ card in its cell, and every card lands in one bucket:
   confirmed-digits  published; the English roll reads the same 7 digits but
               slips on a series letter (a round one, or any when it is
               unsure), and two Kannada readers give the published series
+  confirmed-kan-deletion  both rolls read the EPIC; only the Kannada roll's
+              mark reader sees the deletion code printed after it
+  not-a-card  a page-1 cell neither roll can read (the part's photo, heading)
   kan-only    published, the English card unreadable, the Kannada readers
               agreed outright ('direct'): the publish rule both rolls started
               from; counted, not reviewed
@@ -196,8 +199,12 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
                 else:
                     flag('no-english-card', key, k, e)
             elif epic in ereads:                        # an English reader read this very EPIC
-                if edel != kdel:
+                if edel and not kdel:
                     flag('deleted-mark', key, k, e)
+                elif kdel and not edel and fix is None:
+                    # The reason code (Q, R, S) printed right after the EPIC: the
+                    # English mark reader misses it there (Hassan: 13 of 13 by eye).
+                    counts['confirmed-kan-deletion'] += 1
                 elif fix is not None:
                     done(key, epic, kdel, fix, 'serial')
                 else:
@@ -223,6 +230,8 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
             if pick and e is not None and edel == bool(k.get('deleted')) and epic_seen[pick] == 0:
                 done(key, pick, edel, fix, 'recovered')
                 epic_seen[pick] += 1
+            elif k['page'] <= 1 and not kreads and not ereads:
+                counts['not-a-card'] += 1               # the part's photo or heading, read as cells
             else:
                 flag('withheld', key, k, e)
     # Cards the English roll has and the Kannada rows do not: a voter possibly missed.
