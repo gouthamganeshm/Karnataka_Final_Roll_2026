@@ -65,7 +65,7 @@ MANUAL = ROOT / 'reference' / 'manual'
 MAX_RETRY = 3
 STALE_MIN = 20         # a partial PDF set this old is an upload that died
 MAX_SETS = 6           # English PDF sets waiting in the work release, all VMs together
-PAUSE = 180
+PAUSE = 300            # four VMs share one token's 5,000 API calls an hour
 PER_SHEET = 12
 TITLE = re.compile(r'^OCR AC (\d+) \((\w+)\)$')
 FIRST = [{'HASSAN'}, run.BENGALURU | {'BANGALORE RURAL'}]
@@ -204,7 +204,7 @@ def sheets(led: dict, kan_tar: Path | None, eng_tar: Path) -> list[tuple[str, by
     return out
 
 
-def check(ac: int, main: dict, crops_rel: dict) -> None:
+def check(ac: int, main: dict) -> None:
     d = TMP / str(ac)
     d.mkdir(parents=True, exist_ok=True)
     names = [f'live-rows-{ac}.jsonl.gz', f'live-verify-{ac}.json', f'live-rows-{ac}.summary.json']
@@ -217,7 +217,7 @@ def check(ac: int, main: dict, crops_rel: dict) -> None:
     if led['manual']:
         on(ENG, release.fetch, str(d), [f'crops-eng-{ac}.tar'])
         kan = None
-        for tag, found in ((CROPS, crops_rel), (MAIN, main)):
+        for tag, found in ((CROPS, on(CROPS, release.assets)), (MAIN, main)):
             if f'crops-{ac}.tar' in found:
                 on(tag, release.fetch, str(d), [f'crops-{ac}.tar'])
                 kan = d / f'crops-{ac}.tar'
@@ -315,7 +315,6 @@ def tick(mine: list[int], target: int, state: dict, parts_by_ac: dict) -> None:
         if m and m[2] == 'epdf':
             latest[int(m[1])] = r
     main, work, eng = release.assets(), on(WORK, release.assets), on(ENG, release.assets)
-    crops_rel = on(CROPS, release.assets)
     sets, newest = {}, {}
     for n, a in work.items():
         m = re.match(r'epdfs-(\d+)\.s(\d+)\.tar$', n)
@@ -352,7 +351,7 @@ def tick(mine: list[int], target: int, state: dict, parts_by_ac: dict) -> None:
                 log(f'AC {ac}: applied')
             continue
         if f'engfull-{ac}.tar' in eng:
-            check(ac, main, crops_rel)
+            check(ac, main)
             continue
         last = latest.get(ac)
         if last and last['status'] != 'completed':
