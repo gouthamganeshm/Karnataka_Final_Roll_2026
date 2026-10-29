@@ -40,7 +40,7 @@ import time
 from pathlib import Path
 
 EPIC = re.compile(r'^[A-Z]{3}[0-9]{7}$')
-VERSION = 2
+VERSION = 3
 
 
 def valid(e) -> bool:
@@ -129,7 +129,9 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
         counts[f'manual:{cat}'] += 1
 
     eng_parts = {r['part'] for r in eng}
-    truth = true_serials(eng, ksum, esum)
+    # Only where the rolls line up cell for cell: a part joined by serial has
+    # its English places on other pages and cells than the Kannada ones.
+    truth = {k: v for k, v in true_serials(eng, ksum, esum).items() if joined.get(k[0]) == 'cell'}
 
     def done(key, epic, deleted, serial, why):
         auto.append([*key, epic, deleted, serial, why])
