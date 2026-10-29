@@ -83,10 +83,13 @@ def on_eng(fn, *args):
         release.TAG = main
 
 
-def decided(ac: int) -> dict:
-    """This AC's decisions: the local copy, else the release's (another machine's review)."""
+def decided(ac: int, found: dict | None = None) -> dict:
+    """This AC's decisions: the local copy, else the release's (another machine's review).
+
+    `found` is a listing of the release already in hand: status and next would
+    otherwise list it again for every AC."""
     p = CACHE / str(ac) / 'decisions.json'
-    if not p.exists() and f'decisions-{ac}.json' in on_eng(release.assets):
+    if not p.exists() and f'decisions-{ac}.json' in (found if found is not None else on_eng(release.assets)):
         p.parent.mkdir(parents=True, exist_ok=True)
         on_eng(release.fetch, str(p.parent), [f'decisions-{ac}.json'])[0].replace(p)
     return json.loads(p.read_text('utf8')) if p.exists() else {'ac': ac, 'decisions': {}}
@@ -127,7 +130,7 @@ def status() -> int:
             continue
         ac = int(m[1])
         led = ledger(ac, found[n])
-        dec = decided(ac)['decisions']
+        dec = decided(ac, found)['decisions']
         left = sum(card(x) not in dec for x in led['manual'])
         a = led.get('apply') or {}
         state = 'applied' if a.get('applied') else 'APPLY FAILED' if a.get('failed') else \
@@ -140,8 +143,8 @@ def status() -> int:
     return 0
 
 
-def todo(ac: int) -> list[dict]:
-    dec = decided(ac)['decisions']
+def todo(ac: int, found: dict | None = None) -> list[dict]:
+    dec = decided(ac, found)['decisions']
     return [m for m in ledger(ac)['manual'] if card(m) not in dec]
 
 
@@ -165,7 +168,7 @@ def nxt() -> int:
         m = re.match(r'xcheck-(\d+)\.zip$', n)
         if m:
             ledger(int(m[1]), found[n])
-            if todo(int(m[1])):
+            if todo(int(m[1]), found):
                 return show(int(m[1]))
     print('nothing left to review')
     return 0
