@@ -193,7 +193,14 @@ def one_ac(ac: int, args, reread: dict) -> int:
     have = {tuple(d[:3]) for d in ver['disputed']}
     ver['disputed'] += [d for d in keep if tuple(d[:3]) not in have]
     ver['checks'] = old_ver.get('checks', 'full') + '+reverified'
-    settled = {k for k, (e, _, _) in edits.items() if e}
+    # Cards both rolls (or a person) settled, in this apply or an earlier one,
+    # stay clear of whole-booth disputes: the verify file keeps them, or every
+    # later re-verification would withhold them again (and be refused for it).
+    withheld_now = {k for k, (e, _, _) in edits.items() if not e}
+    # (Files from before this list existed: every card an apply settled reads how == 'english'.)
+    earlier = {tuple(k) for k in old_ver.get('settled', [])} |         {(r['part'], r['page'], r['cell']) for r in rows if r.get('how') == 'english' and r['epicOk']}
+    settled = (earlier - withheld_now) | {k for k, (e, _, _) in edits.items() if e}
+    ver['settled'] = sorted(settled)
     ver['disputed'] = [d for d in ver['disputed'] if tuple(d[:3]) not in settled]
     ver['undeleted'] = [u for u in ver.get('undeleted', []) if tuple(u) not in edits or edits[tuple(u)][1] is None]
     ver['added'] = sorted({*map(tuple, old_ver.get('added', [])), *((k for k, (e, _, s) in edits.items()
@@ -204,7 +211,7 @@ def one_ac(ac: int, args, reread: dict) -> int:
     misread = {tuple(d[:3]) for d in ver['disputed'] if d[3] == 'v2:serial-order'}
     lost = [k for k, e in before.items() if after.get(k) != e and k not in misread and k not in edits]
     fixed = sum(after.get(k, (None,))[0] == e for k, (e, _, _) in edits.items() if e)
-    ok = ver['verdict'] == 'pass' and not lost and fixed == len(settled)
+    ok = ver['verdict'] == 'pass' and not lost and fixed == sum(1 for e, _, _ in edits.values() if e)
     print(f'AC {ac:3}: published {len(before):,} -> {len(after):,} (+{len(after) - len(before):,}; '
           f'{gained_realign} realigned, {patched} totals re-read, {fixed}/{len(edits)} EPICs set) disputed {len(old_ver["disputed"]):,} -> {len(ver["disputed"]):,}; '
           f'verdict {ver["verdict"]}; lost {len(lost)}' + ('' if ok else '  -> NOT APPLIED'), flush=True)
