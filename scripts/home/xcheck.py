@@ -145,7 +145,8 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
     def card(r):
         return None if r is None else {
             'epic': r['epic'], 'epicOk': r['epicOk'], 'how': r.get('how'), 'rd': r.get('rd'),
-            'serial': r['serial'], 'ok': r['ok'], 'deleted': bool(r.get('deleted'))}
+            'serial': r['serial'], 'ok': r['ok'], 'deleted': bool(r.get('deleted')),
+            'at': [r['page'], r['cell']]}       # its own place: a part joined by serial pairs other cells
 
     def flag(cat, key, k, e, note='', serial=None):
         manual.append({'id': len(manual), 'key': list(key), 'cat': cat, 'note': note, 'serial': serial,

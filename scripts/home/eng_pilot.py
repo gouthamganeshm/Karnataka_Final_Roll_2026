@@ -156,9 +156,10 @@ def sheets(led: dict, kan_tar: Path | None, eng_tar: Path) -> list[tuple[str, by
     kb = bundles(kan_tar, parts) if kan_tar else {}
     eb = bundles(eng_tar, parts)
 
-    def crop(b, k, i):
+    def crop(b, k, i, at=None):
+        page, cell = at or k[1:3]
         try:
-            im = b[k[0]][k[1]][i][k[2]]
+            im = b[k[0]][page][i][cell]
         except (KeyError, IndexError):
             return None
         return None if im is None else im.resize((im.width * 2, im.height * 2))
@@ -175,7 +176,8 @@ def sheets(led: dict, kan_tar: Path | None, eng_tar: Path) -> list[tuple[str, by
         rows = []
         for m in items[s:s + PER_SHEET]:
             k = m['key']
-            ims = [crop(kb, k, 0), crop(kb, k, 1), crop(eb, k, 0), crop(eb, k, 1)]
+            at = (m['eng'] or {}).get('at')         # the English card the check paired, wherever it sits
+            ims = [crop(kb, k, 0), crop(kb, k, 1), crop(eb, k, 0, at), crop(eb, k, 1, at)]
             h = max([i.height for i in ims if i] + [40])
             row = Image.new('L', (1900, h + 58), 255)
             x = 5
