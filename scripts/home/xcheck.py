@@ -8,6 +8,9 @@ card in its cell, and every card lands in one bucket:
 
   confirmed   published, and an English reader reads the same EPIC (it is a
               second roll) with the same deleted mark
+  confirmed-digits  published; the English roll reads the same 7 digits but
+              slips on a series letter (a round one, or any when it is
+              unsure), and two Kannada readers give the published series
   kan-only    published, the English card unreadable, the Kannada readers
               agreed outright ('direct'): the publish rule both rolls started
               from; counted, not reviewed
@@ -40,11 +43,23 @@ import time
 from pathlib import Path
 
 EPIC = re.compile(r'^[A-Z]{3}[0-9]{7}$')
-VERSION = 3
+VERSION = 4
 
 
 def valid(e) -> bool:
     return bool(e and EPIC.match(e))
+
+
+ROUND = set('COGQ')
+
+
+def prefix_slip(read: str, epic: str, sure: bool) -> bool:
+    """`read` is `epic` but for its series letters: an English slip when the
+    letters are round (C read as O: its readers do it even when they agree),
+    or any letter when the English readers were unsure (a deletion stamp on
+    the card throws them)."""
+    diff = [(a, b) for a, b in zip(read[:3], epic[:3]) if a != b]
+    return read[3:] == epic[3:] and bool(diff) and (not sure or all(a in ROUND and b in ROUND for a, b in diff))
 
 
 def load_rows(data: bytes) -> list[dict]:
@@ -94,7 +109,9 @@ def join(kan: list[dict], eng: list[dict]) -> tuple[dict, dict]:
 
 def true_serials(eng: list[dict], ksum: dict, esum: dict) -> dict:
     """(part, page, cell) -> serial from the card's place in its part, for parts the
-    English roll has completely (as many cards as the printed Start..Ending)."""
+    English roll has completely: as many cards as the printed Start..Ending, or
+    (no printed range) every English serial its readers are sure of sitting at
+    its place in one unbroken run."""
     by_part = collections.defaultdict(list)
     for r in eng:
         by_part[r['part']].append(r)
@@ -102,11 +119,19 @@ def true_serials(eng: list[dict], ksum: dict, esum: dict) -> dict:
     for part, rows in by_part.items():
         t = (ksum.get('perPart', {}).get(str(part), {}).get('totals') or
              esum.get('perPart', {}).get(str(part), {}).get('totals') or {})
-        if t.get('start') is None or t.get('end') is None or len(rows) != t['end'] - t['start'] + 1:
-            continue
         rows.sort(key=lambda r: (r['page'], r['cell']))
+        if t.get('start') is not None and t.get('end') is not None and len(rows) == t['end'] - t['start'] + 1:
+            first = t['start']
+        else:
+            # No printed range: every serial the English readers are sure of
+            # sits at its place in an unbroken run (and most are sure).
+            sure = [(i, r['serial']) for i, r in enumerate(rows) if r['ok']]
+            starts = {serial - i for i, serial in sure}
+            if len(starts) != 1 or len(sure) < 0.9 * len(rows):
+                continue
+            first = starts.pop()
         for i, r in enumerate(rows):
-            out[(part, r['page'], r['cell'])] = t['start'] + i
+            out[(part, r['page'], r['cell'])] = first + i
     return out
 
 
@@ -133,6 +158,9 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
     # its English places on other pages and cells than the Kannada ones.
     truth = {k: v for k, v in true_serials(eng, ksum, esum).items() if joined.get(k[0]) == 'cell'}
 
+    def kagree(k, epic):
+        return sum(x == epic for x in (k.get('rd') or [])[:3])
+
     def done(key, epic, deleted, serial, why):
         auto.append([*key, epic, deleted, serial, why])
         counts[f'auto:{why}'] += 1
@@ -152,8 +180,10 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
         t = truth.get(key)
         fix = None
         if t is not None and k['serial'] != t:
-            if e is not None and e['serial'] == t:
-                fix = t
+            if e is not None and e['ok'] and e['serial'] == t:
+                fix = t                  # the English reader is sure of it, and it is the card's place
+            elif k['ok'] and not (e is not None and e['ok']):
+                pass                     # the Kannada reader is sure, the English one is not: it stands
             else:
                 flag('serial', key, k, e, f'place in part says {t}', serial=t)
                 continue
@@ -171,6 +201,10 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
                     done(key, epic, kdel, fix, 'serial')
                 else:
                     counts['confirmed'] += 1
+            elif (edel == kdel and fix is None and (k.get('how') == 'direct' or kagree(k, epic) >= 2)
+                  and ereads and all(prefix_slip(x, epic, bool(e['epicOk'])) for x in ereads)):
+                # The 7 digits agree in both rolls; two Kannada readers give the series.
+                counts['confirmed-digits'] += 1
             elif eread is None:
                 if k.get('how') == 'direct' and edel == kdel and fix is None:
                     counts['kan-only'] += 1             # English unreadable; both Kannada readers agreed
