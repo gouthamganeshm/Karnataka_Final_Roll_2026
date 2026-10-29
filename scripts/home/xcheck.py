@@ -14,9 +14,9 @@ card in its cell, and every card lands in one bucket:
   confirmed-kan-deletion  both rolls read the EPIC; only the Kannada roll's
               mark reader sees the deletion code printed after it
   not-a-card  a page-1 cell neither roll can read (the part's photo, heading)
-  kan-only    published, the English card unreadable, the Kannada readers
-              agreed outright ('direct'): the publish rule both rolls started
-              from; counted, not reviewed
+  kan-only    published, the English card absent or unsure, two Kannada
+              readers on the published EPIC: the publish rule both rolls
+              started from; counted, not reviewed
   auto        decided from two rolls without a person: a published card the
               English roll corrects, or a withheld one it recovers, to an EPIC
               that is also a reading of the Kannada card; or a serial set to
@@ -48,7 +48,7 @@ from pathlib import Path
 EPIC = re.compile(r'^[A-Z]{3}[0-9]{7}$')
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import epic_format  # noqa: E402
-VERSION = 4
+VERSION = 5
 
 
 def valid(e) -> bool:
@@ -195,8 +195,10 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
                 continue
         if key in pub:
             epic, kdel = pub[key]
+            strong = k.get('how') == 'direct' or kagree(k, epic) >= 2   # two Kannada readers on it
             if e is None:
-                if k.get('how') == 'direct' and fix is None:
+                # No English card in this cell (its pages sit elsewhere): the Kannada roll alone.
+                if strong and fix is None:
                     counts['kan-only'] += 1
                 else:
                     flag('no-english-card', key, k, e)
@@ -216,8 +218,8 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
                 # The 7 digits agree in both rolls; two Kannada readers give the series.
                 counts['confirmed-digits'] += 1
             elif eread is None:
-                if k.get('how') == 'direct' and edel == kdel and fix is None:
-                    counts['kan-only'] += 1             # English unreadable; both Kannada readers agreed
+                if strong and (edel == kdel or kdel) and fix is None:
+                    counts['kan-only'] += 1             # English unsure; two Kannada readers agreed
                 else:
                     flag('english-unread', key, k, e)
             elif eread in kreads and k.get('how') != 'direct' and edel == kdel and epic_seen[eread] == 0:
@@ -227,8 +229,10 @@ def compare(ac: int, kan: list[dict], verify: dict, ksum: dict, eng: list[dict],
         else:
             # Withheld: unread, the readers disagreed, or the verifier disputed it.
             common = [x for x in ereads if x in kreads]
+            kdirect = k.get('how') == 'direct' or kagree(k, k['epic']) >= 2
             pick = eread if eread in kreads else (
-                common[0] if len(common) == 1 and ereads[common[0]] >= 2 else None)
+                common[0] if len(common) == 1 and (ereads[common[0]] >= 2 or
+                                                   (kdirect and common[0] == k['epic'])) else None)
             if pick and e is not None and edel == bool(k.get('deleted')) and epic_seen[pick] == 0:
                 done(key, pick, edel, fix, 'recovered')
                 epic_seen[pick] += 1
