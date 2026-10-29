@@ -312,9 +312,13 @@ def tick(mine: list[int], target: int, state: dict, parts_by_ac: dict) -> None:
             if state.setdefault('done', {}).get(str(ac)) == when:
                 continue
             led, pages = ledger(ac, asset)
-            if led.get('version') != xcheck.VERSION and not (led.get('apply') or {}).get('applied'):
-                log(f'AC {ac}: ledger from older comparison rules; checking again (decisions carry over)')
+            live = main.get(f'live-rows-{ac}.jsonl.gz', {})
+            changed = (live.get('updated_at') or '') > led['at']
+            if not (led.get('apply') or {}).get('applied') and (led.get('version') != xcheck.VERSION or changed):
+                log(f'AC {ac}: ' + ('live rows replaced since the check' if changed else 'ledger from older comparison rules')
+                    + '; checking again (decisions carry over)')
                 on(ENG, release.delete, f'xcheck-{ac}.zip')
+                state['done'].pop(str(ac), None)
                 continue
             outcome = led.get('apply') or {}
             if outcome.get('applied') or outcome.get('failed'):
