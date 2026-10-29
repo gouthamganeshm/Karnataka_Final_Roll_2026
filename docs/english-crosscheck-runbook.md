@@ -33,7 +33,9 @@ else, including a card in one roll only, a different deleted mark or serial).
 
 A sheet shows 12 cards: Kannada EPIC and serial crops on the left, English on
 the right, both readings and the published value under them. Each `decide` is
-committed and pushed at once (`reference/manual/<ac>.json`).
+uploaded at once as `decisions-<ac>.json` to the private `<tag>-eng` draft
+(they hold EPICs, so never git: the repo is public); a copy stays in
+`cache/xreview/<ac>/`. `xreview.py sync` uploads any an outage kept local.
 
 ## Contingency: what survives what
 
@@ -41,8 +43,8 @@ Nothing that matters lives only in a session or on one machine.
 
 | Failure | Effect | Resume |
 |---|---|---|
-| Claude's session ends / network outage at home | Fetch, OCR, compare and apply of ACs without review cards go on in the cloud | New session: read this file, `xreview.py status`, `xreview.py next`. Undecided cards are exactly those without a decision in git |
-| Outage in the middle of a review batch | Decisions already pushed are safe; a batch committed but not pushed says `NOT PUSHED` | `git push`, then `xreview.py next` |
+| Claude's session ends / network outage at home | Fetch, OCR, compare and apply of ACs without review cards go on in the cloud | New session: read this file, `xreview.py status`, `xreview.py next`. Undecided cards are exactly those without a decision in `decisions-<ac>.json` |
+| Outage in the middle of a review batch | Decisions already uploaded are safe; a batch kept local says `NOT UPLOADED` | `xreview.py sync`, then `xreview.py next` |
 | A VM reboots or the pilot crashes | systemd restarts it within a minute; every decision is re-read from GitHub | none |
 | A VM is lost | Its ACs stop | Re-create from `scripts/home/` docs; or run another VM's unit with `--vm <lost K>` |
 | An OCR run fails | Re-dispatched while its PDFs remain, re-fetched after; 3 tries | Given-up ACs: `cache/eng-pilot.json` on the VM, `journalctl -u eng-pilot@K` |

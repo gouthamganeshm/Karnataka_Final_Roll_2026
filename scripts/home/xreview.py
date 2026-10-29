@@ -4,11 +4,15 @@
     python scripts/home/xreview.py next                # the next AC with cards left to review: fetch its sheets
     python scripts/home/xreview.py show AC             # its undecided cards, batch by batch, with their sheets
     python scripts/home/xreview.py decide AC ID=EPIC ID=keep ID=withhold ID=EPIC/del ID=EPIC/live ...
+    python scripts/home/xreview.py sync                # upload decisions an outage kept local
 
-Decisions go to reference/manual/<ac>.json, keyed by card (part/page/cell), so a
-ledger redone from newer live rows keeps them; each `decide` commits and pushes
-at once, so an interrupted review resumes at the first undecided card. The VM's
-eng_pilot applies an AC as soon as every card it left for review is decided.
+Decisions hold EPICs, so they never go in git (the repo is public): each
+`decide` writes cache/xreview/<ac>/decisions.json and uploads it at once as
+decisions-<ac>.json to the private <tag>-eng draft, where the VMs read it.
+They are keyed by card (part/page/cell), so a ledger redone from newer live
+rows keeps them, and an interrupted review resumes at the first undecided card
+(on any machine: the release copy is the record). The VM's eng_pilot applies
+an AC as soon as every card it left for review is decided.
 
   ID=EPIC        the card carries this EPIC (read off the crops)
   ID=keep        the published card is right as it is
@@ -18,13 +22,13 @@ eng_pilot applies an AC as soon as every card it left for review is decided.
                  rows lack, takes the ledger's serial from the card's place
                  in its part unless one is given)
 
-The sheets hold EPICs: they stay in cache/ (git-ignored), never in git.
+The sheets and decisions hold EPICs: cache/ (git-ignored) and the private
+draft release only, never git.
 """
 from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -34,7 +38,6 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 import release  # noqa: E402
 
 ENG = f'{release.TAG}-eng'
-MANUAL = ROOT / 'reference' / 'manual'
 CACHE = ROOT / 'cache' / 'xreview'
 EPIC = re.compile(r'^[A-Z]{3}[0-9]{7}$')
 BATCH = 12
@@ -70,9 +73,43 @@ def ledger(ac: int, asset: dict | None = None) -> dict:
     return json.loads((d / 'ledger.json').read_text('utf8'))
 
 
+def on_eng(fn, *args):
+    release.TAG, main = ENG, release.TAG
+    try:
+        return fn(*args)
+    finally:
+        release.TAG = main
+
+
 def decided(ac: int) -> dict:
-    p = MANUAL / f'{ac}.json'
+    """This AC's decisions: the local copy, else the release's (another machine's review)."""
+    p = CACHE / str(ac) / 'decisions.json'
+    if not p.exists() and f'decisions-{ac}.json' in on_eng(release.assets):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        on_eng(release.fetch, str(p.parent), [f'decisions-{ac}.json'])[0].replace(p)
     return json.loads(p.read_text('utf8')) if p.exists() else {'ac': ac, 'decisions': {}}
+
+
+def upload(ac: int) -> bool:
+    d = CACHE / str(ac)
+    up = d / f'decisions-{ac}.json'
+    up.write_bytes((d / 'decisions.json').read_bytes())
+    for _ in range(4):
+        try:
+            on_eng(release.replace, str(up))
+            (d / 'unsent').unlink(missing_ok=True)
+            return True
+        except Exception as err:  # noqa: BLE001 - the home line drops
+            print('upload failed, retrying:', str(err)[:120])
+    (d / 'unsent').write_text('1')
+    return False
+
+
+def sync() -> int:
+    for f in CACHE.glob('*/unsent'):
+        ac = int(f.parent.name)
+        print(f'AC {ac}:', 'uploaded' if upload(ac) else 'STILL NOT UPLOADED')
+    return 0
 
 
 def card(m) -> str:
@@ -157,19 +194,11 @@ def decide(ac: int, items: list[str]) -> int:
             d['serial'] = int(serial)
         d['cat'] = m['cat']
         rec['decisions'][card(m)] = d
-    MANUAL.mkdir(parents=True, exist_ok=True)
-    p = MANUAL / f'{ac}.json'
+    p = CACHE / str(ac) / 'decisions.json'
     p.write_text(json.dumps(rec, indent=1, sort_keys=True), 'utf8')
     left = len(todo(ac))
-    subprocess.run(['git', 'add', str(p)], cwd=ROOT, check=True)
-    subprocess.run(['git', 'commit', '-q', '-m', f'Manual review AC {ac}: {len(items)} cards ({left} left)'],
-                   cwd=ROOT, check=True)
-    for _ in range(4):
-        if subprocess.run(['git', 'pull', '-q', '--rebase'], cwd=ROOT).returncode == 0 and \
-                subprocess.run(['git', 'push', '-q'], cwd=ROOT).returncode == 0:
-            break
-    else:
-        print('NOT PUSHED yet (network): committed locally; run `git push` when the line is back')
+    if not upload(ac):
+        print('NOT UPLOADED yet (network): kept in cache; run `xreview.py sync` when the line is back')
     print(f'AC {ac}: {len(items)} decided, {left} left')
     return 0
 
@@ -182,6 +211,8 @@ if __name__ == '__main__':
         sys.exit(nxt())
     if cmd == 'show':
         sys.exit(show(int(sys.argv[2])))
+    if cmd == 'sync':
+        sys.exit(sync())
     if cmd == 'decide':
         sys.exit(decide(int(sys.argv[2]), sys.argv[3:]))
     sys.exit(__doc__)

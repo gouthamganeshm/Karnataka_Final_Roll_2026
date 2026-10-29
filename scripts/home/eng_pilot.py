@@ -107,9 +107,20 @@ def dispatch(ac: int) -> None:
                '-f', 'kind=epdf', '-f', f'shards={vm_fetch.SHARDS}')
 
 
-def decisions(ac: int) -> dict:
-    """card key 'part/page/cell' -> {'epic': str or None, 'deleted': bool (optional), 'note'}."""
-    return load(MANUAL / f'{ac}.json', {}).get('decisions', {})
+def decisions(ac: int, eng: dict) -> dict:
+    """card key 'part/page/cell' -> {'epic': str or None, 'deleted': bool, 'serial': int (optional)}:
+    decisions-<ac>.json on the private release (they hold EPICs: never in git)."""
+    asset = eng.get(f'decisions-{ac}.json')
+    if not asset:
+        return {}
+    d = TMP / 'decisions'
+    d.mkdir(parents=True, exist_ok=True)
+    p, stamp = d / f'decisions-{ac}.json', d / f'decisions-{ac}.stamp'
+    when = asset.get('updated_at') or asset.get('created_at') or ''
+    if not p.exists() or not stamp.exists() or stamp.read_text() != when:
+        on(ENG, release.fetch, str(d), [f'decisions-{ac}.json'])
+        stamp.write_text(when)
+    return load(p, {}).get('decisions', {})
 
 
 def key(item) -> str:
@@ -238,11 +249,11 @@ def ledger(ac: int, asset: dict) -> tuple[dict, list[tuple[str, bytes]]]:
 
 
 # ------------------------------------------------------------------- apply
-def apply(ac: int, led: dict, pages: list) -> bool:
+def apply(ac: int, led: dict, pages: list, eng: dict) -> bool:
     """Returns True once the AC is applied (or nothing was left to apply)."""
     if not (MANUAL / 'APPLY').exists():
         return False                    # the gate: applies start once the comparison is calibrated
-    dec = decisions(ac)
+    dec = decisions(ac, eng)
     todo = [m for m in led['manual'] if key(m) not in dec]
     if todo:
         return False
@@ -323,7 +334,7 @@ def tick(mine: list[int], target: int, state: dict, parts_by_ac: dict) -> None:
             outcome = led.get('apply') or {}
             if outcome.get('applied') or outcome.get('failed'):
                 state['done'][str(ac)] = when         # applied, or failed and listed for a person
-            elif apply(ac, led, pages):
+            elif apply(ac, led, pages, eng):
                 log(f'AC {ac}: applied')
             continue
         if f'engfull-{ac}.tar' in eng:
