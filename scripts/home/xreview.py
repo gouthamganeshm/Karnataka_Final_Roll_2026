@@ -5,6 +5,7 @@
     python scripts/home/xreview.py show AC             # its undecided cards, batch by batch, with their sheets
     python scripts/home/xreview.py decide AC ID=EPIC ID=keep ID=withhold ID=EPIC/del ID=EPIC/live ...
     python scripts/home/xreview.py sync                # upload decisions an outage kept local
+    python scripts/home/xreview.py set AC PART/PAGE/CELL=EPIC ...   # by card, no ledger needed (same value forms)
 
 Decisions hold EPICs, so they never go in git (the repo is public): each
 `decide` writes cache/xreview/<ac>/decisions.json and uploads it at once as
@@ -170,6 +171,40 @@ def nxt() -> int:
     return 0
 
 
+def parse(v: str) -> dict:
+    """EPIC (any format), withhold; then /del or /live; then @serial."""
+    v, _, serial = v.partition('@')
+    val, mark = (v.rsplit('/', 1) if v.endswith(('/del', '/live')) else (v, ''))
+    if val == 'withhold':
+        d = {'epic': None}
+    elif epic_format.valid(val):
+        d = {'epic': val}
+    else:
+        raise SystemExit(f'{v!r} is not an EPIC or withhold')
+    if mark:
+        d['deleted'] = mark == 'del'
+    if serial:
+        d['serial'] = int(serial)
+    return d
+
+
+def set_by_card(ac: int, items: list[str]) -> int:
+    """Decisions keyed by card, without a ledger: they outrank the check's own for that card."""
+    rec = decided(ac)
+    for it in items:
+        k, v = it.split('=', 1)
+        if not re.fullmatch(r'\d+/\d+/\d+', k):
+            raise SystemExit(f'{k!r} is not PART/PAGE/CELL')
+        rec['decisions'][k] = {**parse(v), 'cat': 'set', 'set': True}
+    p = CACHE / str(ac) / 'decisions.json'
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(rec, indent=1, sort_keys=True), 'utf8')
+    if not upload(ac):
+        print('NOT UPLOADED yet (network): kept in cache; run `xreview.py sync` when the line is back')
+    print(f'AC {ac}: {len(items)} set by card')
+    return 0
+
+
 def decide(ac: int, items: list[str]) -> int:
     led = ledger(ac)
     by_id = {m['id']: m for m in led['manual']}
@@ -213,6 +248,8 @@ if __name__ == '__main__':
         sys.exit(nxt())
     if cmd == 'show':
         sys.exit(show(int(sys.argv[2])))
+    if cmd == 'set':
+        sys.exit(set_by_card(int(sys.argv[2]), sys.argv[3:]))
     if cmd == 'sync':
         sys.exit(sync())
     if cmd == 'decide':

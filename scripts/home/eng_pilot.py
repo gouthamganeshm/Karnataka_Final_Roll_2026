@@ -277,19 +277,24 @@ def apply(ac: int, led: dict, pages: list, eng: dict) -> bool:
         log(f'AC {ac}: live rows changed since the check; checking again (decisions carry over)')
         on(ENG, release.delete, f'xcheck-{ac}.zip')
         return False
-    edits = [list(a[:6]) for a in led['auto']]
+    # A person's decision outranks the automatic one for the same card: both
+    # rolls' readers can drop the same digit of an 8-digit EPIC.
+    by_card = {'/'.join(map(str, a[:3])): list(a[:6]) for a in led['auto']}
     items = {key(m): m for m in led['manual']}
     for k, v in dec.items():
         m = items.get(k)
         if m is None:
-            continue                                  # a card a redone check no longer lists
+            if v.get('set'):                          # decided by card, before or beside the check
+                by_card[k] = [*map(int, k.split('/')), v.get('epic'), v.get('deleted'), v.get('serial')]
+            continue                                  # else a card a redone check no longer lists
         if m['cat'] == 'kannada-missing' and not v.get('epic'):
             continue                                  # not a voter (a photo, a heading): nothing to add
         p = m['published']
         if p and v.get('epic') == p[0] and v.get('deleted', p[1]) == p[1] and 'serial' not in v:
             continue                                  # the published card stands
         serial = v.get('serial', m.get('serial') if m['cat'] in ('kannada-missing', 'serial') else None)
-        edits.append([*map(int, k.split('/')), v.get('epic'), v.get('deleted'), serial])
+        by_card[k] = [*map(int, k.split('/')), v.get('epic'), v.get('deleted'), serial]
+    edits = list(by_card.values())
     out = {'applied': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'edits': len(edits)}
     if edits:
         f = d / 'epics.json'
