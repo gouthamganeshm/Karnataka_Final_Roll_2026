@@ -23,8 +23,9 @@ Each look, for this VM's ACs, in that order:
            --epics sets the two-roll and manual EPICs, under its rule that no
            other published card may change; the ledger is re-uploaded with
            the outcome. A ledger made from older live rows is redone first;
-           decisions are keyed by card, so they carry over. Nothing is
-           applied while reference/manual/APPLY is absent (the gate).
+           decisions are keyed by card, so they carry over. Only ACs listed
+           in reference/manual/APPLY (or every AC, if it says `all`) are
+           applied: the gate.
 
 Everything is re-read from GitHub and git each look: safe to kill and restart.
 Local state (retries, given up): cache/eng-pilot.json. Log: stdout (journald).
@@ -251,8 +252,10 @@ def ledger(ac: int, asset: dict) -> tuple[dict, list[tuple[str, bytes]]]:
 # ------------------------------------------------------------------- apply
 def apply(ac: int, led: dict, pages: list, eng: dict) -> bool:
     """Returns True once the AC is applied (or nothing was left to apply)."""
-    if not (MANUAL / 'APPLY').exists():
-        return False                    # the gate: applies start once the comparison is calibrated
+    gate = [w for line in (MANUAL / 'APPLY').read_text().splitlines() if not line.startswith('#')
+            for w in line.split()] if (MANUAL / 'APPLY').exists() else []
+    if 'all' not in gate and str(ac) not in gate:
+        return False                    # the gate: ACs a person has let through (or 'all')
     dec = decisions(ac, eng)
     todo = [m for m in led['manual'] if key(m) not in dec]
     if todo:
