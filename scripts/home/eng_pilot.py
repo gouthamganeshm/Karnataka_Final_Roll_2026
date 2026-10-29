@@ -25,7 +25,9 @@ Each look, for this VM's ACs, in that order:
            the outcome. A ledger made from older live rows is redone first;
            decisions are keyed by card, so they carry over. Only ACs listed
            in reference/manual/APPLY (or every AC, if it says `all`) are
-           applied: the gate.
+           applied: the gate. ACs in reference/manual/HOLD (another job
+           is rewriting their live files) are fetched and read but not
+           checked or applied until they leave it.
 
 Everything is re-read from GitHub and git each look: safe to kill and restart.
 Local state (retries, given up): cache/eng-pilot.json. Log: stdout (journald).
@@ -106,6 +108,13 @@ def runs() -> list[dict]:
 def dispatch(ac: int) -> None:
     release.gh('workflow', 'run', 'ocr.yml', '-R', release.repo(), '-f', f'ac={ac}', '-f', f'tag={MAIN}',
                '-f', 'kind=epdf', '-f', f'shards={vm_fetch.SHARDS}')
+
+
+def listed(name: str) -> set[str]:
+    """ACs (or 'all') in reference/manual/<name>: whitespace-separated, '#' comments."""
+    p = MANUAL / name
+    return {w for line in (p.read_text().splitlines() if p.exists() else []) if not line.startswith('#')
+            for w in line.split()}
 
 
 def decisions(ac: int, eng: dict) -> dict:
@@ -252,8 +261,7 @@ def ledger(ac: int, asset: dict) -> tuple[dict, list[tuple[str, bytes]]]:
 # ------------------------------------------------------------------- apply
 def apply(ac: int, led: dict, pages: list, eng: dict) -> bool:
     """Returns True once the AC is applied (or nothing was left to apply)."""
-    gate = [w for line in (MANUAL / 'APPLY').read_text().splitlines() if not line.startswith('#')
-            for w in line.split()] if (MANUAL / 'APPLY').exists() else []
+    gate = listed('APPLY')
     if 'all' not in gate and str(ac) not in gate:
         return False                    # the gate: ACs a person has let through (or 'all')
     dec = decisions(ac, eng)
@@ -317,8 +325,11 @@ def tick(mine: list[int], target: int, state: dict, parts_by_ac: dict) -> None:
     retries, gave_up = state.setdefault('retries', {}), state.setdefault('gaveUp', [])
     subprocess.run(['git', 'pull', '-q'], cwd=ROOT, check=False)      # manual decisions
     fetched = False
+    hold = listed('HOLD')                 # ACs another job is rewriting: read them, but do not check or apply yet
     for ac in mine:
         if ac in gave_up:
+            continue
+        if str(ac) in hold and (f'xcheck-{ac}.zip' in eng or f'engfull-{ac}.tar' in eng):
             continue
         if f'xcheck-{ac}.zip' in eng:
             asset = eng[f'xcheck-{ac}.zip']
