@@ -281,6 +281,8 @@ def apply(ac: int, led: dict, pages: list, eng: dict) -> bool:
         m = items.get(k)
         if m is None:
             continue                                  # a card a redone check no longer lists
+        if m['cat'] == 'kannada-missing' and not v.get('epic'):
+            continue                                  # not a voter (a photo, a heading): nothing to add
         p = m['published']
         if p and v.get('epic') == p[0] and v.get('deleted', p[1]) == p[1] and 'serial' not in v:
             continue                                  # the published card stands
