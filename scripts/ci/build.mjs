@@ -57,8 +57,9 @@ if (!rowsDir || !outDir) {
 }
 
 // 3 letters + 7 digits; a few series have 8 digits; old state-format cards are
-// kept as printed (KA/01/234/567890). See scripts/epic_format.py.
-const EPIC_RE = /^(?:[A-Z]{3}[0-9]{7,8}|[A-Z]{2}\/[0-9]{2}\/[0-9]{3}\/[0-9]{6,7})$/;
+// kept as printed (KA/01/234/567890), as are a handful of irregular prints a
+// person read off both rolls (6-10 letters and digits). See scripts/epic_format.py.
+const EPIC_RE = /^(?:[A-Z]{3}[0-9]{7,8}|[A-Z]{2}\/[0-9]{2}\/[0-9]{3}\/[0-9]{6,7}|(?=[A-Z]*[0-9])[A-Z0-9]{6,10})$/;
 // What the site hashes: the letters and digits a visitor typed (site/app.js).
 const epicKey = (e) => e.replace(/[^A-Z0-9]/g, '');
 const REC = 10; // bucket byte + 9-byte record, while grouping

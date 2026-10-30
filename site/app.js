@@ -8,8 +8,9 @@
   const REC = 9;
   const FORMAT = 2; // record layout this script reads; see scripts/ci/build.mjs
   // After clean(): 3 letters + 7 (or, in a few series, 8) digits, or an old
-  // state-format card typed with or without its slashes (KA/01/234/567890).
-  const EPIC_RE = /^(?:[A-Z]{3}[0-9]{7,8}|[A-Z]{2}[0-9]{11,12})$/;
+  // state-format card typed with or without its slashes (KA/01/234/567890),
+  // or one of the few cards the roll prints irregularly (6-10 letters and digits).
+  const EPIC_RE = /^(?:[A-Z]{3}[0-9]{7,8}|[A-Z]{2}[0-9]{11,12}|(?=[A-Z]*[0-9])[A-Z0-9]{6,10})$/;
   const $ = (id) => document.getElementById(id);
   let manifest = null;
   let lang = 'kn';
