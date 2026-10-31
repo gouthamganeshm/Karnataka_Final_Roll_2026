@@ -1,0 +1,21 @@
+# Runs scripts/home/sv_pilot.py --vm K on VM K (eci-K): the 25% sample
+# verification (docs/sample-verification.md), restarted after any crash or
+# reboot. Install (as ubuntu, repo at ~/verify, token in ~/.gh_token):
+#   sudo cp ~/verify/scripts/home/sv-pilot@.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now sv-pilot@K
+# Log: journalctl -u sv-pilot@K -f
+[Unit]
+Description=Karnataka final roll: 25% sample verification, VM %i
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/verify
+ExecStartPre=/bin/bash -c 'git pull -q || true'
+ExecStart=/bin/bash -c 'GH_TOKEN=$(cat /home/ubuntu/.gh_token) exec nice -n 5 /home/ubuntu/venv/bin/python -u -W ignore scripts/home/sv_pilot.py --vm %i'
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

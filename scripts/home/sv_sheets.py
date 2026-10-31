@@ -2,8 +2,10 @@
 
     python scripts/home/sv_sheets.py AC [AC ...] [--out cache/sv/sheets]
 
-From svres-<ac>.json.gz: tier A (every card not `ok` whose two rolls agree),
-tier B (every other card not `ok`) and tier C (the random `ok` audit). Each
+From svres-<ac>.json.gz: tier A (every card whose two rolls agree on the
+EPIC and the site does not match, except the minor results ok-approx and
+serial-glyph), tier B (every other card not `ok`) and tier C (the random `ok`
+audit). Each
 row is the whole card cut from the Kannada PDF (left) and the English PDF
 (right), fetched afresh one booth at a time, with the readings and what the
 site holds under it. Writes OUT/<ac>/<tier>-NNN.png (8 cards a sheet) and
@@ -71,8 +73,9 @@ def sheets(ac: int, out: Path) -> int:
     with gzip.open(src, 'rt', encoding='utf8') as f:
         res = json.load(f)
     cards = [it for it in res['items'] if 'cell' in it]
-    tiers = {'A': [it for it in cards if it['result'] != 'ok' and it['how'] == 'settled'],
-             'B': [it for it in cards if it['result'] != 'ok' and it['how'] != 'settled'],
+    minor = ('ok', 'ok-approx', 'serial-glyph')
+    tiers = {'A': [it for it in cards if it['result'] not in minor and it['how'] == 'settled'],
+             'B': [it for it in cards if it['result'] != 'ok' and (it['how'] != 'settled' or it['result'] in minor)],
              'C': res['audit']}
     d = out / str(ac)
     d.mkdir(parents=True, exist_ok=True)

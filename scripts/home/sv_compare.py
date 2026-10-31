@@ -10,6 +10,8 @@ the other way (what the site holds at this AC, booth and serial):
 
   ok           found here, at this serial, deleted status right
   ok-approx    found in this booth; the site marks the serial "~" and it is off
+  serial-glyph found in this booth at a serial differing from the reading only
+               in digits the readers confuse (5/9/3/0/8/6): most likely a misread
   serial       found in this booth at another serial not marked "~"
   deleted      found here; deleted on one side only
   wrong-place  found only in another booth or AC
@@ -45,28 +47,48 @@ OUT = ROOT / 'cache' / 'sv'
 AUDIT = 5   # random ok cards per AC for eyes (tier C), and as many for the browser (tier D)
 
 
-def judge(site, ac: int, part: int, cands: list[str], serial: int | None, deleted: bool | None,
-          places: dict) -> tuple[str, str | None, list]:
-    """(result, the candidate it is about, hits) for the best-matching candidate."""
-    rank = ['ok', 'ok-approx', 'deleted', 'serial', 'wrong-place', 'wrong-epic', 'missing']
+GLYPH = str.maketrans('593086', '555555')   # digits the serial readers confuse
+
+
+def judge(site, ac: int, part: int, cands: list[str], serials: set, deleted: bool | None,
+          places: dict, serial: int | None) -> tuple[str, str | None, list]:
+    """(result, the candidate it is about, hits) for the best-matching candidate.
+    `serials` are every serial the readings allow; `serial` the surest one."""
+    rank = ['ok', 'ok-approx', 'deleted', 'serial-glyph', 'serial', 'wrong-place', 'wrong-epic', 'missing']
     best = None
     for c in cands:
         hits = site.lookup(c)
         here = [h for h in hits if h['ac'] == ac and h['part'] == part]
-        at = [h for h in here if serial is None or h['serial'] == serial]
+        at = [h for h in here if not serials or h['serial'] in serials]
         if at:
             r = 'ok' if deleted is None or any(h['deleted'] == deleted for h in at) else 'deleted'
         elif here:
-            r = 'ok-approx' if all(h['approx'] for h in here) else 'serial'
+            if all(h['approx'] for h in here):
+                r = 'ok-approx'
+            elif any(str(h['serial']).translate(GLYPH) == str(s).translate(GLYPH) for h in here for s in serials):
+                r = 'serial-glyph'
+            else:
+                r = 'serial'
         elif hits:
             r = 'wrong-place'
         else:
             key = site.key(c)[:6]
-            held = places.get((part, serial), []) if serial is not None else []
+            held = [x for s in serials for x in places.get((part, s), [])]
             r = 'wrong-epic' if any(k != key for k, _d, _a in held) else 'missing'
         if best is None or rank.index(r) < rank.index(best[0]):
             best = (r, c, hits)
     return best
+
+
+def run_offset(cards: dict) -> int | None:
+    """Serials on a page run on by cell, so most cards' serial - cell is one
+    number; None unless at least half the read serials (and 4) agree on it."""
+    diffs = collections.Counter(x[5] - cell for cell, x in cards.items() if x[5] is not None)
+    if diffs:
+        off, n = diffs.most_common(1)[0]
+        if n >= 0.5 * sum(diffs.values()) and n >= 4:
+            return off
+    return None
 
 
 def compare(ac: int, reads: dict, site) -> dict:
@@ -97,6 +119,12 @@ def compare(ac: int, reads: dict, site) -> dict:
                 count['page_cells_differ'] += 1
                 items.append({'result': 'cells', 'part': part, 'page': int(p),
                               'kan': sorted(kc), 'eng': sorted(ec)})
+            # Each roll's serials fitted to the page's run by cell. The serial
+            # readers misread 5 as 9 or 3 now and then, a whole page alike on one
+            # roll (AC 162's pilot), so every serial the readings allow is kept and
+            # the site's must be one of them; the surest (both runs agree, else
+            # the rolls' readings agree) is reported and used for the page check.
+            k_off, e_off = run_offset(kc), run_offset(ec)
             serials = []
             for cell in sorted(set(kc) | set(ec)):
                 k, e = kc.get(cell), ec.get(cell)
@@ -111,7 +139,15 @@ def compare(ac: int, reads: dict, site) -> dict:
                     how = 'unread'
                     cands = sorted({x[1] for x in (k, e) if x and x[1]})
                 ks, es = (k[5] if k else None), (e[5] if e else None)
-                serial = ks if ks is not None and (es is None or es == ks) else (es if ks is None else None)
+                allowed = {ks, es} | {int(x[3]) for x in (k, e) if x and str(x[3]).isdigit()}
+                allowed |= {cell + o for o in (k_off, e_off) if o is not None}
+                allowed.discard(None)
+                if k_off is not None and k_off == e_off:
+                    serial = cell + k_off
+                elif ks is not None and (es is None or es == ks):
+                    serial = ks
+                else:
+                    serial = es if ks is None else None
                 kd = (k[6] == 'X') if k else None
                 ed = (e[6] == 'X') if e else None
                 deleted = kd if kd is not None else ed
@@ -122,7 +158,7 @@ def compare(ac: int, reads: dict, site) -> dict:
                 else:
                     serials.append(serial)
                 if cands:
-                    result, epic, hits = judge(site, ac, part, cands, serial, deleted, places)
+                    result, epic, hits = judge(site, ac, part, cands, allowed, deleted, places, serial)
                 else:
                     result, epic, hits = 'unread', None, []
                 if result != 'unread' and how == 'unread':
@@ -138,14 +174,19 @@ def compare(ac: int, reads: dict, site) -> dict:
                     items.append(card)
                 else:
                     oks.append(card)
+            # A page's serials run on without a gap, so its range holds one card
+            # per cell; a range that does not fit the cells (a serial misread at
+            # an end) says nothing about the site.
             if serials:
                 lo, hi = min(serials), max(serials)
-                held = sum(len(places.get((part, s), [])) for s in range(lo, hi + 1))
-                cards_in = sum(1 for s in serials if lo <= s <= hi)
-                if held != cards_in:
-                    count['page'] += 1
-                    items.append({'result': 'page', 'part': part, 'page': int(p), 'range': [lo, hi],
-                                  'site': held, 'pdf': cards_in, 'cells': len(kc)})
+                if hi - lo + 1 == len(kc):
+                    held = sum(len(places.get((part, s), [])) for s in range(lo, hi + 1))
+                    if held != len(kc):
+                        count['page'] += 1
+                        items.append({'result': 'page', 'part': part, 'page': int(p), 'range': [lo, hi],
+                                      'site': held, 'pdf': len(kc)})
+                else:
+                    count['page_unsure'] += 1
     rng = random.Random(f'sv-audit-{ac}')
     audit = rng.sample(oks, min(2 * AUDIT, len(oks)))
     return {'ac': ac, 'builtAt': site.manifest['builtAt'], 'count': dict(count), 'items': items,
@@ -171,7 +212,7 @@ def run(ac: int, site, upload: bool = True, local: str | None = None) -> dict:
     c = res['count']
     print(f'AC {ac}: {c.get("cards", 0)} cards checked ({c.get("cards_sampled", 0)} of {c.get("cards_total", 0)}'
           f' sampled in {c.get("booths_covered", 0)}/{c.get("booths", 0)} booths): ok {c.get("ok", 0)}, '
-          + ', '.join(f'{k} {c[k]}' for k in ('ok-approx', 'serial', 'deleted', 'wrong-place', 'wrong-epic',
+          + ', '.join(f'{k} {c[k]}' for k in ('ok-approx', 'serial-glyph', 'serial', 'deleted', 'wrong-place', 'wrong-epic',
                                               'missing', 'unread', 'page', 'extra', 'page_cells_differ')
                       if c.get(k)), flush=True)
     if upload:
