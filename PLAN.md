@@ -1,5 +1,8 @@
 # Final roll — extraction & publishing plan
 
+> **Historical.** This is the design written before the final roll came out (Oct 2026). What actually
+> runs now is described in [README.md](README.md) and [docs/](docs/); the measurements below still hold.
+
 Status: **ready, waiting for the final roll link (2026-10-10).** Build items
 A–J are done (§5). The one thing not yet run is a full-size constituency
 end to end, which happens as the release-day pilot (§7 step 5).

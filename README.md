@@ -1,147 +1,134 @@
 # Karnataka Final Roll 2026 — EPIC search
 
-A voter types their EPIC number and gets their constituency, part and serial
-number on the Karnataka electoral roll, with a link to the official ECI PDF of
-their polling part. If the final roll strikes the EPIC off, the site says so
-and where. Unofficial; it reformats public data.
+Type the EPIC number from your voter ID card and the site tells you your
+constituency (AC), polling booth (part) and serial number on Karnataka's
+**SIR final electoral roll 2026**, with a link to the official ECI PDF of
+that booth. If the roll strikes your entry off with a DELETED stamp, the site
+says so and where. It is unofficial: it only re-arranges data ECI has
+published.
 
 **Site:** https://gouthamganeshm.github.io/Karnataka_Final_Roll_2026/
 
-**Status:** the SIR final roll was published on 2026-10-27 (ECI roll
-`S10-2026-SIR-FIR-1`: 224 ACs, 60,923 parts) and the statewide run is under way,
-Bengaluru first. The site's coverage table shows which constituencies are
-live; each goes up about an hour after its download finishes. Details are in
-[PLAN.md](PLAN.md).
+![The site's home page](docs/images/site-home.png)
 
-Successor to [Karnataka_Draft_Roll_2026](https://github.com/gouthamganeshm/Karnataka_Draft_Roll_2026),
-rebuilt so a statewide import takes hours, not a week.
+## Status (31 Oct 2026)
 
-## How it works
+| | |
+|---|---|
+| Roll | SIR final roll, published by ECI on 27 Oct 2026 (`S10-2026-SIR-FIR-1`) |
+| Coverage | all **224 constituencies**, all **60,923 booths** |
+| Electors on the site | **4,54,55,689** — exactly the CEO Karnataka's official count |
+| Constituencies matching the official count | **224 of 224**, to the last voter ([proof table](docs/proof/official-match.md)) |
+| Deleted entries (searchable, not counted) | 1,88,331 |
+| Every card cross-checked against the English roll | yes ([how](docs/english-crosscheck-runbook.md)) |
+| Next step | a 25% sample check of every booth, PDF to live site ([plan](docs/sample-verification.md)) |
 
+The two sources the site is built from and checked against are linked at the
+bottom of every page:
+
+![Sources in the site footer](docs/images/site-footer-sources.png)
+
+* **ECI electoral roll PDFs** — https://voters.eci.gov.in/download-eroll (one
+  PDF per booth, in Kannada and in English)
+* **CEO Karnataka AC-wise final-roll booklet** —
+  https://ceo.karnataka.gov.in/uploads/PDF%20FINAL%20AC%20WISE%2027_1793094730.pdf
+  (official elector count per constituency)
+
+## How it works, in one picture
+
+```mermaid
+flowchart LR
+    ECI["ECI website<br/>60,923 booth PDFs<br/>(Kannada + English)"]
+    VM["4 free cloud VMs<br/>(Oracle Cloud)<br/>download PDFs"]
+    REL["Private GitHub release<br/>(only the owner can see it)"]
+    GA["GitHub Actions<br/>cut each card,<br/>read the EPIC 4 ways,<br/>check every booth"]
+    CHK["Checks<br/>English roll, printed<br/>totals, CEO count,<br/>a person for anything unsure"]
+    SITE["GitHub Pages<br/>the search site<br/>(hashed data only)"]
+    ECI --> VM --> REL --> GA --> CHK --> SITE
 ```
-home PC                            GitHub (draft release, private)   GitHub Actions                          GitHub Pages
-fetch part PDF ─► cut crops ─►     crops-<ac>.tar ─────────────────► ocr.yml    16 shard jobs + merge
-(scripts/home/roll_queue.py                                          verify.yml 12 shard jobs + verdict
- → run.py)                                                           publish.yml ─► hashed buckets ────────► site
-```
 
-* **Home fetches.** The ECI CDN refuses GitHub's runners (`406`), so PDFs are
-  downloaded at home, Kannada roll only. Home does the cheap half: cutting
-  each card's serial box and EPIC. PDFs are never written to disk, and each
-  crop tar is deleted once uploaded. Each AC uploads while the next one
-  downloads. The download (~20 parts/min, an 8 MB PDF each) is the bottleneck:
-  it fills a ~30 Mbps home line, so more workers do not help. About two
-  days for the state.
-* **Actions OCRs, split sixteen ways.** `ocr.yml` splits an AC's parts over 16
-  parallel jobs (`ocr_ac.py --shard i/N`); a merge job joins them into exactly
-  what one job writes (`ocr_ac.py merge`). A 600-part AC takes under 10 min
-  instead of ~1.5 h.
-* **Four readers per EPIC.** Tesseract on a contact sheet, a glyph-template
-  reader for the fixed EPIC font, Tesseract on the crop alone, and a
-  prototype reader with different features. A character is published only
-  when independent readers agree; anything unsettled is withheld, never
-  guessed. Details and measurements in [PLAN.md](PLAN.md).
-* **A verifier before publishing, also split twelve ways.** The per-card checks
-  run on every core in 12 parallel jobs: V1 re-reads every record, V4 confirms
-  the letters of EPICs the draft roll does not have (keys from
-  `draft-keys.yml`, hash fragments only). A verdict job then checks the whole
-  AC (V2: serial order, duplicates, missing cards; V3: the part's printed
-  totals and deletions), refuses unless the shards covered every part, and
-  holds the AC if more than 3% of records are disputed or 0.5% of cards are
-  missing. A held AC shows as "under review", never as "not found".
-* **Private transfer.** Crops, rows and shard results travel through a
-  *draft* release, which only repo collaborators and the repo's workflows can
-  see; never through Actions artifacts, which anyone signed in can download
-  on a public repo. Only hashed buckets are published.
-* **Site fills in as it goes.** Each verified AC republishes the site. Until
-  ≥99% of booths are loaded a miss reads "can't say yet", never "not found".
+1. **Download.** ECI's servers refuse GitHub's own machines, so four free
+   Oracle Cloud VMs download the booth PDFs. [How the VMs are set up and
+   run](docs/vm-process.md).
+2. **Read.** Each PDF page is a picture of 30 voter cards (10 rows × 3). The
+   cards are cut out and the EPIC on each is read by four different readers.
+   A character is accepted only when independent readers agree.
+3. **Check.** Every booth's cards are checked against the totals printed in
+   the PDF itself, against the separately typeset English roll, and every
+   constituency against the CEO's official count. Anything the machines
+   could not settle was looked at by a person. Details:
+   [accuracy and proof](docs/accuracy-and-proof.md).
+4. **Publish.** Only hashed fragments of EPICs are published. The site has no
+   server: the search happens inside the visitor's browser.
+
+## Documentation
+
+| Document | What it explains |
+|---|---|
+| [docs/accuracy-and-proof.md](docs/accuracy-and-proof.md) | Every check the data went through, with numbers |
+| [docs/proof/official-match.md](docs/proof/official-match.md) | All 224 constituencies: site count vs the CEO booklet |
+| [docs/vm-process.md](docs/vm-process.md) | The four cloud VMs: why, how they were made, what runs on them, cost |
+| [docs/english-crosscheck-runbook.md](docs/english-crosscheck-runbook.md) | The full English-roll cross-check and manual review |
+| [docs/sample-verification.md](docs/sample-verification.md) | The 25%-of-every-booth check from PDF to live site |
+| [PLAN.md](PLAN.md) | The original design (written before the roll came out) |
 
 ## What the final roll looks like (and how it is read)
 
-The final roll is the draft's layout (image-only pages, 10×3 cards) plus
-supplement sections, found on release day and handled in `scripts/ocr/`:
-
-* **Deleted electors stay in the PDF.** The card keeps its serial, gets a
+* **Deleted electors stay in the PDF.** Their card keeps its serial, gets a
   diagonal DELETED stamp and a reason code left of the serial (E dead, S
   shifted, R repeated, M missing, Q disqualified). `#` in the same place means
-  *modified*, still on the roll. `roll_ocr.serial_marker` tells `#` (by a
-  template, `hash-mark.npy`) from any other mark, which counts as a deletion.
-* **Deleted cards are published, flagged** (top bit of the record's part). The
-  site says "Marked DELETED in the final roll" with AC, part, serial and the
-  PDF; a voter who moved shows the live entry plus a note naming the deleted
-  one. Deleted cards are never counted as electors.
-* **Additions list.** Added electors come after the main list, continuing the
-  serial run, with a second box after the serial ("868 | 7"); the serial is
-  read from the first box only. Their serial box is narrower, so a deletion
-  code there sits ~10 px from the number instead of 130+.
-* **Printed totals are net of deletions.** `totals.py` reads the deletion
-  count from the cover (Ending − Starting + 1 − Total) and the summary page
-  (rows I + II − III = net). V3 requires live cards = net total and detected =
-  printed deletions; if not, every record of the part is disputed, so an
-  unmarked deletion can never go out as a live elector.
-* **A page with one lone card** (the end of a section) is cut too.
-
-## Running it
-
-The home stage runs unattended:
-
-```
-python scripts/home/run.py discover        # part counts per AC (cache/manifest.json)
-python scripts/home/roll_queue.py          # every AC, Bengaluru first, Kannada only
-```
-
-`roll_queue.py` runs `run.py go --tranche all --no-eng --workers 6` and
-restarts it after any crash until every AC is shipped; only one copy runs at a
-time. A Windows Task Scheduler task, **Karnataka Final Roll queue**, starts it
-at logon, so a reboot resumes where it stopped. Logs: `cache/queue.log` and
-`cache/queue-run.log`. `python scripts/home/run.py status` shows what is on
-the release.
-
-Everything after the upload is on Actions: `run.py` dispatches `ocr.yml` per
-AC, which dispatches `verify.yml`, which dispatches `publish.yml`.
-
-**If something breaks:** finished ACs are in
-`cache/shipped-<release>.json` and are skipped on re-run. Re-run one AC's OCR
-with `gh workflow run ocr.yml -f ac=N -f tag=<release>` (needs its crop tar on
-the release), or re-ship it with `run.py go --ac N --force`. `shards` is an
-input of both `ocr.yml` (default 16) and `verify.yml` (default 12), at most 20
-(GitHub's free plan runs 20 jobs at once). Per-card verification is paused
-while the state is imported (`gh variable set VERIFY --body paused`; anything
-else turns it back on): each AC then goes live after the whole-AC checks and
-the official-count check, and `verify.yml` can be run over every AC later,
-its crops kept on the release. If ECI throttles, lower
-`--workers` (never above 8).
+  *modified*, still on the roll. The site says "Marked DELETED in the final
+  roll" with AC, part, serial and the PDF. Deleted cards are never counted as
+  electors.
+* **Additions list.** Electors added after the draft come after the main
+  list, continuing the serial run.
+* **Printed totals.** The cover and the last page print each booth's totals;
+  a booth goes live only when the cards read add up to them.
+* **EPIC formats.** Most cards are 3 letters + 7 digits (`ABC1234567`). Some
+  series have 8 digits, old cards carry the state format with slashes
+  (`KA/01/234/567890`), and a handful are printed irregularly; those are kept
+  exactly as printed, after a person read them off both rolls.
 
 ## Privacy
 
-There is no server. Search happens in the browser: `SHA-256(EPIC)` bytes 0–1
-choose `data/roll/<ab>/<cd>.bin` (one of 65,536 files, each shared by ~27 lakh
-possible EPICs), bytes 2–5 are binary-searched in it. The EPIC is never sent
-anywhere or put in the URL. No cookies, analytics or logs; the browser keeps
-only the language, theme and scenes seen. Fonts are self-hosted, so the page
-requests nothing from any third party; GitHub, as the host, sees visitors' IPs.
-The page carries the same explanation in Kannada and English.
+There is no server and no database. Search happens in the browser:
+`SHA-256(EPIC)` bytes 0–1 choose one of 65,536 files `data/roll/<ab>/<cd>.bin`
+(each shared by ~27 lakh possible EPICs), bytes 2–5 are looked up inside it.
+The EPIC is never sent anywhere or put in the URL. No cookies, analytics or
+logs; the browser keeps only the language, theme and scenes seen. Fonts are
+self-hosted, so the page requests nothing from any third party; GitHub, as the
+host, sees visitors' IPs.
 
 Records are 9 bytes (`scripts/ci/build.mjs`): hash suffix, AC, part (top bit:
-deleted), serial (top bit: serial not OCR-confirmed). The whole state is
-~400 MB, inside Pages' 1 GB limit. Script URLs carry the build time and the
-manifest a record format, so a cached page never misreads newer data.
+deleted), serial (top bit: serial not fully confirmed). The whole state is
+~400 MB, inside GitHub Pages' 1 GB limit.
+
+Everything that holds real EPICs (card crops, OCR rows, review decisions)
+lives only on **draft** GitHub releases, which only the repo owner can see —
+never in git, never in Actions artifacts (those are downloadable by anyone on
+a public repo).
 
 ## Layout
 
 | Path | What it is |
 |---|---|
 | `roll-source.json` | The one place the roll's URL, label and release tag are set |
-| `scripts/home/run.py` | Home: discover, fetch, cut, upload, dispatch OCR |
-| `scripts/home/roll_queue.py` | Unattended, single-instance queue over `run.py go` |
-| `scripts/ocr/` | Crop cutting, the EPIC readers, deletion marks, printed totals, tests |
-| `scripts/ci/` | Actions: OCR per AC (sharded), verifier (sharded), draft-roll keys, site build |
-| `scripts/release.py` | Draft-release helper (refuses to use a published release) |
-| `.github/workflows/` | `ocr.yml`, `verify.yml`, `publish.yml`, `draft-keys.yml` |
-| `site/` | The search page (Kannada and English, light and dark, self-hosted fonts) |
+| `reference/ceo-final-2026.json` | Official elector count per AC, from the CEO booklet |
+| `reference/vm-plan.json` | Which VM downloads which constituencies |
+| `scripts/home/` | Run on the VMs (or a PC): download, dispatch, cross-check, review, apply |
+| `scripts/ocr/` | Cutting cards out of pages, the EPIC readers, deletion marks, printed totals |
+| `scripts/ci/` | Run on GitHub Actions: OCR per AC, verifier, site build |
+| `scripts/release.py` | Private draft-release helper (refuses to touch a published release) |
+| `.github/workflows/` | `ocr.yml`, `verify.yml`, `publish.yml`, `series.yml`, `draft-keys.yml` |
+| `site/` | The search page (Kannada and English, light and dark) |
+| `docs/` | Documentation, proof tables, screenshots |
 
-## Requirements (home)
+## Running it yourself
 
-Python 3.10+ with `pip install -r scripts/ocr/requirements.txt` and the `gh`
-CLI logged in. Tesseract is only needed for local tests, and Node 20+ only to
-build the site locally.
+Python 3.10+ with `pip install -r scripts/ocr/requirements.txt`, Tesseract,
+and the `gh` CLI logged in; Node 20+ only to build the site locally. The cloud
+setup is in [docs/vm-process.md](docs/vm-process.md). The site rebuilds with
+
+    gh workflow run publish.yml -f tag=crops-S10-2026-FR
+
+Successor to [Karnataka_Draft_Roll_2026](https://github.com/gouthamganeshm/Karnataka_Draft_Roll_2026).
