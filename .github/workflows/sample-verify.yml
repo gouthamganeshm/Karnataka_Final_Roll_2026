@@ -1,0 +1,55 @@
+# 25% sample verification (docs/sample-verification.md, step 4): read the
+# sampled cards of one AC, both rolls. Dispatched by scripts/home/sv_pilot.py
+# on a VM once sv-<ac>.tar is on the <tag>-sv draft; the readings go to the
+# <tag>-svr draft, never to Actions artifacts (anyone signed in can download
+# those on a public repo, and the readings hold EPICs).
+name: Sample verification
+run-name: Sample verification AC ${{ inputs.ac }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      ac:
+        description: Assembly constituency number
+        required: true
+      tag:
+        description: Main draft release tag (roll-source.json); -sv and -svr are derived
+        required: true
+
+permissions:
+  contents: write   # read/write assets on the draft releases
+
+concurrency:
+  group: sample-verify-${{ inputs.ac }}
+  cancel-in-progress: false
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      GH_TOKEN: ${{ secrets.ROLL_TOKEN || github.token }}
+      AC: ${{ inputs.ac }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/ocr/requirements.txt
+
+      - name: Install Tesseract
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
+          tesseract --version | head -1
+
+      - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
+
+      - name: Read the sampled cards
+        run: |
+          ROLL_RELEASE="$TAG-sv" python3 -c "import sys; sys.path.insert(0, 'scripts'); import release; release.fetch('.', ['sv-$AC.tar'])"
+          python3 scripts/ci/sv_read.py "sv-$AC.tar" "svread-$AC.json.gz"
+          ROLL_RELEASE="$TAG-svr" python3 -c "import sys; sys.path.insert(0, 'scripts'); import release; release.upload('svread-$AC.json.gz')"
