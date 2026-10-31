@@ -70,6 +70,7 @@ flowchart LR
 | [docs/vm-process.md](docs/vm-process.md) | The four cloud VMs: why, how they were made, what runs on them, cost |
 | [docs/english-crosscheck-runbook.md](docs/english-crosscheck-runbook.md) | The full English-roll cross-check and manual review |
 | [docs/sample-verification.md](docs/sample-verification.md) | The 25%-of-every-booth check from PDF to live site |
+| [docs/site-voter-details.md](docs/site-voter-details.md) | Planned: age, gender, relation and polling station on the search result |
 | [docs/dataset.md](docs/dataset.md) | The planned open dataset: age, gender, relation per entry, no names, EPIC only as a keyed hash |
 | [PLAN.md](PLAN.md) | The original design (written before the roll came out) |
 
