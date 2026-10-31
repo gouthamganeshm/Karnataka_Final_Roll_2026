@@ -1,9 +1,11 @@
-"""Age, gender, relation type and house number of every card, from the English roll.
+"""Age, gender, relation type and house number of every card, from either roll.
 
     from fields import read_page
-    read_page(img) -> {cell: {'age', 'gender', 'relation', 'house'}}
+    read_page(img, lang='eng'|'kan', names=False) -> {cell: {'age', 'gender', 'relation', 'house'[, 'name']}}
 
-For the open dataset (docs/dataset.md). Each card's text block (left of the
+For the open dataset (docs/dataset.md). Both rolls are read: each is a
+witness for the other's age, gender and relation, and the site shows the
+name in the visitor's language. Each card's text block (left of the
 photo, below the serial and EPIC strip) is pasted into one sheet per page and
 read by Tesseract once; its words go back to their card by position. Only the
 fields the dataset needs are parsed. The relative's name is never parsed:
@@ -30,6 +32,16 @@ AGE = re.compile(r'\bAge\s*[:;.,]?\s*(\d{1,3})\b', re.I)
 GENDER = re.compile(r'\bGender\s*[:;.,]?\s*(Male|Female|Third\s*Gender|Transgender|Others?|TG)\b', re.I)
 HOUSE = re.compile(r'House\s*Number\s*[:;.,]?\s*(.*?)\s*(?:\bAge\b|$)', re.I)
 GENDERS = {'male': 'M', 'female': 'F'}
+# The Kannada roll's labels: ಹೆಸರು name, ತಂದೆಯ / ಗಂಡನ / ತಾಯಿಯ ಹೆಸರು father's /
+# husband's / mother's name, ಇತರೆ other, ಮನೆಯ ಸಂಖ್ಯೆ house number, ವಯಸ್ಸು age,
+# ಲಿಂಗ gender: ಗಂಡು male, ಹೆಣ್ಣು female, ಇತರೆ third gender.
+KAN_REL = re.compile(r'(ತಂದೆಯ|ಗಂಡನ|ತಾಯಿಯ|ಇತರೆ|ಇತರರ)\s*ಹೆಸರು')
+KAN_REL_NAMES = {'ತಂದೆಯ': 'Father', 'ಗಂಡನ': 'Husband', 'ತಾಯಿಯ': 'Mother', 'ಇತರೆ': 'Other', 'ಇತರರ': 'Other'}
+KAN_AGE = re.compile(r'ವಯಸ್ಸು\s*[:;.,]?\s*(\d{1,3})')
+KAN_GENDER = re.compile(r'ಲಿಂಗ\s*[:;.,]?\s*(ಗಂಡು|ಹೆಣ್ಣು|ಇತರೆ)')
+KAN_GENDERS = {'ಗಂಡು': 'M', 'ಹೆಣ್ಣು': 'F', 'ಇತರೆ': 'TG'}
+KAN_HOUSE = re.compile(r'ಮನೆಯ\s*ಸಂಖ್ಯೆ\s*[:;.,]?\s*(.*?)\s*(?:ವಯಸ್ಸು|$)')
+KAN_NAME = re.compile(r'^\s*ಹೆಸರು\s*[:;.,]?\s*(.+?)\s*$', re.M)
 
 
 def text_box(box: tuple) -> tuple:
@@ -39,7 +51,7 @@ def text_box(box: tuple) -> tuple:
     return (left + int(0.01 * w), top + int(0.17 * h), left + int(0.70 * w), bottom - 2)
 
 
-def card_text(img: Image.Image, boxes: list) -> dict[int, str]:
+def card_text(img: Image.Image, boxes: list, lang: str = 'eng') -> dict[int, str]:
     """cell -> the card's text as Tesseract read it (one call per page)."""
     g = img.convert('L')
     crops = [g.crop(text_box(b)) for b in boxes]
@@ -53,7 +65,7 @@ def card_text(img: Image.Image, boxes: list) -> dict[int, str]:
         y += c.height + GAP
     buf = io.BytesIO()
     sheet.save(buf, format='PNG')
-    out = subprocess.run([C.R._tesseract_cmd(), 'stdin', 'stdout', '--psm', '6', 'tsv'],
+    out = subprocess.run([C.R._tesseract_cmd(), 'stdin', 'stdout', '--psm', '6', '-l', 'kan+eng' if lang == 'kan' else 'eng', 'tsv'],
                          input=buf.getvalue(), capture_output=True, check=False).stdout.decode('utf8', 'replace')
     lines: dict[tuple, list] = {}
     for row in csv.DictReader(io.StringIO(out), delimiter='\t', quoting=csv.QUOTE_NONE):
@@ -75,6 +87,24 @@ def card_text(img: Image.Image, boxes: list) -> dict[int, str]:
 NAME = re.compile(r'^\s*Name\s*[:;.,]?\s*(.+?)\s*$', re.I | re.M)
 
 
+def parse_kan(text: str, names: bool = False) -> dict:
+    rel = KAN_REL.search(text)
+    age = KAN_AGE.search(text)
+    gen = KAN_GENDER.search(text)
+    flat = ' '.join(l for l in text.splitlines() if not re.search(r'ಹೆಸರು', l))
+    house = KAN_HOUSE.search(flat)
+    out = {
+        'relation': KAN_REL_NAMES[rel.group(1)] if rel else None,
+        'age': int(age.group(1)) if age and 18 <= int(age.group(1)) <= 125 else None,
+        'gender': KAN_GENDERS[gen.group(1)] if gen else None,
+        'house': house.group(1).strip(' ,.') if house and house.group(1).strip(' ,.') else None,
+    }
+    if names:
+        name = KAN_NAME.search(text)
+        out['name'] = name.group(1) if name else None
+    return out
+
+
 def parse(text: str, names: bool = False) -> dict:
     rel = REL.search(text)
     age = AGE.search(text)
@@ -94,7 +124,8 @@ def parse(text: str, names: bool = False) -> dict:
     return out
 
 
-def read_page(img: Image.Image, names: bool = False) -> dict[int, dict]:
+def read_page(img: Image.Image, lang: str = 'eng', names: bool = False) -> dict[int, dict]:
     boxes = []
     C.cut_page(img, boxes)
-    return {cell: parse(t, names) for cell, t in card_text(img, boxes).items()}
+    p = parse_kan if lang == 'kan' else parse
+    return {cell: p(t, names) for cell, t in card_text(img, boxes, lang).items()}

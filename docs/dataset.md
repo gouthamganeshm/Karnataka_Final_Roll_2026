@@ -41,12 +41,18 @@ stay on private draft releases and are deleted once the dataset is built.
 
 ## How it will run (all in the cloud)
 
-1. **VMs** download every booth's English PDF afresh (as for the cross-check)
-   and upload them to the private work release.
-2. **GitHub Actions** cut every card and read its text block once per page
-   (Tesseract, `fields.py`): age, gender, relation label, house number.
-   Measured on 227 cards: every age read, 99.6% gender, 98.7% relation label on
-   the first pass; misses get a second, card-by-card read.
+1. **VMs** download every booth's **Kannada and English** PDFs afresh and
+   upload them to the private work release.
+2. **GitHub Actions** cut every card and read its text block once per page in
+   each roll (Tesseract with its Kannada and English models, `fields.py`): age,
+   gender, relation label, house number, and the elector's name (for the
+   site only). The two rolls are typeset separately, so each is a witness for
+   the other: a field goes out when both agree, or when one is unread and the
+   other is plain; a disagreement is looked at by a person on the card images.
+   Measured on the same 227 cards in both rolls: age agreed on 226 of 227,
+   relation on 227 of 227, gender on every card both read (the Kannada reader
+   missed 7, the English 1). Both rolls together are ~30 lakh page reads,
+   about 2-3 days on Actions.
 3. **A VM** joins the readings to the verified rows (EPIC, serial, deleted) by
    AC, part, page and card, hashes EPIC and house number, and drops them.
 4. **Checks before release**

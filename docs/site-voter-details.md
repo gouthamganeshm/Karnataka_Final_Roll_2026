@@ -10,7 +10,7 @@ dataset it will also show:
 
 | New on the result | Source |
 |---|---|
-| **Voter's name** (English, as printed) | the English roll, read once per card |
+| **Voter's name, in the site's language**: Kannada as printed in the Kannada roll, English as printed in the English roll (the language button switches both the page and the name) | both rolls, read once per card |
 | Age, gender, relation (Father / Husband / Mother / Other) | dataset |
 | Status in detail: live, modified (`#`), or deleted with the printed reason (dead, shifted, repeated, missing, disqualified) | dataset |
 | **Polling station name and address** (where to go and vote) | each booth PDF's cover page, read once per booth |
@@ -28,7 +28,7 @@ compute, so someone could guess EPICs and find which exist. That only
 reveals where an EPIC votes. With names it would reveal a name list for the
 whole state, so names get stronger protection:
 
-1. **Each name is encrypted with a key derived from its EPIC** (AES-GCM, key
+1. **Each name (Kannada and English) is encrypted with a key derived from its EPIC** (AES-GCM, key
    from a deliberately slow, memory-hard hash of the EPIC). Only a visitor who
    already knows the EPIC can read the name; the downloaded files hold
    unreadable bytes.
@@ -49,8 +49,8 @@ effort; that remaining risk is accepted for showing names.
 ## How (no server)
 
 * Record grows from 9 bytes to about 40 (fragment, AC, part, serial, page,
-  age, gender/relation/status, encrypted name). ~4.56 crore × 40 bytes is
-  ~1.8 GB, over GitHub Pages' 1 GB per site, so the records are split over
+  age, gender/relation/status, both names encrypted, packed one byte a
+  letter). ~4.56 crore × ~55 bytes is ~2.5 GB, over GitHub Pages' 1 GB per site, so the records are split over
   two or three GitHub Pages repos (each gets its own 1 GB, free); Cloudflare R2
   stays out (it is shared with another site). `FORMAT` goes from 2 to 3.
 * Build cost: the slow hash runs once per card, 4.56 crore times, on Actions.
