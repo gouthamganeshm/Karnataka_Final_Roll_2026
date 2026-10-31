@@ -51,7 +51,7 @@ effort; that remaining risk is accepted for showing names.
 * Record grows from 9 bytes to about 40 (fragment, AC, part, serial, page,
   age, gender/relation/status, both names encrypted, packed one byte a
   letter). ~4.56 crore × ~55 bytes is ~2.5 GB, over GitHub Pages' 1 GB per site, so the records are split over
-  two or three GitHub Pages repos (each gets its own 1 GB, free); Cloudflare R2
+  three GitHub Pages repos (each gets its own 1 GB, free); Cloudflare R2
   stays out (it is shared with another site). `FORMAT` goes from 2 to 3.
 * Build cost: the slow hash runs once per card, 4.56 crore times, on Actions.
 * Polling station names: one small file per constituency
