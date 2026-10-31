@@ -13,7 +13,6 @@ finishes; verification has priority on the VMs and on GitHub Actions.
 | `age`, `gender` | As printed |
 | `relation` | Father, Husband, Mother, or Other (the label only) |
 | `epic_hash` | Keyed hash of the EPIC: equal hashes = same EPIC; cannot be turned back into it |
-| `epic_series` | The first three letters of the EPIC (the issuing series) |
 | `household_hash` | Keyed hash of the house number within the booth: equal = same printed house number |
 | `verified` | Which checks the entry passed (both rolls, a person's review, the 25% sample) |
 
@@ -24,8 +23,9 @@ band and gender, deletions by reason, and a data-quality table.
 
 | Never in the dataset | How |
 |---|---|
-| Elector's name | Never parsed: the reader drops those text lines in memory (`scripts/ocr/fields.py`) |
-| Relative's name (father, husband, …) | Same: only the label "Father" / "Husband" / … is kept |
+| Elector's name | Not in the dataset. It is read only for the site's search result, where it is stored encrypted under the EPIC ([site-voter-details.md](site-voter-details.md)) |
+| Relative's name (father, husband, …) | Never parsed: the reader drops that line in memory; only the label "Father" / "Husband" / … is kept |
+| EPIC series (first three letters) | Left out: it would make guessing EPICs easier |
 | House number / address | Only as a keyed hash, then discarded |
 | EPIC number | Only as a keyed hash (HMAC-SHA256, first 24 hex characters) |
 

@@ -6,10 +6,12 @@
 For the open dataset (docs/dataset.md). Each card's text block (left of the
 photo, below the serial and EPIC strip) is pasted into one sheet per page and
 read by Tesseract once; its words go back to their card by position. Only the
-fields the dataset needs are parsed. The elector's and the relative's NAMES
-are deliberately never parsed or kept: the text lines that carry them are
-dropped here, in memory. The house number is returned only so the caller can
-turn it into a keyed hash (household) and drop it.
+fields the dataset needs are parsed. The relative's name is never parsed:
+its line is dropped here, in memory. The elector's own name is returned only
+when asked (`names=True`), for the site's search result, where it is stored
+encrypted under the EPIC (docs/site-voter-details.md); it never goes into the
+open dataset. The house number is returned only so the caller can turn it
+into a keyed hash (household) and drop it.
 """
 from __future__ import annotations
 
@@ -70,22 +72,29 @@ def card_text(img: Image.Image, boxes: list) -> dict[int, str]:
     return {c: '\n'.join(t) for c, t in text.items()}
 
 
-def parse(text: str) -> dict:
+NAME = re.compile(r'^\s*Name\s*[:;.,]?\s*(.+?)\s*$', re.I | re.M)
+
+
+def parse(text: str, names: bool = False) -> dict:
     rel = REL.search(text)
     age = AGE.search(text)
     gen = GENDER.search(text)
     flat = ' '.join(l for l in text.splitlines() if not re.match(r'\s*(Name|Father|Husband|Mother|Wife|Other|Guru)', l, re.I))
     house = HOUSE.search(flat)
     g = gen.group(1).lower().replace(' ', '') if gen else None
-    return {
+    out = {
         'relation': rel.group(1).title().rstrip('s') if rel else None,
         'age': int(age.group(1)) if age and 18 <= int(age.group(1)) <= 125 else None,
         'gender': GENDERS.get(g, 'TG') if g else None,
         'house': house.group(1).strip(' ,.') if house and house.group(1).strip(' ,.') else None,
     }
+    if names:
+        name = NAME.search(text)
+        out['name'] = name.group(1) if name else None
+    return out
 
 
-def read_page(img: Image.Image) -> dict[int, dict]:
+def read_page(img: Image.Image, names: bool = False) -> dict[int, dict]:
     boxes = []
     C.cut_page(img, boxes)
-    return {cell: parse(t) for cell, t in card_text(img, boxes).items()}
+    return {cell: parse(t, names) for cell, t in card_text(img, boxes).items()}
