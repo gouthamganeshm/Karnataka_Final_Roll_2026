@@ -1,5 +1,5 @@
-# Open dataset (docs/dataset.md, step 2): read the card sheets of one AC, both
-# rolls, one job per shard. Dispatched by scripts/home/ds_pilot.py on a VM once
+# Open dataset (docs/dataset.md, step 2): read the card sheets of one AC (the
+# English roll), one job per shard. Dispatched by scripts/home/ds_pilot.py on a VM once
 # ds-<ac>.s<i>.tar are on the <tag>-ds draft; the readings go back to the same
 # draft, never to Actions artifacts (anyone signed in can download those on a
 # public repo, and the readings hold house numbers).
@@ -63,7 +63,7 @@ jobs:
       - name: Install Tesseract
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng tesseract-ocr-kan
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
           tesseract --version | head -1
 
       - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt

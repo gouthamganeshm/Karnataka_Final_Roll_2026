@@ -8,13 +8,14 @@ finishes; verification has priority on the VMs and on GitHub Actions.
 | Column | What it is |
 |---|---|
 | `ac`, `part`, `page`, `card`, `serial` | Where the entry is printed (anyone can open that ECI PDF) |
-| `status` | live, deleted (with the printed reason code E/S/R/M/Q when read), modified (`#`) |
-| `list` | main roll or additions list |
-| `age`, `gender` | As printed |
-| `relation` | Father, Husband, Mother, or Other (the label only) |
+| `serial_sure` | 1 when the serial was confirmed by the readers, 0 when it is the site's "~" serial |
+| `status` | live, deleted (struck off with a DELETED stamp), or withheld (EPIC not settled; not on the site) |
+| `age`, `gender` | As printed in the English roll (M, F, TG) |
+| `relation` | Father, Husband, Mother, Wife or Other (the label only) |
 | `epic_hash` | Keyed hash of the EPIC: equal hashes = same EPIC; cannot be turned back into it |
 | `household_hash` | Keyed hash of the house number within the booth: equal = same printed house number |
-| `verified` | Which checks the entry passed (both rolls, a person's review, the 25% sample) |
+
+An empty field is one the reader could not read.
 
 Plus summary tables per booth, constituency and district: electors by age
 band and gender, deletions by reason, and a data-quality table.
@@ -23,7 +24,7 @@ band and gender, deletions by reason, and a data-quality table.
 
 | Never in the dataset | How |
 |---|---|
-| Elector's name | Not in the dataset. It is read only for the site's search result, where it is stored encrypted under the EPIC ([site-voter-details.md](site-voter-details.md)) |
+| Elector's name | Not read at all |
 | Relative's name (father, husband, …) | Never parsed: the reader drops that line in memory; only the label "Father" / "Husband" / … is kept |
 | EPIC series (first three letters) | Left out: it would make guessing EPICs easier |
 | House number / address | Only as a keyed hash, then discarded |
@@ -41,20 +42,17 @@ stay on private draft releases and are deleted once the dataset is built.
 
 ## How it will run (all in the cloud)
 
-1. **VMs** download every booth's **Kannada and English** PDFs afresh and
-   upload them to the private work release.
-2. **GitHub Actions** cut every card and read its text block once per page in
-   each roll (Tesseract with its Kannada and English models, `fields.py`): age,
-   gender, relation label, house number, and the elector's name (for the
-   site only). The two rolls are typeset separately, so each is a witness for
-   the other: a field goes out when both agree, or when one is unread and the
-   other is plain; a disagreement is looked at by a person on the card images.
-   Measured on the same 227 cards in both rolls: age agreed on 226 of 227,
-   relation on 227 of 227, gender on every card both read (the Kannada reader
-   missed 7, the English 1). Both rolls together are ~30 lakh page reads,
-   about 2-3 days on Actions.
+1. **VMs** download every booth's **English** PDF afresh (the owner's choice:
+   the English roll only), cut each card page into one image of the cards'
+   text blocks, and upload them to the private `-ds` draft.
+2. **GitHub Actions** read each page's image once (Tesseract, `fields.py`):
+   age, gender, relation label and house number. Names are not read (the
+   dataset does not feed the site, so there is no use for them). Measured on
+   227 cards: age read on 227, gender on 226, relation on 224.
 3. **A VM** joins the readings to the verified rows (EPIC, serial, deleted) by
-   AC, part, page and card, hashes EPIC and house number, and drops them.
+   AC, part, page and card (only on pages that hold as many cards in the
+   English roll as in the Kannada one), hashes EPIC and house number, and
+   drops them (`ds_join.py`).
 4. **Checks before release**
    * gender totals per constituency against the CEO booklet (male, female,
      third gender are printed there for every AC);

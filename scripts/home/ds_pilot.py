@@ -5,9 +5,10 @@
 
 Per AC, VM K taking every 4th AC from the K-th:
 
-  cut    both PDFs of every booth, fresh from ECI; every card page cut into
-         one sheet of the cards' text blocks (fields.page_sheet). A zip per
-         booth and roll, spread over SHARDS tars: ds-<ac>.s<i>.tar on <tag>-ds.
+  cut    the English PDF of every booth, fresh from ECI (the owner's choice:
+         English roll only); every card page cut into one sheet of the cards'
+         text blocks (fields.page_sheet). A zip per booth, spread over SHARDS
+         tars: ds-<ac>.s<i>.tar on <tag>-ds.
   read   dataset-read.yml on Actions, one job per shard ->
          dsread-<ac>.s<i>.json.gz on <tag>-ds
   merge  the shards' readings -> dsread-<ac>.json.gz on <tag>-ds; the sheet
@@ -95,7 +96,7 @@ def cut_ac(ac: int, parts: list[int]) -> list[Path]:
     booths = {}
 
     def get(part):
-        return part, run.fetch(run.url(ac, part, 'kan')), run.fetch(run.url(ac, part, 'eng'))
+        return part, run.fetch(run.url(ac, part, 'eng'))
 
     t = time.time()
     with ThreadPoolExecutor(6) as pool:
@@ -103,13 +104,13 @@ def cut_ac(ac: int, parts: list[int]) -> list[Path]:
         futs = [pool.submit(get, p) for p in parts[:window]]
         nxt = window
         for i, _ in enumerate(parts):
-            part, kan, eng = futs[i].result()
+            part, eng = futs[i].result()
             futs[i] = None
             if nxt < len(parts):
                 futs.append(pool.submit(get, parts[nxt]))
                 nxt += 1
             rec = {}
-            for lang, data in (('kan', kan), ('eng', eng)):
+            for lang, data in (('eng', eng),):
                 if data is None:
                     rec[lang] = None
                     continue
@@ -128,7 +129,7 @@ def cut_ac(ac: int, parts: list[int]) -> list[Path]:
         info.size = len(meta)
         tar.addfile(info, io.BytesIO(meta))
         tar.close()
-    miss = [p for p, r in booths.items() if not r['kan'] or not r['eng']]
+    miss = [p for p, r in booths.items() if not r['eng']]
     log(f'AC {ac}: {len(booths)} booths cut, {sum(p.stat().st_size for p in paths) / 1e6:.0f} MB '
         f'in {time.time() - t:.0f}s{f"; a PDF not served for {miss}" if miss else ""}')
     return paths

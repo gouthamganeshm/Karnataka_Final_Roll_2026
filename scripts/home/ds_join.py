@@ -2,23 +2,22 @@
 
     python scripts/home/ds_join.py AC [AC ...]
 
-From dsread-<ac>.json.gz (both rolls' age, gender, relation label, house
-number per card; ds_pilot.py) and live-rows-<ac>.jsonl.gz (the verified rows:
-EPIC, serial, deleted), one row per card of the Kannada roll:
+From dsread-<ac>.json.gz (the English roll's age, gender, relation label,
+house number per card; ds_pilot.py) and live-rows-<ac>.jsonl.gz (the
+verified rows: EPIC, serial, deleted), one row per published card:
 
   ac, part, page, card, serial, serial_sure, status, age, gender, relation,
-  rolls, epic_hash, household_hash
+  epic_hash, household_hash
 
-`rolls` says where a field came from: 2 both rolls agreed, 1 one roll read
-it and the other did not, 0 the rolls disagree (field left empty and the
-card listed for a person). The English card is taken from the same page and
-cell, and only when that page holds as many cards in both rolls.
+The verified rows are placed by the Kannada roll's pages; the English card is
+taken from the same page and cell, and only when that page holds as many
+cards in both rolls (else the card's fields stay empty and it is counted).
 epic_hash = HMAC-SHA256(key, EPIC), first 24 hex; household_hash =
 HMAC-SHA256(key, ac|part|house number with spaces and punctuation dropped),
 first 16 hex. The key (~/.dataset_key, 32 bytes) never leaves the VMs and the
 Actions secret; EPICs and house numbers are dropped here.
 
-Writes ds-<ac>.csv.gz and dsreview-<ac>.json (cards for a person) to the
+Writes ds-<ac>.csv.gz and dsstats-<ac>.json to the
 private <tag>-ds draft. Never touches the live site or its releases.
 """
 from __future__ import annotations
@@ -42,7 +41,7 @@ DS = f'{TAG}-ds'
 DIR = ROOT / 'cache' / 'ds' / 'join'
 KEY = Path.home() / '.dataset_key'
 COLUMNS = ['ac', 'part', 'page', 'card', 'serial', 'serial_sure', 'status', 'age', 'gender', 'relation',
-           'rolls', 'epic_hash', 'household_hash']
+           'epic_hash', 'household_hash']
 FIELDS = ('age', 'gender', 'relation')
 
 
@@ -68,21 +67,6 @@ def house_norm(h: str | None) -> str | None:
     return s or None
 
 
-def combine(k: dict | None, e: dict | None) -> tuple[dict, str]:
-    """Fields from both rolls; `rolls` per field as 2/1/0 joined, e.g. '221'."""
-    out, how = {}, ''
-    for f in FIELDS:
-        a, b = (k or {}).get(f), (e or {}).get(f)
-        if a is not None and b is not None:
-            out[f], h = (a, '2') if a == b else (None, '0')
-        elif a is not None or b is not None:
-            out[f], h = (a if a is not None else b), '1'
-        else:
-            out[f], h = None, '-'
-        how += h
-    return out, how
-
-
 def join(ac: int, k: bytes) -> dict:
     DIR.mkdir(parents=True, exist_ok=True)
     rd, = release.fetch(str(DIR), [f'live-rows-{ac}.jsonl.gz'])
@@ -99,28 +83,30 @@ def join(ac: int, k: bytes) -> dict:
             if line.strip():
                 rows.append(json.loads(line))
     rows.sort(key=lambda r: (r['part'], r['page'], r['cell']))
-    out, review, stats = [], [], {'cards': 0, 'eng_joined': 0, 'disagree': 0, 'no_reading': 0}
+    per_page = {}
+    for r in rows:
+        per_page[(r['part'], r['page'])] = per_page.get((r['part'], r['page']), 0) + 1
+    out, stats = [], {'cards': 0, 'read': 0, 'page_differs': 0, 'no_page': 0}
     for r in rows:
         part, page, cell = r['part'], r['page'], r['cell']
-        kp = reads.get(f'{part}.kan.zip', {}).get(str(page), {})
-        ep = reads.get(f'{part}.eng.zip', {}).get(str(page), {})
-        kc = kp.get(str(cell))
-        ec = ep.get(str(cell)) if ep and len(ep) == len(kp) else None
+        ep = reads.get(f'{part}.eng.zip', {}).get(str(page))
         stats['cards'] += 1
-        stats['eng_joined'] += ec is not None
-        vals, how = combine(kc, ec)
-        if '0' in how:
-            stats['disagree'] += 1
-            review.append([part, page, cell, how])
-        if kc is None and ec is None:
-            stats['no_reading'] += 1
-        house = house_norm((ec or {}).get('house')) or house_norm((kc or {}).get('house'))
+        if ep is None:
+            stats['no_page'] += 1
+            ec = None
+        elif len(ep) != per_page[(part, page)]:
+            stats['page_differs'] += 1
+            ec = None
+        else:
+            ec = ep.get(str(cell))
+        stats['read'] += ec is not None
+        house = house_norm((ec or {}).get('house'))
         epic = r.get('epic') if r.get('epicOk', True) else None
         out.append({
             'ac': ac, 'part': part, 'page': page, 'card': cell, 'serial': r.get('serial'),
             'serial_sure': int(bool(r.get('ok'))),
             'status': 'withheld' if epic is None else 'deleted' if r.get('deleted') else 'live',
-            **vals, 'rolls': how,
+            **{f: (ec or {}).get(f) for f in FIELDS},
             'epic_hash': mac(k, epic, 24) if epic else None,
             'household_hash': mac(k, f'{ac}|{part}|{house}', 16) if house else None,
         })
@@ -138,8 +124,8 @@ def join(ac: int, k: bytes) -> dict:
     csv_p = DIR / f'ds-{ac}.csv.gz'
     with gzip.open(csv_p, 'wt', encoding='utf8') as f:
         f.write(buf.getvalue())
-    rev_p = DIR / f'dsreview-{ac}.json'
-    rev_p.write_text(json.dumps({'ac': ac, 'key_id': key_id(k), 'stats': stats, 'review': review}), 'utf8')
+    rev_p = DIR / f'dsstats-{ac}.json'
+    rev_p.write_text(json.dumps({'ac': ac, 'key_id': key_id(k), 'stats': stats}), 'utf8')
     release.TAG = DS
     try:
         release.upload(str(csv_p), str(rev_p))
