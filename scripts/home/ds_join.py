@@ -67,6 +67,19 @@ def house_norm(h: str | None) -> str | None:
     return s or None
 
 
+def offset(live: dict[int, int], eng: dict[int, int]) -> int:
+    """English page = Kannada page + offset, for one booth.
+
+    Some booths' English roll has one more front page than the Kannada one, so
+    every card page sits one later; a run of 30-card pages then matches by count
+    at the wrong offset. The offset taken is the one under which the most pages
+    hold as many cards in both rolls (0 on a tie); pages that still differ stay
+    empty."""
+    def hits(d):
+        return sum(eng.get(p + d) == n for p, n in live.items())
+    return max((0, 1, -1, 2, -2), key=lambda d: (hits(d), d == 0))
+
+
 def join(ac: int, k: bytes) -> dict:
     DIR.mkdir(parents=True, exist_ok=True)
     rd, = release.fetch(str(DIR), [f'live-rows-{ac}.jsonl.gz'])
@@ -86,10 +99,15 @@ def join(ac: int, k: bytes) -> dict:
     per_page = {}
     for r in rows:
         per_page[(r['part'], r['page'])] = per_page.get((r['part'], r['page']), 0) + 1
-    out, stats = [], {'cards': 0, 'read': 0, 'page_differs': 0, 'no_page': 0}
+    shift = {}
+    for part in {p for p, _ in per_page}:
+        shift[part] = offset({pg: n for (pa, pg), n in per_page.items() if pa == part},
+                             {int(pg): len(v) for pg, v in reads.get(f'{part}.eng.zip', {}).items()})
+    out, stats = [], {'cards': 0, 'read': 0, 'page_differs': 0, 'no_page': 0,
+                      'booths_shifted': sum(1 for d in shift.values() if d)}
     for r in rows:
         part, page, cell = r['part'], r['page'], r['cell']
-        ep = reads.get(f'{part}.eng.zip', {}).get(str(page))
+        ep = reads.get(f'{part}.eng.zip', {}).get(str(page + shift[part]))
         stats['cards'] += 1
         if ep is None:
             stats['no_page'] += 1
