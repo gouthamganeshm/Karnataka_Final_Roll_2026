@@ -16,10 +16,8 @@ open dataset. The house number is returned only so the caller can turn it
 into a keyed hash (household) and drop it.
 
 The cloud run splits the work: a VM cuts each page into one sheet image
-(`page_sheet`: every card with its photo blanked, stacked), Actions read the
-sheets (`read_sheet`). Each card's first line is its serial box and its EPIC
-as printed (`serial`, `epic_raw`, letters and digits as Tesseract sees them:
-for checking the print against the published EPIC, never published).
+(`page_sheet`: the cards' text blocks, stacked), Actions read the sheets
+(`read_sheet`).
 """
 from __future__ import annotations
 
@@ -50,13 +48,11 @@ KAN_HOUSE = re.compile(r'ಮನೆಯ\s*ಸಂಖ್ಯೆ\s*[:;.,]?\s*(.*?)\s*(
 KAN_NAME = re.compile(r'^\s*ಹೆಸರು\s*[:;.,]?\s*(.+?)\s*$', re.M)
 
 
-def card_image(g: Image.Image, box: tuple) -> Image.Image:
-    """The whole card, its photo painted white: serial box and EPIC on the first line."""
+def text_box(box: tuple) -> tuple:
+    """The card's text block: below the serial/EPIC strip, left of the photo."""
     left, top, right, bottom = box
     w, h = right - left, bottom - top
-    im = g.crop((left + 1, top + 1, right - 1, bottom - 2))
-    im.paste(255, (int(0.70 * w), int(0.17 * h), im.width, im.height))
-    return im
+    return (left + int(0.01 * w), top + int(0.17 * h), left + int(0.70 * w), bottom - 2)
 
 
 def page_sheet(img: Image.Image) -> tuple[Image.Image | None, list]:
@@ -64,7 +60,7 @@ def page_sheet(img: Image.Image) -> tuple[Image.Image | None, list]:
     boxes = []
     C.cut_page(img, boxes)
     g = img.convert('L')
-    crops = [card_image(g, b) for b in boxes]
+    crops = [g.crop(text_box(b)) for b in boxes]
     if not crops:
         return None, []
     sheet = Image.new('L', (max(c.width for c in crops), sum(c.height + GAP for c in crops)), 255)
@@ -73,7 +69,7 @@ def page_sheet(img: Image.Image) -> tuple[Image.Image | None, list]:
         sheet.paste(c, (0, y))
         spans.append((y, y + c.height))
         y += c.height + GAP
-    return sheet.point(lambda v: 255 if v > 160 else 0).convert('1'), spans
+    return sheet, spans
 
 
 def sheet_text(sheet: Image.Image, spans: list, lang: str = 'eng') -> dict[int, str]:
@@ -100,16 +96,6 @@ def sheet_text(sheet: Image.Image, spans: list, lang: str = 'eng') -> dict[int, 
 
 
 NAME = re.compile(r'^\s*Name\s*[:;.,]?\s*(.+?)\s*$', re.I | re.M)
-
-
-FIRST = re.compile(r'^\D*?(\d{1,4})\b.*?([A-Za-z0-9/]{6,16})\s*$')
-
-
-def head(text: str) -> dict:
-    """The first line: serial box and the EPIC as printed."""
-    line = text.splitlines()[0] if text else ''
-    m = FIRST.match(line)
-    return {'serial': int(m.group(1)) if m else None, 'epic_raw': m.group(2).upper() if m else None}
 
 
 def parse_kan(text: str, names: bool = False) -> dict:
@@ -151,7 +137,7 @@ def parse(text: str, names: bool = False) -> dict:
 
 def read_sheet(sheet: Image.Image, spans: list, lang: str = 'eng', names: bool = False) -> dict[int, dict]:
     p = parse_kan if lang == 'kan' else parse
-    return {cell: {**head(t), **p(t, names)} for cell, t in sheet_text(sheet, spans, lang).items()}
+    return {cell: p(t, names) for cell, t in sheet_text(sheet, spans, lang).items()}
 
 
 def read_page(img: Image.Image, lang: str = 'eng', names: bool = False) -> dict[int, dict]:
