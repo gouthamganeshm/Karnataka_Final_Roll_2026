@@ -59,8 +59,10 @@ def on_ds(fn, *args):
 
 
 def encode(sheet) -> bytes:
+    # 16 greys read as well as the full 256 on 227 cards of both rolls (age,
+    # gender, relation alike); 1-bit lost 5-15% of them. ~260 KB a page.
     buf = io.BytesIO()
-    sheet.save(buf, format='PNG', optimize=True)
+    sheet.quantize(16).save(buf, format='PNG', optimize=True)
     return buf.getvalue()
 
 
