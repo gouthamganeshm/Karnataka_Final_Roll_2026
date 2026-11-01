@@ -63,7 +63,8 @@ the correction finds **no booth** with a gap or a double.
 One card (AC 175, part 145, serial 20) prints its EPIC with the letter S
 where a 5 would be (`SVF` + `S` + 6 digits). The site holds it under the
 standard form with a 5. A visitor who types it exactly as printed gets
-"not found". Left as it is pending the owner's decision.
+"not found". Since the build of 1 Nov 2026 the card is found under both
+spellings (`aka` on its row, `scripts/home/set_aka.py`; counted once).
 
 ## Fixes
 

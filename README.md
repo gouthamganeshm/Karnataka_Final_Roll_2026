@@ -90,7 +90,9 @@ flowchart LR
 * **EPIC formats.** Most cards are 3 letters + 7 digits (`ABC1234567`). Some
   series have 8 digits, old cards carry the state format with slashes
   (`KA/01/234/567890`), and a handful are printed irregularly; those are kept
-  exactly as printed, after a person read them off both rolls.
+  exactly as printed, after a person read them off both rolls. A card that
+  prints a letter for a digit of its EPIC (S for 5) is found under both
+  spellings (`aka`, set by a person with `scripts/home/set_aka.py`).
 
 ## Privacy
 

@@ -121,7 +121,7 @@ for (const f of rowFiles) {
   const xc = await crossCheck(ac);
   const stat = {
     status: !ver ? 'pending' : ver.verdict === 'pass' ? 'verified' : 'held',
-    reasons: ver?.reasons ?? [], electors: 0, deleted: 0, approx: 0, withheld: 0, disputed: 0,
+    reasons: ver?.reasons ?? [], electors: 0, deleted: 0, approx: 0, withheld: 0, disputed: 0, aka: 0,
     cards: 0, liveCards: 0, printed: 0, partsRead: sum?.partsRead ?? 0,
     v5: xc ? { part: xc.part, compared: 0, agree: 0 } : null
   };
@@ -154,13 +154,20 @@ for (const f of rowFiles) {
   }
   if (stat.status === 'verified') {
     for (const r of pending) {
-      const h = createHash('sha256').update(epicKey(r.epic), 'utf8').digest();
-      rec[0] = h[1];
-      h.copy(rec, 1, 2, 6);
-      rec.writeUInt8(r.ac, 5);
-      rec.writeUInt16LE((r.part & 0x7fff) | (r.deleted ? 0x8000 : 0), 6);
-      rec.writeUInt16LE((r.serial & 0x7fff) | (r.ok ? 0 : 0x8000), 8);
-      push(groups[h[0]], rec);
+      // `aka`: the EPIC exactly as the PDF prints it, where that differs from
+      // the card's EPIC (a letter printed for a digit); a person sets it
+      // (scripts/home/set_aka.py). Same place, found under either spelling,
+      // counted once.
+      for (const e of [r.epic, ...(r.aka ?? []).filter((a) => /^[A-Z0-9/]{6,16}$/.test(a))]) {
+        const h = createHash('sha256').update(epicKey(e), 'utf8').digest();
+        rec[0] = h[1];
+        h.copy(rec, 1, 2, 6);
+        rec.writeUInt8(r.ac, 5);
+        rec.writeUInt16LE((r.part & 0x7fff) | (r.deleted ? 0x8000 : 0), 6);
+        rec.writeUInt16LE((r.serial & 0x7fff) | (r.ok ? 0 : 0x8000), 8);
+        push(groups[h[0]], rec);
+        if (e !== r.epic) stat.aka++;
+      }
       if (r.deleted) { stat.deleted++; continue; }
       stat.electors++;
       if (!r.ok) stat.approx++;
@@ -168,7 +175,7 @@ for (const f of rowFiles) {
   }
   perAc.set(ac, stat);
   console.log(`AC ${ac}: ${stat.status}${stat.reasons.length ? ' (' + stat.reasons.join('; ') + ')' : ''} — ` +
-    `${stat.electors} published, ${stat.deleted} deleted, ${stat.withheld} unreadable, ${stat.disputed} disputed, ` +
+    `${stat.electors} published, ${stat.deleted} deleted${stat.aka ? ` (${stat.aka} also as printed)` : ''}, ${stat.withheld} unreadable, ${stat.disputed} disputed, ` +
     `${stat.cards}/${stat.printed || '?'} cards, ${stat.liveCards} live vs official ${want ?? '?'}` + (stat.v5 ? `, English ${stat.v5.agree}/${stat.v5.compared}` : ''));
 }
 
