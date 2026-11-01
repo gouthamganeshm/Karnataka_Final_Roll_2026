@@ -14,8 +14,9 @@ Per AC, VM K taking every 4th AC from the K-th:
   merge  the shards' readings -> dsread-<ac>.json.gz on <tag>-ds; the sheet
          tars and shard readings are deleted.
   join   ds_join.py: the readings joined to the verified rows, EPIC and house
-         number hashed and dropped -> ds-<ac>.csv.gz, dsstats-<ac>.json; the
-         readings are deleted.
+         number hashed and dropped -> ds-<ac>.csv.gz, dsstats-<ac>.json. The
+         readings (they hold house numbers) stay on the private draft until the
+         dataset is final, so a join can be redone without reading again.
 
 At most MAX_OPEN ACs of a VM wait on Actions at a time, which bounds both the
 release's size and the Actions queue. Progress is the set of files on the
@@ -183,7 +184,6 @@ def step(acs: list[int], st: dict) -> tuple[int | None, int]:
         if f'dsread-{ac}.json.gz' in have:
             import ds_join
             log(f'AC {ac}: joined {ds_join.join(ac, ds_join.key())}')
-            on_ds(release.delete, f'dsread-{ac}.json.gz')
             continue
         if all(f'dsread-{ac}.s{i}.json.gz' in have for i in range(SHARDS)):
             merge(ac)
