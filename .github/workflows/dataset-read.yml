@@ -1,0 +1,74 @@
+# Open dataset (docs/dataset.md, step 2): read the card sheets of one AC, both
+# rolls, one job per shard. Dispatched by scripts/home/ds_pilot.py on a VM once
+# ds-<ac>.s<i>.tar are on the <tag>-ds draft; the readings go back to the same
+# draft, never to Actions artifacts (anyone signed in can download those on a
+# public repo, and the readings hold house numbers).
+name: Dataset read
+run-name: Dataset read AC ${{ inputs.ac }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      ac:
+        description: Assembly constituency number
+        required: true
+      tag:
+        description: Main draft release tag (roll-source.json); -ds is derived
+        required: true
+      shards:
+        description: Number of shard tars
+        required: true
+        default: '8'
+
+permissions:
+  contents: write   # read/write assets on the draft release
+
+concurrency:
+  group: dataset-read-${{ inputs.ac }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.m.outputs.shards }}
+    steps:
+      - id: m
+        run: echo "shards=$(python3 -c "import json; print(json.dumps(list(range(${{ inputs.shards }}))))")" >> "$GITHUB_OUTPUT"
+
+  read:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    env:
+      GH_TOKEN: ${{ secrets.ROLL_TOKEN || github.token }}
+      AC: ${{ inputs.ac }}
+      TAG: ${{ inputs.tag }}
+      I: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/ocr/requirements.txt
+
+      - name: Install Tesseract
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng tesseract-ocr-kan
+          tesseract --version | head -1
+
+      - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
+
+      - name: Read the sheets
+        run: |
+          export ROLL_RELEASE="$TAG-ds"
+          python3 -c "import sys; sys.path.insert(0, 'scripts'); import release; release.fetch('.', ['ds-$AC.s$I.tar'])"
+          python3 scripts/ci/ds_read.py "ds-$AC.s$I.tar" "dsread-$AC.s$I.json.gz"
+          python3 -c "import sys; sys.path.insert(0, 'scripts'); import release; release.upload('dsread-$AC.s$I.json.gz')"
