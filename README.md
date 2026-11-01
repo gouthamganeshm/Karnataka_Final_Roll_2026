@@ -11,7 +11,7 @@ published.
 
 ![The site's home page](docs/images/site-home.png)
 
-## Status (31 Oct 2026)
+## Status (1 Nov 2026)
 
 | | |
 |---|---|
@@ -21,7 +21,7 @@ published.
 | Constituencies matching the official count | **224 of 224**, to the last voter ([proof table](docs/proof/official-match.md)) |
 | Deleted entries (searchable, not counted) | 1,88,331 |
 | Every card cross-checked against the English roll | yes ([how](docs/english-crosscheck-runbook.md)) |
-| Next step | a 25% sample check of every booth, PDF to live site ([plan](docs/sample-verification.md)) |
+| 25% sample check, PDF to live site | done for all 60,923 booths: 1,22,97,124 cards; 67 wrong serials found and corrected ([results](docs/proof/sample-verification.md)) |
 
 The two sources the site is built from and checked against are linked at the
 bottom of every page:
@@ -70,6 +70,7 @@ flowchart LR
 | [docs/vm-process.md](docs/vm-process.md) | The four cloud VMs: why, how they were made, what runs on them, cost |
 | [docs/english-crosscheck-runbook.md](docs/english-crosscheck-runbook.md) | The full English-roll cross-check and manual review |
 | [docs/sample-verification.md](docs/sample-verification.md) | The 25%-of-every-booth check from PDF to live site |
+| [docs/proof/sample-verification.md](docs/proof/sample-verification.md) | Its results: what was flagged, what a person found, what was corrected |
 | [docs/site-voter-details.md](docs/site-voter-details.md) | Planned: age, gender, relation and polling station on the search result |
 | [docs/dataset.md](docs/dataset.md) | The planned open dataset: age, gender, relation per entry, no names, EPIC only as a keyed hash |
 | [PLAN.md](PLAN.md) | The original design (written before the roll came out) |
