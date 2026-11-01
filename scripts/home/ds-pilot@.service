@@ -1,5 +1,5 @@
-# Runs scripts/home/ds_pilot.py --vm K on VM K (eci-K): the 25% sample
-# verification (docs/sample-verification.md), restarted after any crash or
+# Runs scripts/home/ds_pilot.py --vm K on VM K (eci-K): the open dataset
+# (docs/dataset.md, English roll), restarted after any crash or
 # reboot. Install (as ubuntu, repo at ~/verify, token in ~/.gh_token):
 #   sudo cp ~/verify/scripts/home/ds-pilot@.service /etc/systemd/system/
 #   sudo systemctl daemon-reload && sudo systemctl enable --now ds-pilot@K
