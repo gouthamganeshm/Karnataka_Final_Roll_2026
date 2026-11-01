@@ -44,6 +44,7 @@ SHARDS = 8
 MAX_OPEN = 2
 REDISPATCH_H = 6
 EXT = 'png'
+GREYS = [(v >> 4) * 17 for v in range(256)]
 
 
 def log(msg: str) -> None:
@@ -60,9 +61,9 @@ def on_ds(fn, *args):
 
 def encode(sheet) -> bytes:
     # 16 greys read as well as the full 256 on 227 cards of both rolls (age,
-    # gender, relation alike); 1-bit lost 5-15% of them. ~260 KB a page.
+    # gender, relation alike); 1-bit lost 5-15% of them. ~240 KB a page.
     buf = io.BytesIO()
-    sheet.quantize(16).save(buf, format='PNG', optimize=True)
+    sheet.point(GREYS).save(buf, format='PNG', compress_level=6)
     return buf.getvalue()
 
 
