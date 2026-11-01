@@ -13,6 +13,9 @@ Per AC, VM K taking every 4th AC from the K-th:
          dsread-<ac>.s<i>.json.gz on <tag>-ds
   merge  the shards' readings -> dsread-<ac>.json.gz on <tag>-ds; the sheet
          tars and shard readings are deleted.
+  join   ds_join.py: the readings joined to the verified rows, EPIC and house
+         number hashed and dropped -> ds-<ac>.csv.gz, dsstats-<ac>.json; the
+         readings are deleted.
 
 At most MAX_OPEN ACs of a VM wait on Actions at a time, which bounds both the
 release's size and the Actions queue. Progress is the set of files on the
@@ -174,8 +177,13 @@ def step(acs: list[int], st: dict) -> tuple[int | None, int]:
     todo, waiting = None, 0
     for ac in acs:
         a = st.setdefault(str(ac), {})
-        if f'dsread-{ac}.json.gz' in have:
+        if f'ds-{ac}.csv.gz' in have:
             a['done'] = True
+            continue
+        if f'dsread-{ac}.json.gz' in have:
+            import ds_join
+            log(f'AC {ac}: joined {ds_join.join(ac, ds_join.key())}')
+            on_ds(release.delete, f'dsread-{ac}.json.gz')
             continue
         if all(f'dsread-{ac}.s{i}.json.gz' in have for i in range(SHARDS)):
             merge(ac)
