@@ -41,6 +41,18 @@ def variants(epic: str, most: int = 2):
                 yield ''.join(v)
 
 
+def series(epic: str):
+    """Every three-letter series in front of the reading's digits (and of each
+    one-look-alike variant of them): the fresh readers misread series letters
+    beyond the look-alike groups (L/I, Y/W, S/G, ...) and print case varies."""
+    if len(epic) != 10 or not epic[3:].isdigit():
+        return
+    tails = [epic[3:]] + [v for v in variants(epic[3:], 1) if v.isdigit()]
+    for tail in tails:
+        for p in itertools.product('ABCDEFGHIJKLMNOPQRSTUVWXYZ', repeat=3):
+            yield ''.join(p) + tail
+
+
 def serials_of(item: dict) -> set:
     return {s for s in (item.get('serial'), item['kan'][4] if item.get('kan') else None,
                         item['eng'][4] if item.get('eng') else None) if s is not None}
@@ -61,6 +73,8 @@ def resolve(site, ac: int) -> dict:
             cands = {x[0] for x in (it['kan'], it['eng']) if x and x[0]}
             for c in cands:
                 hit = next((v for v in variants(c) if site.key(v)[:6] in held), None)
+                if not hit:
+                    hit = next((v for v in series(c) if site.key(v)[:6] in held), None)
                 if hit:
                     rec.update(verdict='slip', site_variant=hit, from_reading=c)
                     break
