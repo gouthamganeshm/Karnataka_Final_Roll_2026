@@ -14,6 +14,12 @@ when asked (`names=True`), for the site's search result, where it is stored
 encrypted under the EPIC (docs/site-voter-details.md); it never goes into the
 open dataset. The house number is returned only so the caller can turn it
 into a keyed hash (household) and drop it.
+
+The cloud run splits the work: a VM cuts each page into one sheet image
+(`page_sheet`: every card with its photo blanked, stacked), Actions read the
+sheets (`read_sheet`). Each card's first line is its serial box and its EPIC
+as printed (`serial`, `epic_raw`, letters and digits as Tesseract sees them:
+for checking the print against the published EPIC, never published).
 """
 from __future__ import annotations
 
@@ -44,25 +50,34 @@ KAN_HOUSE = re.compile(r'ಮನೆಯ\s*ಸಂಖ್ಯೆ\s*[:;.,]?\s*(.*?)\s*(
 KAN_NAME = re.compile(r'^\s*ಹೆಸರು\s*[:;.,]?\s*(.+?)\s*$', re.M)
 
 
-def text_box(box: tuple) -> tuple:
-    """The card's text block: below the serial/EPIC strip, left of the photo."""
+def card_image(g: Image.Image, box: tuple) -> Image.Image:
+    """The whole card, its photo painted white: serial box and EPIC on the first line."""
     left, top, right, bottom = box
     w, h = right - left, bottom - top
-    return (left + int(0.01 * w), top + int(0.17 * h), left + int(0.70 * w), bottom - 2)
+    im = g.crop((left + 1, top + 1, right - 1, bottom - 2))
+    im.paste(255, (int(0.70 * w), int(0.17 * h), im.width, im.height))
+    return im
 
 
-def card_text(img: Image.Image, boxes: list, lang: str = 'eng') -> dict[int, str]:
-    """cell -> the card's text as Tesseract read it (one call per page)."""
+def page_sheet(img: Image.Image) -> tuple[Image.Image | None, list]:
+    """(one sheet of the page's cards, stacked, [(top, bottom)] per cell): what Tesseract reads."""
+    boxes = []
+    C.cut_page(img, boxes)
     g = img.convert('L')
-    crops = [g.crop(text_box(b)) for b in boxes]
+    crops = [card_image(g, b) for b in boxes]
     if not crops:
-        return {}
+        return None, []
     sheet = Image.new('L', (max(c.width for c in crops), sum(c.height + GAP for c in crops)), 255)
     spans, y = [], 0
     for c in crops:
         sheet.paste(c, (0, y))
         spans.append((y, y + c.height))
         y += c.height + GAP
+    return sheet.point(lambda v: 255 if v > 160 else 0).convert('1'), spans
+
+
+def sheet_text(sheet: Image.Image, spans: list, lang: str = 'eng') -> dict[int, str]:
+    """cell -> the card's text as Tesseract read it (one call per sheet)."""
     buf = io.BytesIO()
     sheet.save(buf, format='PNG')
     out = subprocess.run([C.R._tesseract_cmd(), 'stdin', 'stdout', '--psm', '6', '-l', 'kan+eng' if lang == 'kan' else 'eng', 'tsv'],
@@ -85,6 +100,16 @@ def card_text(img: Image.Image, boxes: list, lang: str = 'eng') -> dict[int, str
 
 
 NAME = re.compile(r'^\s*Name\s*[:;.,]?\s*(.+?)\s*$', re.I | re.M)
+
+
+FIRST = re.compile(r'^\D*?(\d{1,4})\b.*?([A-Za-z0-9/]{6,16})\s*$')
+
+
+def head(text: str) -> dict:
+    """The first line: serial box and the EPIC as printed."""
+    line = text.splitlines()[0] if text else ''
+    m = FIRST.match(line)
+    return {'serial': int(m.group(1)) if m else None, 'epic_raw': m.group(2).upper() if m else None}
 
 
 def parse_kan(text: str, names: bool = False) -> dict:
@@ -124,8 +149,11 @@ def parse(text: str, names: bool = False) -> dict:
     return out
 
 
-def read_page(img: Image.Image, lang: str = 'eng', names: bool = False) -> dict[int, dict]:
-    boxes = []
-    C.cut_page(img, boxes)
+def read_sheet(sheet: Image.Image, spans: list, lang: str = 'eng', names: bool = False) -> dict[int, dict]:
     p = parse_kan if lang == 'kan' else parse
-    return {cell: p(t, names) for cell, t in card_text(img, boxes, lang).items()}
+    return {cell: {**head(t), **p(t, names)} for cell, t in sheet_text(sheet, spans, lang).items()}
+
+
+def read_page(img: Image.Image, lang: str = 'eng', names: bool = False) -> dict[int, dict]:
+    sheet, spans = page_sheet(img)
+    return read_sheet(sheet, spans, lang, names) if sheet is not None else {}
