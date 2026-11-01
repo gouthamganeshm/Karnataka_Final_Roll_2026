@@ -48,6 +48,10 @@ def series(epic: str):
     beyond the look-alike groups (L/I, Y/W, S/G, ...) and print case varies."""
     if len(epic) != 10 or not epic[3:].isdigit():
         return
+    # Series with eight digits: the fresh readers dropped one.
+    for i in range(3, 11):
+        for d in '0123456789':
+            yield epic[:i] + d + epic[i:]
     tails = [epic[3:]] + [v for v in variants(epic[3:], 1) if v.isdigit()]
     for tail in tails:
         for p in itertools.product('ABCDEFGHIJKLMNOPQRSTUVWXYZ', repeat=3):
