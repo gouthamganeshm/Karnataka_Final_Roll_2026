@@ -49,6 +49,8 @@ jobs:
       AC: ${{ inputs.ac }}
       TAG: ${{ inputs.tag }}
       I: ${{ matrix.shard }}
+      # One Tesseract per core (ds_read.py's pool); its own threads only fight them.
+      OMP_THREAD_LIMIT: '1'
     steps:
       - uses: actions/checkout@v4
 
