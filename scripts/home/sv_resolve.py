@@ -18,6 +18,7 @@ from __future__ import annotations
 import gzip
 import itertools
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -71,7 +72,15 @@ def resolve(site, ac: int) -> dict:
         if it['result'] == 'wrong-epic':
             held = {k for s in serials_of(it) for k, _d, _a in places.get((it['part'], s), [])}
             cands = {x[0] for x in (it['kan'], it['eng']) if x and x[0]}
-            for c in cands:
+            # A section heading printed over the card runs into the reading:
+            # keep the EPIC-shaped tail of it.
+            cands |= {m.group(0) for c in list(cands) for m in [re.search(r'[A-Z]{3}\d{7}$', c.upper())] if m}
+            for c in sorted(cands):
+                here = [h for h in site.lookup(c) if h['ac'] == ac and h['part'] == it['part']]
+                if here:
+                    rec.update(verdict='slip', site_variant=c, from_reading=c, site_at=here)
+                    break
+            for c in sorted(cands) if rec['verdict'] == 'doubt' else []:
                 hit = next((v for v in variants(c) if site.key(v)[:6] in held), None)
                 if not hit:
                     hit = next((v for v in series(c) if site.key(v)[:6] in held), None)
