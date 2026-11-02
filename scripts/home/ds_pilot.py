@@ -200,8 +200,8 @@ def step(acs: list[int], st: dict) -> tuple[int | None, int]:
     todo, waiting = None, 0
     for ac in acs:
         a = st.setdefault(str(ac), {})
-        if f'ds-{ac}.csv.gz' in have:
-            a['done'] = True
+        a['done'] = f'ds-{ac}.csv.gz' in have  # a join deleted from the draft is made again
+        if a['done']:
             continue
         if f'dsread-{ac}.json.gz' in have:
             import ds_join
