@@ -97,19 +97,11 @@ the page and card.
   the CEO's male, female or third-gender count.
 * At least {min_read} of each constituency's cards read.
 * One hash key for every constituency.
-* Every entry against an independent reading of the same roll
-  ([Diagram Chasing's dataset](https://github.com/diagram-chasing/karnataka-sir-voter-rolls-data),
-  ODbL; used only for this check, nothing of it is in this dataset), by
-  constituency, part and serial: ages agree on {dc_age_agree} of the
-  {dc_age_compared} entries both read, genders on {dc_gender_agree} of
-  {dc_gender_compared}. No booth may have its ages agree on under {dc_min}
-  (that would mean cards joined to the wrong rows). Constituencies this
-  check could not be run on (the independent files not reachable): {dc_not_run}.
 
 The results per constituency are in `checks.json` and `{name}-summary-ac.csv`.
 
-**Still to come:** a person looks at the card images where the two readings
-disagree, the few pages left empty are read again, and the gender of
+**Still to come:** a person looks at the card images of the entries flagged by
+the checks, the few pages left empty are read again, and the gender of
 struck-off entries is read under the stamp. Any correction will come as a new
 release; this one will stay as it is.
 

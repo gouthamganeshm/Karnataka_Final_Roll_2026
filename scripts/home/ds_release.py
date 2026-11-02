@@ -7,7 +7,8 @@ Waits until every AC is joined (ds-<ac>.csv.gz and dsstats-<ac>.json on the
 private <tag>-ds draft, ds_pilot.py), then:
 
   check    every row against the live site (sv_site.py: where a visitor's
-           lookup of its EPIC lands) and against an independent reading;
+           lookup of its EPIC lands) and against a second reading of the roll
+           (private: its results stay on the -ds draft);
            every value of every column against what it may hold (no column
            can carry a name, an EPIC or a house number); rows per AC = the
            verified rows; one hash key for all; electors and gender per AC
@@ -54,10 +55,13 @@ TEMPLATE = ROOT / 'docs' / 'dataset-release.md'
 WAIT_S = 900
 HOLD_H = 6
 MIN_READ = 0.995          # share of an AC's cards whose fields were read
-# The independent reading (Diagram Chasing, ODbL): used only to check, nothing
-# of it is published. A booth whose ages agree on fewer than DC_MIN_AGREE of
-# the entries both read (at least DC_MIN_N) has its cards on the wrong rows.
-DC_URL = 'https://data.sir.diagramchasing.fun/releases/2026-10-28-statewide.3/electors/electors-ac-{ac:03d}.parquet'
+# A second reading of the same roll, kept off the repo (its URL template, with
+# {ac:03d}, in ~/.ds_xcheck_url on the VM): only a check; nothing of it and
+# nothing about it is published. A booth whose ages agree on fewer than
+# DC_MIN_AGREE of the entries both read (at least DC_MIN_N) has its cards on the
+# wrong rows.
+DC_URL_FILE = Path.home() / '.ds_xcheck_url'
+PRIVATE_COLS = ('dc_age_compared', 'dc_age_agree', 'dc_gender_compared', 'dc_gender_agree')
 DC_MIN_AGREE = 0.9
 DC_MIN_N = 30
 GENDER_SLACK = 0.001      # misread genders allowed per AC, share of its electors (at least 5)
@@ -107,20 +111,23 @@ def schema():
 
 
 def dc_rows(ac: int, tmp: Path) -> dict | None:
-    """(part, serial) -> (age, gender) of the independent reading; None when it
+    """(part, serial) -> (age, gender) of the second reading; None when it
     cannot be had (the check is then reported as not run, not failed)."""
     import pyarrow.parquet as pq
     from urllib.request import Request, urlopen
     dest = tmp / f'dc-{ac}.parquet'
+    if not DC_URL_FILE.exists():
+        return None
+    url = DC_URL_FILE.read_text('utf8').strip()
     for wait in (0, 30, 120, 300):
         time.sleep(wait)
         try:
-            req = Request(DC_URL.format(ac=ac), headers={'User-Agent': 'Mozilla/5.0 (dataset cross-check)'})
+            req = Request(url.format(ac=ac), headers={'User-Agent': 'Mozilla/5.0 (dataset cross-check)'})
             with urlopen(req, timeout=300) as r:
                 dest.write_bytes(r.read())
             break
         except Exception as exc:  # noqa: BLE001
-            log(f'AC {ac}: independent reading not fetched: {exc!r}')
+            log(f'AC {ac}: second reading not fetched: {exc!r}')
     else:
         return None
     g = {'male': 'M', 'female': 'F', 'third_gender': 'TG', 'transgender': 'TG'}
@@ -213,7 +220,7 @@ def check_ac(ac: int, csv_p: Path, stats: dict, kid: str, ceo: dict, writer, dc:
     allowed = max(5, int(GENDER_SLACK * ceo['electors']))
     if over > allowed:
         fails.append(f'{over} more read in a gender than the CEO counts (allowed {allowed})')
-    # Against the independent reading, entry by entry (part and confirmed serial).
+    # Against the second reading, entry by entry (part and confirmed serial).
     cmp = {'dc_age_compared': None, 'dc_age_agree': None, 'dc_gender_compared': None, 'dc_gender_agree': None}
     if dc is not None:
         sure = t['serial_sure'].to_pylist()
@@ -235,7 +242,7 @@ def check_ac(ac: int, csv_p: Path, stats: dict, kid: str, ceo: dict, writer, dc:
                 gg += g == d[1]
         off = [p for p, (n, k) in per.items() if n >= DC_MIN_N and k / n < DC_MIN_AGREE]
         if off:
-            fails.append(f'booths {sorted(off)}: ages agree with the independent reading on under {DC_MIN_AGREE:.0%}')
+            fails.append(f'booths {sorted(off)}: ages agree with the second reading on under {DC_MIN_AGREE:.0%}')
         cmp = {'dc_age_compared': na, 'dc_age_agree': round(aa / na, 5) if na else None,
                'dc_gender_compared': ng, 'dc_gender_agree': round(gg / ng, 5) if ng else None}
     tot.update(cmp)
@@ -331,7 +338,8 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         dropped += stats['stats']['age_dropped']
         log(f'AC {ac}: {"ok" if not res["fails"] else res["fails"]}')
     writer.close()
-    for name, rows in (('summary-booth', booth_rows), ('summary-ac', ac_rows)):
+    public_ac = [{k: v for k, v in r.items() if k not in PRIVATE_COLS} for r in ac_rows]
+    for name, rows in (('summary-booth', booth_rows), ('summary-ac', public_ac)):
         with open(pub / f'{NAME}-{name}.csv', 'w', newline='', encoding='utf8') as f:
             if rows:
                 w = csv.DictWriter(f, list(rows[0]))
@@ -353,7 +361,9 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     report = {'release': PUBLIC, 'key_id': kid, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
               'commit': commit, 'acs': len(acs), 'passed': not failed, 'failed': failed, 'totals': tot,
               'thresholds': {'min_read': MIN_READ, 'gender_slack': GENDER_SLACK}}
-    (pub / 'checks.json').write_text(json.dumps(report, indent=1), 'utf8')
+    public = {**report, 'totals': {k: v for k, v in tot.items() if not k.startswith('dc_')},
+              'failed': {a: [f for f in fs if 'second reading' not in f] for a, fs in failed.items()}}
+    (pub / 'checks.json').write_text(json.dumps(public, indent=1), 'utf8')
     (OUT / 'dsrelease-checks.json').write_text(json.dumps(report, indent=1), 'utf8')
     shifted = sum(r['booths_shifted'] for r in ac_rows)
     readme = TEMPLATE.read_text('utf8').format(
@@ -362,9 +372,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         ceo_electors=f'{tot["ceo_electors"]:,}', male=f'{tot["male"]:,}', female=f'{tot["female"]:,}',
         tg=f'{tot["tg"]:,}', gender_unread=f'{tot["gender_unread"]:,}', age_unread=f'{tot["age_unread"]:,}',
         shifted=shifted, age_dropped=f'{dropped:,}', name=NAME, site_build=built_at,
-        dc_age_compared=f'{tot["dc_age_compared"]:,}', dc_age_agree=f'{(tot["dc_age_agree"] or 0):.3%}',
-        dc_gender_compared=f'{tot["dc_gender_compared"]:,}', dc_gender_agree=f'{(tot["dc_gender_agree"] or 0):.3%}',
-        dc_not_run=', '.join(map(str, dc_missing)) or 'none', dc_min=f'{DC_MIN_AGREE:.0%}', min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}')
+        min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}')
     (pub / 'README.md').write_text(readme, 'utf8')
     (pub / 'LICENSE.txt').write_text(LICENCE, 'utf8')
     sums = ''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in sorted(pub.iterdir()))

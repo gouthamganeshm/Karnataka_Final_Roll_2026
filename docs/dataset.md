@@ -56,10 +56,11 @@ stay on private draft releases and are deleted once the dataset is built.
 4. **Checks before release**
    * gender totals per constituency against the CEO booklet (male, female,
      third gender are printed there for every AC);
-   * age and gender per entry against an independent reading
-     ([Diagram Chasing's dataset](https://github.com/diagram-chasing/karnataka-sir-voter-rolls-data),
-     ODbL), by AC, part and serial; disagreements looked at by a person on the
-     card images;
+   * age and gender per entry against a second reading of the same roll, by
+     AC, part and serial (kept private); disagreements looked at by a person
+     on the card images;
+   * every entry with an EPIC against the live site: the same AC, part, serial
+     and deletion as a visitor's lookup finds;
    * no column can hold a name: a scan of every text value for letters before
      publishing.
 5. **Publish**, unattended (the owner's choice: published even if nobody is
@@ -69,7 +70,7 @@ stay on private draft releases and are deleted once the dataset is built.
    `checks.json`, README ([dataset-release.md](dataset-release.md)), licence
    (ODbL 1.0) and checksums, and publishes the public release
    `dataset-final-roll-2026-v1`. A failed check holds the release. The
-   comparison with Diagram Chasing and the look at the card images follow;
+   look at the card images follows;
    a correction comes as a new release.
 
 Outages are waited out: a booth PDF that does not come is fetched again for
