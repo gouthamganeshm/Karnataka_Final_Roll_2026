@@ -62,6 +62,17 @@ stay on private draft releases and are deleted once the dataset is built.
      card images;
    * no column can hold a name: a scan of every text value for letters before
      publishing.
-5. **Publish** as a public GitHub release (CSV and Parquet, one file per
-   constituency plus the summaries), with a column guide and the licence, only
-   after the owner's go-ahead.
+5. **Publish**, unattended (the owner's choice: published even if nobody is
+   watching): `ds_release.py`, the `ds-release` service on eci-1, waits for
+   all 224 joins, runs the automatic checks above (all but the person's
+   review), builds CSV per constituency, one Parquet file, summaries,
+   `checks.json`, README ([dataset-release.md](dataset-release.md)), licence
+   (ODbL 1.0) and checksums, and publishes the public release
+   `dataset-final-roll-2026-v1`. A failed check holds the release. The
+   comparison with Diagram Chasing and the look at the card images follow;
+   a correction comes as a new release.
+
+Outages are waited out: a booth PDF that does not come is fetched again for
+up to two hours before the AC is cut again later; a failed upload or
+dispatch is retried; an Actions read lost to an outage is dispatched again
+after 2 h; each Actions download and upload is tried four times.
