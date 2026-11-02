@@ -50,6 +50,11 @@ It is separate from that project's search site and does not feed it.
 
 An empty field is one the reader could not read with certainty; nothing is guessed.
 
+**Struck-off entries:** the DELETED stamp is printed over the gender and the
+house number of a struck-off card, so for those entries `gender` and
+`household_hash` are almost always empty; age and relation are read on about
+98% of them.
+
 Anyone can check a row by opening the booth's PDF on the ECI site and going to
 the page and card.
 
@@ -87,13 +92,21 @@ the page and card.
   the CEO's male, female or third-gender count.
 * At least {min_read} of each constituency's cards read.
 * One hash key for every constituency.
+* Every entry against an independent reading of the same roll
+  ([Diagram Chasing's dataset](https://github.com/diagram-chasing/karnataka-sir-voter-rolls-data),
+  ODbL; used only for this check, nothing of it is in this dataset), by
+  constituency, part and serial: ages agree on {dc_age_agree} of the
+  {dc_age_compared} entries both read, genders on {dc_gender_agree} of
+  {dc_gender_compared}. No booth may have its ages agree on under {dc_min}
+  (that would mean cards joined to the wrong rows). Constituencies this
+  check could not be run on (the independent files not reachable): {dc_not_run}.
 
 The results per constituency are in `checks.json` and `{name}-summary-ac.csv`.
 
-**Still to come:** a comparison of every entry's age and gender with an
-independent reading ([Diagram Chasing's dataset](https://github.com/diagram-chasing/karnataka-sir-voter-rolls-data)),
-with disagreements checked by a person on the card images. Any correction will
-come as a new release; this one will stay as it is.
+**Still to come:** a person looks at the card images where the two readings
+disagree, the few pages left empty are read again, and the gender of
+struck-off entries is read under the stamp. Any correction will come as a new
+release; this one will stay as it is.
 
 ## Licence
 
