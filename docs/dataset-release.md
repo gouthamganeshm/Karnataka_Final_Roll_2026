@@ -87,6 +87,11 @@ the page and card.
 
 * Every value of every column matches the pattern its column allows.
 * Rows per constituency = the project's verified rows.
+* Every entry with an EPIC hash is exactly where the project's
+  [search site](https://gouthamganeshm.github.io/Karnataka_Final_Roll_2026/)
+  (build {site_build}) finds that EPIC: same constituency, part and serial,
+  struck off or not alike; and each constituency has as many electors and
+  deletions as the site shows.
 * Electors per constituency = the CEO's final booklet.
 * Gender read per constituency: no more than {gender_slack} of electors above
   the CEO's male, female or third-gender count.

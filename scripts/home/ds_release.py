@@ -6,7 +6,9 @@
 Waits until every AC is joined (ds-<ac>.csv.gz and dsstats-<ac>.json on the
 private <tag>-ds draft, ds_pilot.py), then:
 
-  check    every value of every column against what it may hold (no column
+  check    every row against the live site (sv_site.py: where a visitor's
+           lookup of its EPIC lands) and against an independent reading;
+           every value of every column against what it may hold (no column
            can carry a name, an EPIC or a house number); rows per AC = the
            verified rows; one hash key for all; electors and gender per AC
            against the CEO booklet (reference/ceo-final-2026.json); the share
@@ -243,6 +245,46 @@ def check_ac(ac: int, csv_p: Path, stats: dict, kid: str, ceo: dict, writer, dc:
     return {'fails': fails, 'booths': booths, 'ac': tot}
 
 
+def site_check(ac: int, csv_p: Path, tmp: Path, site, k: bytes) -> tuple[list[str], list[list], dict]:
+    """Every row against the live site, as a visitor's lookup finds it
+    (sv_site.Site): a row with an EPIC hash is on the site under that EPIC at
+    its AC, part and serial, struck off or not as here, and its hash is that
+    EPIC's; per AC, as many electors and deletions as the site counts.
+    Conflicts are given by place only (no EPIC)."""
+    lr, = release.fetch(str(tmp), [f'live-rows-{ac}.jsonl.gz'])
+    with gzip.open(lr, 'rt', encoding='utf8') as f:
+        rows = sorted((json.loads(x) for x in f if x.strip()), key=lambda r: (r['part'], r['page'], r['cell']))
+    lr.unlink()
+    with gzip.open(csv_p, 'rt', encoding='utf8') as f:
+        ds = list(csv.DictReader(f))
+    fails, conflicts = [], []
+    if len(rows) != len(ds):
+        return [f'{len(ds)} rows, the live rows {len(rows)}'], [], {}
+    live = dead = 0
+    for r, d in zip(rows, ds):
+        at = [ac, r['part'], r['page'], r['cell']]
+        if (int(d['part']), int(d['page']), int(d['card'])) != tuple(at[1:]):
+            return [f'row order differs at {at}'], [], {}
+        if not d['epic_hash']:
+            continue
+        if d['epic_hash'] != ds_join.mac(k, r['epic'], 24):
+            conflicts.append(at + ['hash'])
+            continue
+        gone = d['status'] == 'deleted'
+        hits = [h for h in site.lookup(r['epic']) if h['ac'] == ac and h['part'] == r['part']]
+        if not any(h['serial'] == (r['serial'] & 0x7fff) and h['deleted'] == gone for h in hits):
+            conflicts.append(at + ['not on the site' if not hits else 'differs from the site'])
+            continue
+        dead += gone
+        live += not gone
+    s = next((a for a in site.manifest['acs'] if a['ac'] == ac), {})
+    if (live, dead) != (s.get('electors'), s.get('deleted')):
+        fails.append(f'{live} electors and {dead} deletions with an EPIC hash; the site {s.get("electors")} and {s.get("deleted")}')
+    if conflicts:
+        fails.append(f'{len(conflicts)} rows disagree with the live site')
+    return fails, conflicts, {'site_electors': s.get('electors'), 'site_deleted': s.get('deleted')}
+
+
 def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     import pyarrow.parquet as pq
     if OUT.exists():
@@ -254,7 +296,11 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     kid = ds_join.key_id(k)
     ceo = json.loads(CEO.read_text('utf8'))['acs']
     writer = pq.ParquetWriter(pub / f'{NAME}.parquet', schema(), compression='zstd')
-    checks, booth_rows, ac_rows, dropped, dc_missing = {}, [], [], 0, []
+    checks, booth_rows, ac_rows, dropped, dc_missing, conflicts = {}, [], [], 0, [], []
+    import sv_site
+    sv_site.snapshot()          # the live site as visitors see it, now
+    site = sv_site.Site()
+    built_at = site.manifest['builtAt']
     for ac in acs:
         csv_name, st_name = f'ds-{ac}.csv.gz', f'dsstats-{ac}.json'
         csv_p, st_p = on_ds(release.fetch, str(tmp), [csv_name, st_name])
@@ -270,6 +316,11 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         if dc is None:
             dc_missing.append(ac)
         res = check_ac(ac, csv_p, stats, kid, ceo[str(ac)], writer, dc)
+        sfails, sconf, sres = site_check(ac, csv_p, tmp, site, k)
+        res['fails'] += sfails
+        conflicts += sconf
+        if res['ac']:
+            res['ac'].update(sres)
         checks[ac] = res['fails']
         for part, b in sorted(res['booths'].items()):
             booth_rows.append({'ac': ac, 'part': part, **b})
@@ -296,6 +347,9 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         k = sum(round((r[f'{c}_agree'] or 0) * (r[f'{c}_compared'] or 0)) for r in ac_rows)
         tot[f'{c}_compared'], tot[f'{c}_agree'] = n, round(k / n, 5) if n else None
     tot['dc_not_run_acs'] = dc_missing
+    tot['site_build'] = built_at
+    tot['site_conflicts'] = len(conflicts)
+    (OUT / 'dsrelease-conflicts.json').write_text(json.dumps(conflicts), 'utf8')
     report = {'release': PUBLIC, 'key_id': kid, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
               'commit': commit, 'acs': len(acs), 'passed': not failed, 'failed': failed, 'totals': tot,
               'thresholds': {'min_read': MIN_READ, 'gender_slack': GENDER_SLACK}}
@@ -307,7 +361,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         entries=f'{tot["entries"]:,}', electors=f'{tot["electors"]:,}', deleted=f'{tot["deleted"]:,}',
         ceo_electors=f'{tot["ceo_electors"]:,}', male=f'{tot["male"]:,}', female=f'{tot["female"]:,}',
         tg=f'{tot["tg"]:,}', gender_unread=f'{tot["gender_unread"]:,}', age_unread=f'{tot["age_unread"]:,}',
-        shifted=shifted, age_dropped=f'{dropped:,}', name=NAME,
+        shifted=shifted, age_dropped=f'{dropped:,}', name=NAME, site_build=built_at,
         dc_age_compared=f'{tot["dc_age_compared"]:,}', dc_age_agree=f'{(tot["dc_age_agree"] or 0):.3%}',
         dc_gender_compared=f'{tot["dc_gender_compared"]:,}', dc_gender_agree=f'{(tot["dc_gender_agree"] or 0):.3%}',
         dc_not_run=', '.join(map(str, dc_missing)) or 'none', dc_min=f'{DC_MIN_AGREE:.0%}', min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}')
@@ -317,7 +371,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     (pub / 'SHA256SUMS').write_text(sums, 'utf8')
     shutil.rmtree(tmp)
     if not dry:
-        on_ds(release.upload, str(OUT / 'dsrelease-checks.json'))
+        on_ds(release.upload, str(OUT / 'dsrelease-checks.json'), str(OUT / 'dsrelease-conflicts.json'))
     log(f'built {len(acs)} ACs: {"all checks hold" if not failed else f"{len(failed)} ACs fail"}')
     return not failed, pub
 
