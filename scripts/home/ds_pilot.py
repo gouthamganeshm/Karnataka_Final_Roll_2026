@@ -47,7 +47,8 @@ OUT = ROOT / 'cache' / 'ds'
 STATE = OUT / 'pilot.json'
 SHARDS = 8
 MAX_OPEN = 2
-REDISPATCH_H = 6
+REDISPATCH_H = 2
+RETRY_WAITS = (60, 300, 900, 1800, 3600)
 EXT = 'png'
 GREYS = [(v >> 4) * 17 for v in range(256)]
 
@@ -97,10 +98,17 @@ def cut_ac(ac: int, parts: list[int]) -> list[Path]:
     OUT.mkdir(parents=True, exist_ok=True)
     paths = [OUT / f'ds-{ac}.s{i}.tar' for i in range(SHARDS)]
     tars = [tarfile.open(p, 'w') for p in paths]
-    booths = {}
+    booths, missing = {}, []
 
     def get(part):
         return part, run.fetch(run.url(ac, part, 'eng'))
+
+    def add(i, part, data):
+        z, n = bundle(ac, part, 'eng', data)
+        info = tarfile.TarInfo(f'{part}.eng.zip')
+        info.size = len(z)
+        tars[i % SHARDS].addfile(info, io.BytesIO(z))
+        booths[part] = {'eng': n}
 
     t = time.time()
     with ThreadPoolExecutor(6) as pool:
@@ -113,19 +121,34 @@ def cut_ac(ac: int, parts: list[int]) -> list[Path]:
             if nxt < len(parts):
                 futs.append(pool.submit(get, parts[nxt]))
                 nxt += 1
-            rec = {}
-            for lang, data in (('eng', eng),):
-                if data is None:
-                    rec[lang] = None
-                    continue
-                z, n = bundle(ac, part, lang, data)
-                info = tarfile.TarInfo(f'{part}.{lang}.zip')
-                info.size = len(z)
-                tars[i % SHARDS].addfile(info, io.BytesIO(z))
-                rec[lang] = n
-            booths[part] = rec
+            if eng is None:
+                missing.append((i, part))
+            else:
+                add(i, part, eng)
             if (i + 1) % 50 == 0:
                 log(f'AC {ac}: {i + 1}/{len(parts)} booths cut ({time.time() - t:.0f}s)')
+    # Every booth of the manifest is served (the site was built from them), so a
+    # PDF that did not come is a network or CDN outage: wait it out rather than
+    # cut an AC with a booth left out. Nothing is uploaded until all are in.
+    for wait in RETRY_WAITS:
+        if not missing:
+            break
+        log(f'AC {ac}: {len(missing)} PDFs did not come; trying again in {wait}s')
+        time.sleep(wait)
+        still = []
+        for i, part in missing:
+            eng = run.fetch(run.url(ac, part, 'eng'))
+            if eng is None:
+                still.append((i, part))
+            else:
+                add(i, part, eng)
+        missing = still
+    if missing:
+        for tar in tars:
+            tar.close()
+        for p in paths:
+            p.unlink()
+        raise RuntimeError(f'AC {ac}: PDFs of parts {[p for _, p in missing]} not served')
     meta = json.dumps({'ac': ac, 'shards': SHARDS, 'booths': booths,
                        'at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}).encode()
     for tar in tars:
@@ -133,9 +156,8 @@ def cut_ac(ac: int, parts: list[int]) -> list[Path]:
         info.size = len(meta)
         tar.addfile(info, io.BytesIO(meta))
         tar.close()
-    miss = [p for p, r in booths.items() if not r['eng']]
     log(f'AC {ac}: {len(booths)} booths cut, {sum(p.stat().st_size for p in paths) / 1e6:.0f} MB '
-        f'in {time.time() - t:.0f}s{f"; a PDF not served for {miss}" if miss else ""}')
+        f'in {time.time() - t:.0f}s')
     return paths
 
 
@@ -191,7 +213,7 @@ def step(acs: list[int], st: dict) -> tuple[int | None, int]:
         if all(f'ds-{ac}.s{i}.tar' in have for i in range(SHARDS)):
             waiting += 1
             last = a.get('dispatched', 0)
-            if time.time() - last > REDISPATCH_H * 3600:
+            if time.time() - last > REDISPATCH_H * 3600:  # a run lost to an outage; a repeat is harmless
                 if last:
                     log(f'AC {ac}: not all shards read {REDISPATCH_H} h after dispatch; dispatching again')
                 dispatch(ac)
@@ -227,11 +249,18 @@ def main() -> int:
         if todo is None or waiting >= MAX_OPEN:
             time.sleep(300)
             continue
-        paths = cut_ac(todo, parts_by_ac[todo])
-        on_ds(release.upload, *map(str, paths))
-        for p in paths:
-            p.unlink()
-        dispatch(todo)
+        try:
+            paths = cut_ac(todo, parts_by_ac[todo])
+            on_ds(release.upload, *map(str, paths))
+            for p in paths:
+                p.unlink()
+            dispatch(todo)
+        except Exception as exc:  # noqa: BLE001 - an outage (ECI or GitHub): the AC is cut again later
+            log(f'AC {todo}: cut failed: {exc!r}')
+            for p in OUT.glob(f'ds-{todo}.s*.tar'):
+                p.unlink()
+            time.sleep(300)
+            continue
         st.setdefault(str(todo), {})['dispatched'] = time.time()
         save_state(st)
 

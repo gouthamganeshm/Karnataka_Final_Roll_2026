@@ -60,17 +60,31 @@ jobs:
           cache: pip
           cache-dependency-path: scripts/ocr/requirements.txt
 
+      # A network hiccup should not lose the run: each download and upload is
+      # tried again a few times (a VM re-dispatches a run that still fails).
       - name: Install Tesseract
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
+          for t in 1 2 3 4; do
+            sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng && break
+            [ $t = 4 ] && exit 1; sleep $((t * 60))
+          done
           tesseract --version | head -1
 
-      - run: pip install --disable-pip-version-check -r scripts/ocr/requirements.txt
+      - run: |
+          for t in 1 2 3 4; do
+            pip install --disable-pip-version-check -r scripts/ocr/requirements.txt && break
+            [ $t = 4 ] && exit 1; sleep $((t * 60))
+          done
 
       - name: Read the sheets
         run: |
           export ROLL_RELEASE="$TAG-ds"
-          python3 -c "import sys; sys.path.insert(0, 'scripts'); import release; release.fetch('.', ['ds-$AC.s$I.tar'])"
+          for t in 1 2 3 4; do
+            python3 -c "import sys; sys.path.insert(0, 'scripts'); import release; release.fetch('.', ['ds-$AC.s$I.tar'])" && break
+            [ $t = 4 ] && exit 1; sleep $((t * 60))
+          done
           python3 scripts/ci/ds_read.py "ds-$AC.s$I.tar" "dsread-$AC.s$I.json.gz"
-          python3 -c "import sys; sys.path.insert(0, 'scripts'); import release; release.upload('dsread-$AC.s$I.json.gz')"
+          for t in 1 2 3 4; do
+            python3 -c "import sys; sys.path.insert(0, 'scripts'); import release; release.upload('dsread-$AC.s$I.json.gz')" && break
+            [ $t = 4 ] && exit 1; sleep $((t * 60))
+          done

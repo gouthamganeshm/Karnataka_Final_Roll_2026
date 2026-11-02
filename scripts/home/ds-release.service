@@ -1,0 +1,22 @@
+# Runs scripts/home/ds_release.py on eci-1: waits until every AC of the open
+# dataset is joined, checks it and publishes it as a public release, with
+# nobody watching; restarted after any crash or reboot, done once published.
+# Install (as ubuntu, repo at ~/verify, token in ~/.gh_token, pyarrow in ~/venv):
+#   sudo cp ~/verify/scripts/home/ds-release.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now ds-release
+# Log: journalctl -u ds-release -f
+[Unit]
+Description=Karnataka final roll: open dataset release
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/verify
+ExecStartPre=/bin/bash -c 'git pull -q || true'
+ExecStart=/bin/bash -c 'GH_TOKEN=$(cat /home/ubuntu/.gh_token) exec nice -n 10 /home/ubuntu/venv/bin/python -u -W ignore scripts/home/ds_release.py'
+Restart=on-failure
+RestartSec=300
+
+[Install]
+WantedBy=multi-user.target
