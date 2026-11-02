@@ -1,9 +1,11 @@
-# Open dataset (planned): one row per entry on the roll, without identities
+# Open dataset: one row per entry on the roll, without identities
 
-Runs **after** the 25% sample verification ([sample-verification.md](sample-verification.md))
-finishes; verification has priority on the VMs and on GitHub Actions.
+<p align="center"><img src="images/dataset.svg" alt="What the open dataset keeps from each card" width="100%"></p>
 
-## What each row will hold
+Ran **after** the 25% sample verification ([sample-verification.md](sample-verification.md))
+finished; verification had priority on the VMs and on GitHub Actions.
+
+## What each row holds
 
 | Column | What it is |
 |---|---|
@@ -17,7 +19,7 @@ finishes; verification has priority on the VMs and on GitHub Actions.
 
 An empty field is one the reader could not read.
 
-Plus summary tables per booth, constituency and district: electors by age
+Plus summary tables per booth and constituency: electors by age
 band and gender, deletions by reason, and a data-quality table.
 
 ## Privacy: what is never published
@@ -40,7 +42,7 @@ SHA-256) only says which releases can be compared with each other.
 Card-level intermediate files (readings with house numbers, joins with EPICs)
 stay on private draft releases and are deleted once the dataset is built.
 
-## How it will run (all in the cloud)
+## How it runs (all in the cloud)
 
 1. **VMs** download every booth's **English** PDF afresh (the owner's choice:
    the English roll only), cut each card page into one image of the cards'

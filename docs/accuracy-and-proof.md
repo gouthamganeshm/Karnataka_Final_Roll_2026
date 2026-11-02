@@ -1,5 +1,7 @@
 # Accuracy and proof
 
+<p align="center"><img src="images/pipeline.svg" alt="How the roll becomes a search site and a dataset" width="100%"></p>
+
 This page lists, in plain words, every check the data went through before and
 after it went on the site, with the numbers. Anything that holds a real EPIC
 (card images, readings, decisions) is kept on a private release, so the proof

@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" role="img" aria-labelledby="t d">
+  <title id="t">How the roll becomes a search site and a dataset</title>
+  <desc id="d">ECI booth PDFs are downloaded by four free cloud VMs, kept on a private GitHub release, read card by card on GitHub Actions, checked against the printed totals, the English roll and the CEO count, then published as the search site and the open dataset.</desc>
+  <style>
+    .bg{fill:#f7f5f0}.box{fill:#fff;stroke:#d9d3c7}.ink{fill:#1d1b18}.mute{fill:#6b655c}.wire{stroke:#cfc8b9;fill:none}
+    .dot{fill:#c2410c}.acc{fill:#c2410c}.priv{fill:#fde7d9}.ok{fill:#15803d}.okbox{fill:#e7f5ec;stroke:#a7d7b8}
+    @media (prefers-color-scheme:dark){
+      .bg{fill:#14130f}.box{fill:#1f1d18;stroke:#3a362e}.ink{fill:#f3efe6}.mute{fill:#a39d90}.wire{stroke:#4a453b}
+      .dot{fill:#fb923c}.acc{fill:#fb923c}.priv{fill:#3b2414}.ok{fill:#4ade80}.okbox{fill:#14271b;stroke:#245c37}}
+    text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+    .h{font-size:17px;font-weight:650}.s{font-size:13.5px}.n{font-size:12px;font-weight:700;letter-spacing:1.5px}
+    @media (prefers-reduced-motion:reduce){.mv{display:none}}
+  </style>
+  <rect class="bg" width="1200" height="380" rx="24"/>
+  <text class="ink" x="40" y="52" font-size="22" font-weight="700">From PDF to search box, all in the cloud</text>
+  <text class="mute" x="40" y="78" font-size="15">Nothing runs on a home PC. Everything that holds real EPICs stays private.</text>
+
+  <path id="w" class="wire" stroke-width="3" d="M150 200 H1050"/>
+
+  <!-- stages -->
+  <g transform="translate(40 130)">
+    <rect class="box" width="150" height="140" rx="14" stroke-width="1.5"/>
+    <text class="acc n" x="16" y="30">1 · SOURCE</text>
+    <text class="ink h" x="16" y="62">ECI PDFs</text>
+    <text class="mute s" x="16" y="88">60,923 booths</text>
+    <text class="mute s" x="16" y="108">Kannada + English</text>
+  </g>
+  <g transform="translate(232 130)">
+    <rect class="box" width="150" height="140" rx="14" stroke-width="1.5"/>
+    <text class="acc n" x="16" y="30">2 · DOWNLOAD</text>
+    <text class="ink h" x="16" y="62">4 cloud VMs</text>
+    <text class="mute s" x="16" y="88">Oracle free tier</text>
+    <text class="mute s" x="16" y="108">cut every card</text>
+  </g>
+  <g transform="translate(424 130)">
+    <rect class="box priv" width="150" height="140" rx="14" stroke-width="1.5"/>
+    <text class="acc n" x="16" y="30">3 · KEEP</text>
+    <text class="ink h" x="16" y="62">Private release</text>
+    <text class="mute s" x="16" y="88">owner only</text>
+    <text class="mute s" x="16" y="108">never in git</text>
+  </g>
+  <g transform="translate(616 130)">
+    <rect class="box" width="150" height="140" rx="14" stroke-width="1.5"/>
+    <text class="acc n" x="16" y="30">4 · READ</text>
+    <text class="ink h" x="16" y="62">GitHub Actions</text>
+    <text class="mute s" x="16" y="88">4 EPIC readers</text>
+    <text class="mute s" x="16" y="108">must agree</text>
+  </g>
+  <g transform="translate(808 130)">
+    <rect class="box" width="150" height="140" rx="14" stroke-width="1.5"/>
+    <text class="acc n" x="16" y="30">5 · CHECK</text>
+    <text class="ink h" x="16" y="62">3 ways</text>
+    <text class="mute s" x="16" y="88">printed totals</text>
+    <text class="mute s" x="16" y="108">English roll · CEO</text>
+  </g>
+  <g transform="translate(1000 108)">
+    <rect class="okbox" width="160" height="84" rx="14" stroke-width="1.5"/>
+    <text class="ok n" x="16" y="28">PUBLISH</text>
+    <text class="ink h" x="16" y="58">Search site</text>
+  </g>
+  <g transform="translate(1000 208)">
+    <rect class="okbox" width="160" height="84" rx="14" stroke-width="1.5"/>
+    <text class="ok n" x="16" y="28">PUBLISH</text>
+    <text class="ink h" x="16" y="58">Open dataset</text>
+  </g>
+
+  <!-- moving cards -->
+  <g class="mv">
+    <rect class="dot" x="-7" y="-5" width="14" height="10" rx="2">
+      <animateMotion dur="6s" repeatCount="indefinite" path="M150 200 H1000"/>
+    </rect>
+    <rect class="dot" x="-7" y="-5" width="14" height="10" rx="2" opacity=".7">
+      <animateMotion dur="6s" begin="2s" repeatCount="indefinite" path="M150 200 H1000"/>
+    </rect>
+    <rect class="dot" x="-7" y="-5" width="14" height="10" rx="2" opacity=".45">
+      <animateMotion dur="6s" begin="4s" repeatCount="indefinite" path="M150 200 H1000"/>
+    </rect>
+  </g>
+
+  <text class="mute" x="40" y="330" font-size="14">Each stage carries on after an outage: the VMs restart themselves, retry downloads and uploads, and pick up where they left off.</text>
+</svg>

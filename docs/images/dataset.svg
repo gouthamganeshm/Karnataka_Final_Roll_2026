@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-labelledby="t d">
+  <title id="t">What the open dataset keeps from each card</title>
+  <desc id="d">From each card of the English roll the dataset keeps the place (constituency, part, page, card, serial), age, gender and the relation label. Names are never read. The EPIC and the house number become secret-keyed hashes and are thrown away.</desc>
+  <style>
+    .bg{fill:#f7f5f0}.card{fill:#fff;stroke:#d9d3c7}.ink{fill:#1d1b18}.mute{fill:#6b655c}.acc{fill:#c2410c}
+    .keep{fill:#e7f5ec}.hash{fill:#e0ecfb}.drop{fill:#fbe4e4}.okt{fill:#15803d}.hst{fill:#1d4ed8}.dpt{fill:#b91c1c}
+    .bar{fill:#e8e3d8}.strike{stroke:#b91c1c}
+    @media (prefers-color-scheme:dark){
+      .bg{fill:#14130f}.card{fill:#1f1d18;stroke:#3a362e}.ink{fill:#f3efe6}.mute{fill:#a39d90}.acc{fill:#fb923c}
+      .keep{fill:#14271b}.hash{fill:#14243a}.drop{fill:#3a1616}.okt{fill:#4ade80}.hst{fill:#93c5fd}.dpt{fill:#fca5a5}
+      .bar{fill:#2c2923}.strike{stroke:#fca5a5}}
+    text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+    .mono{font-family:ui-monospace,"Cascadia Code",Consolas,monospace}
+    .row{opacity:0;animation:in .6s ease forwards}.r2{animation-delay:.6s}.r3{animation-delay:1.2s}
+    @keyframes in{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+    .cut{stroke-dasharray:200;stroke-dashoffset:200;animation:cut 1s 1.8s ease forwards}
+    @keyframes cut{to{stroke-dashoffset:0}}
+    @media (prefers-reduced-motion:reduce){.row{animation:none;opacity:1}.cut{animation:none;stroke-dashoffset:0}}
+  </style>
+  <rect class="bg" width="1200" height="400" rx="24"/>
+  <text class="ink" x="40" y="52" font-size="22" font-weight="700">The open dataset: one row per entry, no identities</text>
+  <text class="mute" x="40" y="78" font-size="15">Read from the English roll, joined to the verified rows, checked before release.</text>
+
+  <!-- the card -->
+  <g transform="translate(40 110)">
+    <rect class="card" width="330" height="240" rx="14" stroke-width="1.5"/>
+    <text class="mute" x="18" y="32" font-size="13">serial 704</text>
+    <text class="ink mono" x="190" y="32" font-size="14" font-weight="600">ABC1234567</text>
+    <text class="mute" x="18" y="72" font-size="14">Name</text><rect class="bar" x="110" y="61" width="120" height="14" rx="4"/>
+    <line class="strike cut" x1="104" y1="68" x2="236" y2="68" stroke-width="2.5"/>
+    <text class="mute" x="18" y="104" font-size="14">Husband's name</text><rect class="bar" x="130" y="93" width="100" height="14" rx="4"/>
+    <line class="strike cut" x1="124" y1="100" x2="236" y2="100" stroke-width="2.5"/>
+    <text class="mute" x="18" y="136" font-size="14">House number</text><rect class="bar" x="130" y="125" width="60" height="14" rx="4"/>
+    <text class="mute" x="18" y="168" font-size="14">Age</text><text class="ink" x="60" y="168" font-size="14" font-weight="650">66</text>
+    <text class="mute" x="120" y="168" font-size="14">Gender</text><text class="ink" x="178" y="168" font-size="14" font-weight="650">Female</text>
+    <rect class="bar" x="246" y="50" width="66" height="100" rx="8"/>
+    <text class="mute" x="18" y="214" font-size="12.5">an illustration, not a real card</text>
+  </g>
+
+  <!-- what happens -->
+  <g class="row" transform="translate(420 110)">
+    <rect class="keep" width="740" height="70" rx="12"/>
+    <text class="okt" x="20" y="30" font-size="13" font-weight="700" letter-spacing="1.5">KEPT AS PRINTED</text>
+    <text class="ink" x="20" y="54" font-size="15">ac · part · page · card · serial · live or deleted · age 66 · gender F · relation “Husband”</text>
+  </g>
+  <g class="row r2" transform="translate(420 195)">
+    <rect class="hash" width="740" height="70" rx="12"/>
+    <text class="hst" x="20" y="30" font-size="13" font-weight="700" letter-spacing="1.5">ONLY AS A SECRET-KEYED HASH</text>
+    <text class="ink" x="20" y="54" font-size="15">EPIC → <tspan class="mono">epic_hash</tspan> · house number → <tspan class="mono">household_hash</tspan> (same value = same EPIC / same house)</text>
+  </g>
+  <g class="row r3" transform="translate(420 280)">
+    <rect class="drop" width="740" height="70" rx="12"/>
+    <text class="dpt" x="20" y="30" font-size="13" font-weight="700" letter-spacing="1.5">NEVER READ, NEVER PUBLISHED</text>
+    <text class="ink" x="20" y="54" font-size="15">the elector's name · the relative's name · the EPIC itself · the house number itself</text>
+  </g>
+</svg>

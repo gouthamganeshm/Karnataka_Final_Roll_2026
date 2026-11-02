@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-labelledby="t d">
+  <title id="t">How a search stays private</title>
+  <desc id="d">The EPIC typed in the browser is hashed with SHA-256. The first two bytes pick one of 65,536 files, the next four are looked up inside it, and the 9-byte record gives constituency, part and serial. The EPIC never leaves the browser.</desc>
+  <style>
+    .bg{fill:#f7f5f0}.box{fill:#fff;stroke:#d9d3c7}.ink{fill:#1d1b18}.mute{fill:#6b655c}.acc{fill:#c2410c}.wire{stroke:#cfc8b9;fill:none}
+    .b1{fill:#fde7d9}.b2{fill:#e0ecfb}.b3{fill:#e7f5ec}.ok{fill:#15803d}.edge{stroke:#c2410c;fill:none;stroke-dasharray:6 6}
+    @media (prefers-color-scheme:dark){
+      .bg{fill:#14130f}.box{fill:#1f1d18;stroke:#3a362e}.ink{fill:#f3efe6}.mute{fill:#a39d90}.acc{fill:#fb923c}.wire{stroke:#4a453b}
+      .b1{fill:#3b2414}.b2{fill:#14243a}.b3{fill:#14271b}.ok{fill:#4ade80}.edge{stroke:#fb923c}}
+    text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+    .mono{font-family:ui-monospace,"Cascadia Code",Consolas,monospace}
+    .flow{animation:dash 1.2s linear infinite}@keyframes dash{to{stroke-dashoffset:-12}}
+    .lit{animation:lit 4s ease-in-out infinite;opacity:.35}.l2{animation-delay:1s}.l3{animation-delay:2s}.l4{animation-delay:3s}
+    @keyframes lit{0%,15%{opacity:.35}25%,45%{opacity:1}60%,100%{opacity:.35}}
+    @media (prefers-reduced-motion:reduce){.flow,.lit{animation:none;opacity:1}}
+  </style>
+  <rect class="bg" width="1200" height="360" rx="24"/>
+  <text class="ink" x="40" y="52" font-size="22" font-weight="700">Your EPIC never leaves your browser</text>
+  <text class="mute" x="40" y="78" font-size="15">No server, no database, no cookies. The site only holds hashed fragments.</text>
+
+  <!-- browser frame -->
+  <rect class="box" x="40" y="104" width="1120" height="200" rx="16" stroke-width="1.5"/>
+  <text class="mute" x="60" y="130" font-size="13" font-weight="600" letter-spacing="1.5">IN YOUR BROWSER</text>
+
+  <g class="lit" transform="translate(60 150)">
+    <rect class="box" width="220" height="120" rx="12" stroke-width="1.5"/>
+    <text class="mute" x="16" y="28" font-size="13">1 · you type</text>
+    <text class="ink mono" x="16" y="68" font-size="24" font-weight="600">ABC1234567</text>
+    <text class="mute" x="16" y="100" font-size="12.5">an example, not a real card</text>
+  </g>
+  <g class="lit l2" transform="translate(330 150)">
+    <rect class="b1" width="240" height="120" rx="12"/>
+    <text class="mute" x="16" y="28" font-size="13">2 · SHA-256</text>
+    <text class="ink mono" x="16" y="66" font-size="19"><tspan class="acc" font-weight="700">a5 50</tspan> f1 2c 42 47 …</text>
+    <text class="mute" x="16" y="100" font-size="12.5">only 6 of its 32 bytes are ever used</text>
+  </g>
+  <g class="lit l3" transform="translate(620 150)">
+    <rect class="b2" width="250" height="120" rx="12"/>
+    <text class="mute" x="16" y="28" font-size="13">3 · fetch one of 65,536 files</text>
+    <text class="ink mono" x="16" y="66" font-size="19">data/roll/<tspan class="acc" font-weight="700">a5/50</tspan>.bin</text>
+    <text class="mute" x="16" y="100" font-size="12.5">shared by ~27 lakh possible EPICs</text>
+  </g>
+  <g class="lit l4" transform="translate(920 150)">
+    <rect class="b3" width="220" height="120" rx="12"/>
+    <text class="mute" x="16" y="28" font-size="13">4 · 9-byte record</text>
+    <text class="ink" x="16" y="64" font-size="19" font-weight="650">AC · part · serial</text>
+    <text class="ok" x="16" y="100" font-size="12.5" font-weight="600">+ link to the official PDF</text>
+  </g>
+
+  <path class="edge flow" stroke-width="2.5" d="M282 210 H328"/>
+  <path class="edge flow" stroke-width="2.5" d="M572 210 H618"/>
+  <path class="edge flow" stroke-width="2.5" d="M872 210 H918"/>
+
+  <text class="mute" x="40" y="336" font-size="14">The whole state is ~400 MB of such records on GitHub Pages. The open dataset uses a different, secret-keyed hash, so the two cannot be joined to recover EPICs.</text>
+</svg>

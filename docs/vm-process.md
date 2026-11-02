@@ -1,5 +1,7 @@
 # The cloud VMs: why, how, and what runs on them
 
+<p align="center"><img src="images/pipeline.svg" alt="Where the VMs sit in the pipeline" width="100%"></p>
+
 ## Why VMs at all
 
 * ECI's download server answers every GitHub Actions machine with `406
