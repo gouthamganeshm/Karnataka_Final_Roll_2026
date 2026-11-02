@@ -75,6 +75,8 @@ the page and card.
    verified rows (serial, EPIC, struck off). Where a booth's English roll has
    an extra front page the pages were lined up first ({shifted} booths); a page
    whose card count still did not agree was left empty.
+4. An age no elector can have (under 18 or over 120, e.g. 123 read for 23)
+   was left empty: {age_dropped} entries.
 
 ## Checks before release (all passed)
 

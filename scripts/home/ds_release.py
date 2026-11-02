@@ -53,6 +53,7 @@ WAIT_S = 900
 HOLD_H = 6
 MIN_READ = 0.995          # share of an AC's cards whose fields were read
 GENDER_SLACK = 0.001      # misread genders allowed per AC, share of its electors (at least 5)
+REJOIN_IF_NO = {'booths_shifted', 'age_dropped'}   # stats a join by the current ds_join.py writes
 
 PATTERNS = {
     'ac': r'^\d{1,3}$', 'part': r'^\d{1,4}$', 'page': r'^\d{1,3}$', 'card': r'^\d{1,2}$',
@@ -189,14 +190,20 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     tmp.mkdir()
     k = ds_join.key()
     kid = ds_join.key_id(k)
-    del k
     ceo = json.loads(CEO.read_text('utf8'))['acs']
     writer = pq.ParquetWriter(pub / f'{NAME}.parquet', schema(), compression='zstd')
-    checks, booth_rows, ac_rows = {}, [], []
+    checks, booth_rows, ac_rows, dropped = {}, [], [], 0
     for ac in acs:
         csv_name, st_name = f'ds-{ac}.csv.gz', f'dsstats-{ac}.json'
         csv_p, st_p = on_ds(release.fetch, str(tmp), [csv_name, st_name])
         stats = json.loads(st_p.read_text('utf8'))
+        if not REJOIN_IF_NO.issubset(stats['stats']):  # joined by older code: join again
+            log(f'AC {ac}: joined before {sorted(REJOIN_IF_NO - set(stats["stats"]))}; joining again')
+            csv_p.unlink()
+            st_p.unlink()
+            ds_join.join(ac, k)
+            csv_p, st_p = on_ds(release.fetch, str(tmp), [csv_name, st_name])
+            stats = json.loads(st_p.read_text('utf8'))
         res = check_ac(ac, csv_p, stats, kid, ceo[str(ac)], writer)
         checks[ac] = res['fails']
         for part, b in sorted(res['booths'].items()):
@@ -205,6 +212,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
             ac_rows.append({'ac': ac, **res['ac']})
         csv_p.rename(pub / f'{NAME}-ac{ac:03d}.csv.gz')
         st_p.unlink()
+        dropped += stats['stats']['age_dropped']
         log(f'AC {ac}: {"ok" if not res["fails"] else res["fails"]}')
     writer.close()
     for name, rows in (('summary-booth', booth_rows), ('summary-ac', ac_rows)):
@@ -217,6 +225,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     tot = {c: sum(r[c] for r in ac_rows) for c in ('entries', 'electors', 'deleted', 'male', 'female', 'tg',
                                                     'gender_unread', 'age_unread', 'ceo_electors')}
+    tot['age_dropped'] = dropped
     report = {'release': PUBLIC, 'key_id': kid, 'built': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
               'commit': commit, 'acs': len(acs), 'passed': not failed, 'failed': failed, 'totals': tot,
               'thresholds': {'min_read': MIN_READ, 'gender_slack': GENDER_SLACK}}
@@ -228,7 +237,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         entries=f'{tot["entries"]:,}', electors=f'{tot["electors"]:,}', deleted=f'{tot["deleted"]:,}',
         ceo_electors=f'{tot["ceo_electors"]:,}', male=f'{tot["male"]:,}', female=f'{tot["female"]:,}',
         tg=f'{tot["tg"]:,}', gender_unread=f'{tot["gender_unread"]:,}', age_unread=f'{tot["age_unread"]:,}',
-        shifted=shifted, name=NAME, min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}')
+        shifted=shifted, age_dropped=f'{dropped:,}', name=NAME, min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}')
     (pub / 'README.md').write_text(readme, 'utf8')
     (pub / 'LICENSE.txt').write_text(LICENCE, 'utf8')
     sums = ''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in sorted(pub.iterdir()))
