@@ -9,10 +9,10 @@ finishes; verification has priority on the VMs and on GitHub Actions.
 |---|---|
 | `ac`, `part`, `page`, `card`, `serial` | Where the entry is printed (anyone can open that ECI PDF) |
 | `serial_sure` | 1 when the serial was confirmed by the readers, 0 when it is the site's "~" serial |
-| `status` | live, deleted (struck off with a DELETED stamp), or withheld (EPIC not settled; not on the site) |
+| `status` | live or deleted (struck off with a DELETED stamp; a mark the verifier found false is not a deletion) |
 | `age`, `gender` | As printed in the English roll (M, F, TG) |
 | `relation` | Father, Husband, Mother, Wife or Other (the label only) |
-| `epic_hash` | Keyed hash of the EPIC: equal hashes = same EPIC; cannot be turned back into it |
+| `epic_hash` | Keyed hash of the EPIC: equal hashes = same EPIC; cannot be turned back into it. Empty where the EPIC is not settled (as the site leaves it out) |
 | `household_hash` | Keyed hash of the house number within the booth: equal = same printed house number |
 
 An empty field is one the reader could not read.

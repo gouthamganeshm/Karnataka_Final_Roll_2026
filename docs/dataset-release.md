@@ -39,13 +39,13 @@ It is separate from that project's search site and does not feed it.
 | `ac` | Assembly constituency number (1 to 224) |
 | `part` | Part (booth) number within the constituency |
 | `page`, `card` | Page of the booth's PDF, counted from 0, and the card's place on that page (0 to 29) |
-| `serial` | The entry's serial number in the part |
+| `serial` | The entry's serial number in the part (empty when not read) |
 | `serial_sure` | 1 = the serial was read and confirmed; 0 = approximate (shown with "~" on the project's site) |
-| `status` | `live`, `deleted` (struck off with a DELETED stamp) or `withheld` (EPIC not settled) |
+| `status` | `live` or `deleted` (struck off with a DELETED stamp) |
 | `age` | Age as printed |
 | `gender` | `M`, `F` or `TG` as printed |
 | `relation` | `Father`, `Husband`, `Mother`, `Wife`, `Other` or `Guru`: the label only, never the relative's name |
-| `epic_hash` | A keyed hash of the EPIC number: the same EPIC always gives the same hash; it cannot be turned back into the EPIC |
+| `epic_hash` | A keyed hash of the EPIC number: the same EPIC always gives the same hash; it cannot be turned back into the EPIC. Empty for the few entries whose EPIC the project could not settle (they are not on its search site either) |
 | `household_hash` | A keyed hash of the house number within the booth: equal hashes = the same printed house number |
 
 An empty field is one the reader could not read with certainty; nothing is guessed.

@@ -59,18 +59,18 @@ DC_URL = 'https://data.sir.diagramchasing.fun/releases/2026-10-28-statewide.3/el
 DC_MIN_AGREE = 0.9
 DC_MIN_N = 30
 GENDER_SLACK = 0.001      # misread genders allowed per AC, share of its electors (at least 5)
-REJOIN_IF_NO = {'booths_shifted', 'age_dropped'}   # stats a join by the current ds_join.py writes
+REJOIN_IF_NO = {'booths_shifted', 'age_dropped', 'epic_unsettled'}   # stats a join by the current ds_join.py writes
 
 PATTERNS = {
     'ac': r'^\d{1,3}$', 'part': r'^\d{1,4}$', 'page': r'^\d{1,3}$', 'card': r'^\d{1,2}$',
-    'serial': r'^(\d{1,5})?$', 'serial_sure': r'^[01]$', 'status': r'^(live|deleted|withheld)$',
+    'serial': r'^(\d{1,5})?$', 'serial_sure': r'^[01]$', 'status': r'^(live|deleted)$',
     'age': r'^(1[89]|[2-9]\d|1[01]\d|120)?$', 'gender': r'^(M|F|TG)?$',
     'relation': r'^(Father|Husband|Mother|Wife|Other|Guru)?$',
     'epic_hash': r'^([0-9a-f]{24})?$', 'household_hash': r'^([0-9a-f]{16})?$',
 }
 BANDS = [('18_19', 18, 19), ('20_29', 20, 29), ('30_39', 30, 39), ('40_49', 40, 49), ('50_59', 50, 59),
          ('60_69', 60, 69), ('70_79', 70, 79), ('80_plus', 80, 200)]
-SUMMARY = ['entries', 'deleted', 'withheld', 'electors', 'male', 'female', 'tg', 'gender_unread',
+SUMMARY = ['entries', 'deleted', 'epic_unsettled', 'electors', 'male', 'female', 'tg', 'gender_unread',
            *[f'age_{b}' for b, _, _ in BANDS], 'age_unread', 'relation_unread']
 
 
@@ -160,9 +160,6 @@ def check_ac(ac: int, csv_p: Path, stats: dict, kid: str, ceo: dict, writer, dc:
         fails.append(f'{len(t)} rows, the join counted {stats["stats"]["cards"]}')
     if stats.get('key_id') != kid:
         fails.append(f'key_id {stats.get("key_id")}, want {kid}')
-    no_hash = pc.and_(pc.equal(t['epic_hash'], ''), pc.not_equal(t['status'], 'withheld'))
-    if pc.sum(no_hash).as_py():
-        fails.append('an EPIC hash missing on a live or deleted row')
 
     def num(c):
         return pc.cast(pc.if_else(pc.equal(t[c], ''), pa.scalar(None, pa.string()), t[c]), pa.int64())
@@ -182,11 +179,13 @@ def check_ac(ac: int, csv_p: Path, stats: dict, kid: str, ceo: dict, writer, dc:
     if writer is not None:
         writer.write_table(typed)
 
-    # Summaries: electors are the rows not struck off (live, and withheld ones).
+    # Summaries: electors are the rows not struck off; epic_unsettled counts the
+    # electors whose EPIC is not settled (no epic_hash).
     booths = {}
     parts, status = cols['part'].to_pylist(), t['status'].to_pylist()
     ages, gender, relation = cols['age'].to_pylist(), t['gender'].to_pylist(), t['relation'].to_pylist()
-    for part, s, a, g, r in zip(parts, status, ages, gender, relation):
+    hashes = t['epic_hash'].to_pylist()
+    for part, s, a, g, r, h in zip(parts, status, ages, gender, relation, hashes):
         b = booths.get(part)
         if b is None:
             b = booths[part] = dict.fromkeys(SUMMARY, 0)
@@ -194,7 +193,7 @@ def check_ac(ac: int, csv_p: Path, stats: dict, kid: str, ceo: dict, writer, dc:
         if s == 'deleted':
             b['deleted'] += 1
             continue
-        b['withheld'] += s == 'withheld'
+        b['epic_unsettled'] += h == ''
         b['electors'] += 1
         b[{'M': 'male', 'F': 'female', 'TG': 'tg', '': 'gender_unread'}[g]] += 1
         b['relation_unread'] += r == ''
@@ -206,8 +205,8 @@ def check_ac(ac: int, csv_p: Path, stats: dict, kid: str, ceo: dict, writer, dc:
     read = stats['stats']['read'] / max(1, stats['stats']['cards'])
     if read < MIN_READ:
         fails.append(f'{read:.4f} of cards read, want {MIN_READ}')
-    if ceo['electors'] not in (tot['electors'], tot['electors'] - tot['withheld']):
-        fails.append(f'{tot["electors"]} electors ({tot["withheld"]} withheld), CEO {ceo["electors"]}')
+    if ceo['electors'] != tot['electors']:
+        fails.append(f'{tot["electors"]} electors, CEO {ceo["electors"]}')
     over = sum(max(0, tot[k] - ceo[c]) for k, c in (('male', 'male'), ('female', 'female'), ('tg', 'tg')))
     allowed = max(5, int(GENDER_SLACK * ceo['electors']))
     if over > allowed:

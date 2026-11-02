@@ -6,8 +6,9 @@ From dsread-<ac>.json.gz (the English roll's age, gender, relation label,
 house number per card; ds_pilot.py) and live-rows-<ac>.jsonl.gz (the
 verified rows: EPIC, serial, deleted), one row per published card:
 
-  ac, part, page, card, serial, serial_sure, status, age, gender, relation,
-  epic_hash, household_hash
+  ac, part, page, card, serial, serial_sure, status (live/deleted), age,
+  gender, relation, epic_hash (empty when the EPIC is not settled, as the site
+  leaves it out), household_hash
 
 The verified rows are placed by the Kannada roll's pages; the English card is
 taken from the same page and cell, and only when that page holds as many
@@ -67,6 +68,47 @@ def house_norm(h: str | None) -> str | None:
     return s or None
 
 
+# As the site's build (scripts/ci/build.mjs) takes a row: an EPIC is settled
+# only if it has an EPIC's form, its readers agreed, the verifier did not
+# dispute it and the English roll's strongest reading does not contradict it;
+# a DELETED mark the verifier found false is no deletion.
+EPIC_RE = re.compile(r'^(?:[A-Z]{3}[0-9]{7,8}|[A-Z]{2}/[0-9]{2}/[0-9]{3}/[0-9]{6,7}|(?=[A-Z]*[0-9])[A-Z0-9]{6,10})$')
+
+
+class Settled:
+    def __init__(self, ac: int):
+        have = release.assets()
+        ver = {}
+        if f'live-verify-{ac}.json' in have:
+            vp, = release.fetch(str(DIR), [f'live-verify-{ac}.json'])
+            ver = json.loads(vp.read_text('utf8'))
+            vp.unlink()
+        self.disputed = {tuple(x) for x in ver.get('disputed', [])}
+        self.undeleted = {tuple(x) for x in ver.get('undeleted', [])}
+        self.eng, self.eng_part = {}, None
+        if f'eng-{ac}.jsonl.gz' in have:
+            ep, = release.fetch(str(DIR), [f'eng-{ac}.jsonl.gz'])
+            with gzip.open(ep, 'rt', encoding='utf8') as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    e = json.loads(line)
+                    self.eng_part = e['part']
+                    if e.get('epicOk') and e.get('ok') and e.get('how') in ('direct', 'text'):
+                        self.eng[e['serial']] = e['epic']
+            ep.unlink()
+
+    def __call__(self, r: dict) -> tuple[str | None, bool]:
+        at = (r['part'], r['page'], r['cell'])
+        deleted = bool(r.get('deleted')) and at not in self.undeleted
+        epic = r.get('epic')
+        if not isinstance(epic, str) or not EPIC_RE.match(epic) or r.get('epicOk') is False or at in self.disputed:
+            return None, deleted
+        if r.get('ok') and r['part'] == self.eng_part and self.eng.get(r['serial'], epic) != epic:
+            return None, deleted
+        return epic, deleted
+
+
 def offset(live: dict[int, int], eng: dict[int, int]) -> int:
     """English page = Kannada page + offset, for one booth.
 
@@ -83,6 +125,7 @@ def offset(live: dict[int, int], eng: dict[int, int]) -> int:
 def join(ac: int, k: bytes) -> dict:
     DIR.mkdir(parents=True, exist_ok=True)
     rd, = release.fetch(str(DIR), [f'live-rows-{ac}.jsonl.gz'])
+    settle = Settled(ac)
     release.TAG = DS
     try:
         dr, = release.fetch(str(DIR), [f'dsread-{ac}.json.gz'])
@@ -103,7 +146,7 @@ def join(ac: int, k: bytes) -> dict:
     for part in {p for p, _ in per_page}:
         shift[part] = offset({pg: n for (pa, pg), n in per_page.items() if pa == part},
                              {int(pg): len(v) for pg, v in reads.get(f'{part}.eng.zip', {}).items()})
-    out, stats = [], {'cards': 0, 'read': 0, 'page_differs': 0, 'no_page': 0,
+    out, stats = [], {'cards': 0, 'read': 0, 'page_differs': 0, 'no_page': 0, 'epic_unsettled': 0,
                       'booths_shifted': sum(1 for d in shift.values() if d)}
     for r in rows:
         part, page, cell = r['part'], r['page'], r['cell']
@@ -119,11 +162,13 @@ def join(ac: int, k: bytes) -> dict:
             ec = ep.get(str(cell))
         stats['read'] += ec is not None
         house = house_norm((ec or {}).get('house'))
-        epic = r.get('epic') if r.get('epicOk', True) else None
+        epic, deleted = settle(r)
+        stats['epic_unsettled'] += epic is None
+        serial = r.get('serial') if isinstance(r.get('serial'), int) and r['serial'] > 0 else None
         out.append({
-            'ac': ac, 'part': part, 'page': page, 'card': cell, 'serial': r.get('serial'),
-            'serial_sure': int(bool(r.get('ok'))),
-            'status': 'withheld' if epic is None else 'deleted' if r.get('deleted') else 'live',
+            'ac': ac, 'part': part, 'page': page, 'card': cell, 'serial': serial,
+            'serial_sure': int(bool(r.get('ok')) and serial is not None),
+            'status': 'deleted' if deleted else 'live',
             **{f: (ec or {}).get(f) for f in FIELDS},
             'epic_hash': mac(k, epic, 24) if epic else None,
             'household_hash': mac(k, f'{ac}|{part}|{house}', 16) if house else None,
