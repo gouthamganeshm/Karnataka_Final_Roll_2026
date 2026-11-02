@@ -128,6 +128,13 @@ def join(ac: int, k: bytes) -> dict:
             'epic_hash': mac(k, epic, 24) if epic else None,
             'household_hash': mac(k, f'{ac}|{part}|{house}', 16) if house else None,
         })
+    # An age no elector can have (under 18, over 120: e.g. 123 for 23) is a
+    # misreading, so it is left empty rather than published.
+    stats['age_dropped'] = 0
+    for o in out:
+        if isinstance(o['age'], int) and not 18 <= o['age'] <= 120:
+            o['age'] = None
+            stats['age_dropped'] += 1
     # Nothing that could hold a name or a number off the card leaves here.
     for o in out:
         for c in ('gender', 'relation'):
