@@ -61,6 +61,38 @@ def mac(k: bytes, s: str, n: int) -> str:
     return hmac.new(k, s.encode('utf8'), hashlib.sha256).hexdigest()[:n]
 
 
+# Asset listings, one per release per process: a listing is ~10 API calls
+# (~900 assets), and taking one per file per AC on four VMs at once spent the
+# token's 5,000 calls an hour. A file missing from a cached listing, or one
+# replaced since (its old id gone), is looked for again in a fresh listing.
+_LISTINGS: dict[str, dict] = {}
+
+
+def listing(tag: str, fresh: bool = False) -> dict:
+    if fresh or tag not in _LISTINGS:
+        old, release.TAG = release.TAG, tag
+        try:
+            _LISTINGS[tag] = release.assets()
+        finally:
+            release.TAG = old
+    return _LISTINGS[tag]
+
+
+def get(tag: str, names: list[str], dest: str) -> list[Path]:
+    have = listing(tag)
+    if any(n not in have for n in names):
+        have = listing(tag, fresh=True)
+    old, release.TAG = release.TAG, tag
+    try:
+        try:
+            return [release.download(n, dest, have.get(n)) for n in names]
+        except Exception:  # noqa: BLE001 - replaced since the listing: once more, fresh
+            have = listing(tag, fresh=True)
+            return [release.download(n, dest, have.get(n)) for n in names]
+    finally:
+        release.TAG = old
+
+
 def house_norm(h: str | None) -> str | None:
     if not h:
         return None
@@ -77,17 +109,17 @@ EPIC_RE = re.compile(r'^(?:[A-Z]{3}[0-9]{7,8}|[A-Z]{2}/[0-9]{2}/[0-9]{3}/[0-9]{6
 
 class Settled:
     def __init__(self, ac: int):
-        have = release.assets()
+        have = listing(TAG)
         ver = {}
         if f'live-verify-{ac}.json' in have:
-            vp, = release.fetch(str(DIR), [f'live-verify-{ac}.json'])
+            vp, = get(TAG, [f'live-verify-{ac}.json'], str(DIR))
             ver = json.loads(vp.read_text('utf8'))
             vp.unlink()
         self.disputed = {tuple(x) for x in ver.get('disputed', [])}
         self.undeleted = {tuple(x) for x in ver.get('undeleted', [])}
         self.eng, self.eng_part = {}, None
         if f'eng-{ac}.jsonl.gz' in have:
-            ep, = release.fetch(str(DIR), [f'eng-{ac}.jsonl.gz'])
+            ep, = get(TAG, [f'eng-{ac}.jsonl.gz'], str(DIR))
             with gzip.open(ep, 'rt', encoding='utf8') as f:
                 for line in f:
                     if not line.strip():
@@ -124,13 +156,9 @@ def offset(live: dict[int, int], eng: dict[int, int]) -> int:
 
 def join(ac: int, k: bytes) -> dict:
     DIR.mkdir(parents=True, exist_ok=True)
-    rd, = release.fetch(str(DIR), [f'live-rows-{ac}.jsonl.gz'])
+    rd, = get(TAG, [f'live-rows-{ac}.jsonl.gz'], str(DIR))
     settle = Settled(ac)
-    release.TAG = DS
-    try:
-        dr, = release.fetch(str(DIR), [f'dsread-{ac}.json.gz'])
-    finally:
-        release.TAG = TAG
+    dr, = get(DS, [f'dsread-{ac}.json.gz'], str(DIR))
     with gzip.open(dr, 'rt', encoding='utf8') as f:
         reads = json.load(f)['reads']
     rows = []

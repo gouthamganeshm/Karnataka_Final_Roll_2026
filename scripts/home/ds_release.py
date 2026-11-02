@@ -259,7 +259,7 @@ def site_check(ac: int, csv_p: Path, tmp: Path, site, k: bytes) -> tuple[list[st
     its AC, part and serial, struck off or not as here, and its hash is that
     EPIC's; per AC, as many electors and deletions as the site counts.
     Conflicts are given by place only (no EPIC)."""
-    lr, = release.fetch(str(tmp), [f'live-rows-{ac}.jsonl.gz'])
+    lr, = ds_join.get(TAG, [f'live-rows-{ac}.jsonl.gz'], str(tmp))
     with gzip.open(lr, 'rt', encoding='utf8') as f:
         rows = sorted((json.loads(x) for x in f if x.strip()), key=lambda r: (r['part'], r['page'], r['cell']))
     lr.unlink()
@@ -309,20 +309,23 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     ceo = json.loads(CEO.read_text('utf8'))['acs']
     writer = pq.ParquetWriter(pub / f'{NAME}.parquet', schema(), compression='zstd')
     checks, booth_rows, ac_rows, dropped, dc_missing, conflicts, skipped = {}, [], [], 0, [], [], 0
+    ds_join.listing(TAG, fresh=True)
+    ds_join.listing(DS, fresh=True)
     import sv_site
     sv_site.snapshot()          # the live site as visitors see it, now
     site = sv_site.Site()
     built_at = site.manifest['builtAt']
     for ac in acs:
         csv_name, st_name = f'ds-{ac}.csv.gz', f'dsstats-{ac}.json'
-        csv_p, st_p = on_ds(release.fetch, str(tmp), [csv_name, st_name])
+        csv_p, st_p = ds_join.get(DS, [csv_name, st_name], str(tmp))
         stats = json.loads(st_p.read_text('utf8'))
         if not REJOIN_IF_NO.issubset(stats['stats']):  # joined by older code: join again
             log(f'AC {ac}: joined before {sorted(REJOIN_IF_NO - set(stats["stats"]))}; joining again')
             csv_p.unlink()
             st_p.unlink()
             ds_join.join(ac, k)
-            csv_p, st_p = on_ds(release.fetch, str(tmp), [csv_name, st_name])
+            ds_join.listing(DS, fresh=True)
+            csv_p, st_p = ds_join.get(DS, [csv_name, st_name], str(tmp))
             stats = json.loads(st_p.read_text('utf8'))
         dc = dc_rows(ac, tmp)
         if dc is None:
