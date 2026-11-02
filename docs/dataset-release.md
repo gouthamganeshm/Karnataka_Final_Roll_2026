@@ -82,6 +82,8 @@ the page and card.
    whose card count still did not agree was left empty.
 4. An age no elector can have (under 18 or over 120, e.g. 123 read for 23)
    was left empty: {age_dropped} entries.
+5. Marks on a booth's cover and map pages that the card cutter took for cards
+   ({not_entries}, none with an EPIC, none counted by the CEO) are left out.
 
 ## Checks before release (all passed)
 

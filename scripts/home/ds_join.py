@@ -139,6 +139,13 @@ def join(ac: int, k: bytes) -> dict:
             if line.strip():
                 rows.append(json.loads(line))
     rows.sort(key=lambda r: (r['part'], r['page'], r['cell']))
+    # Not entries: marks on a booth's first two pages (cover, map) that the
+    # card cutter took for cards. Every one of the 81 statewide has no EPIC
+    # (serial 0, -1 or a guess); the CEO's counts leave them out. Real cards
+    # start on the third page.
+    n = len(rows)
+    rows = [r for r in rows if r['page'] > 1 or settle(r)[0] is not None]
+    not_entries = n - len(rows)
     per_page = {}
     for r in rows:
         per_page[(r['part'], r['page'])] = per_page.get((r['part'], r['page']), 0) + 1
@@ -147,6 +154,7 @@ def join(ac: int, k: bytes) -> dict:
         shift[part] = offset({pg: n for (pa, pg), n in per_page.items() if pa == part},
                              {int(pg): len(v) for pg, v in reads.get(f'{part}.eng.zip', {}).items()})
     out, stats = [], {'cards': 0, 'read': 0, 'page_differs': 0, 'no_page': 0, 'epic_unsettled': 0,
+                      'not_entries': not_entries,
                       'booths_shifted': sum(1 for d in shift.values() if d)}
     for r in rows:
         part, page, cell = r['part'], r['page'], r['cell']

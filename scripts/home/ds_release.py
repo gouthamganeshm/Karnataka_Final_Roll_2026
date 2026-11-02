@@ -44,6 +44,7 @@ sys.path[:0] = [str(ROOT / 'scripts'), str(ROOT / 'scripts' / 'home')]
 import release  # noqa: E402
 import run  # noqa: E402
 import ds_join  # noqa: E402
+from ds_join import EPIC_RE  # noqa: E402
 
 TAG = release.TAG
 DS = f'{TAG}-ds'
@@ -65,7 +66,7 @@ PRIVATE_COLS = ('dc_age_compared', 'dc_age_agree', 'dc_gender_compared', 'dc_gen
 DC_MIN_AGREE = 0.9
 DC_MIN_N = 30
 GENDER_SLACK = 0.001      # misread genders allowed per AC, share of its electors (at least 5)
-REJOIN_IF_NO = {'booths_shifted', 'age_dropped', 'epic_unsettled'}   # stats a join by the current ds_join.py writes
+REJOIN_IF_NO = {'booths_shifted', 'age_dropped', 'epic_unsettled', 'not_entries'}   # stats a join by the current ds_join.py writes
 
 PATTERNS = {
     'ac': r'^\d{1,3}$', 'part': r'^\d{1,4}$', 'page': r'^\d{1,3}$', 'card': r'^\d{1,2}$',
@@ -263,15 +264,17 @@ def site_check(ac: int, csv_p: Path, tmp: Path, site, k: bytes) -> tuple[list[st
         rows = sorted((json.loads(x) for x in f if x.strip()), key=lambda r: (r['part'], r['page'], r['cell']))
     lr.unlink()
     with gzip.open(csv_p, 'rt', encoding='utf8') as f:
-        ds = list(csv.DictReader(f))
+        ds = {(int(d['part']), int(d['page']), int(d['card'])): d for d in csv.DictReader(f)}
     fails, conflicts = [], []
-    if len(rows) != len(ds):
-        return [f'{len(ds)} rows, the live rows {len(rows)}'], [], {}
     live = dead = 0
-    for r, d in zip(rows, ds):
+    for r in rows:
         at = [ac, r['part'], r['page'], r['cell']]
-        if (int(d['part']), int(d['page']), int(d['card'])) != tuple(at[1:]):
-            return [f'row order differs at {at}'], [], {}
+        d = ds.pop(tuple(at[1:]), None)
+        if d is None:   # a row left out as no entry: the site must not have it either
+            if r['page'] > 1 or (r.get('epicOk') is not False and EPIC_RE.match(r.get('epic') or '')
+                                 and site.lookup(r['epic'])):
+                conflicts.append(at + ['left out'])
+            continue
         if not d['epic_hash']:
             continue
         if d['epic_hash'] != ds_join.mac(k, r['epic'], 24):
@@ -284,6 +287,8 @@ def site_check(ac: int, csv_p: Path, tmp: Path, site, k: bytes) -> tuple[list[st
             continue
         dead += gone
         live += not gone
+    if ds:
+        fails.append(f'{len(ds)} rows not among the live rows')
     s = next((a for a in site.manifest['acs'] if a['ac'] == ac), {})
     if (live, dead) != (s.get('electors'), s.get('deleted')):
         fails.append(f'{live} electors and {dead} deletions with an EPIC hash; the site {s.get("electors")} and {s.get("deleted")}')
@@ -303,7 +308,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     kid = ds_join.key_id(k)
     ceo = json.loads(CEO.read_text('utf8'))['acs']
     writer = pq.ParquetWriter(pub / f'{NAME}.parquet', schema(), compression='zstd')
-    checks, booth_rows, ac_rows, dropped, dc_missing, conflicts = {}, [], [], 0, [], []
+    checks, booth_rows, ac_rows, dropped, dc_missing, conflicts, skipped = {}, [], [], 0, [], [], 0
     import sv_site
     sv_site.snapshot()          # the live site as visitors see it, now
     site = sv_site.Site()
@@ -336,6 +341,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         csv_p.rename(pub / f'{NAME}-ac{ac:03d}.csv.gz')
         st_p.unlink()
         dropped += stats['stats']['age_dropped']
+        skipped += stats['stats']['not_entries']
         log(f'AC {ac}: {"ok" if not res["fails"] else res["fails"]}')
     writer.close()
     public_ac = [{k: v for k, v in r.items() if k not in PRIVATE_COLS} for r in ac_rows]
@@ -350,6 +356,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     tot = {c: sum(r[c] for r in ac_rows) for c in ('entries', 'electors', 'deleted', 'male', 'female', 'tg',
                                                     'gender_unread', 'age_unread', 'ceo_electors')}
     tot['age_dropped'] = dropped
+    tot['not_entries'] = skipped
     for c in ('dc_age', 'dc_gender'):
         n = sum(r[f'{c}_compared'] or 0 for r in ac_rows)
         k = sum(round((r[f'{c}_agree'] or 0) * (r[f'{c}_compared'] or 0)) for r in ac_rows)
@@ -371,7 +378,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         entries=f'{tot["entries"]:,}', electors=f'{tot["electors"]:,}', deleted=f'{tot["deleted"]:,}',
         ceo_electors=f'{tot["ceo_electors"]:,}', male=f'{tot["male"]:,}', female=f'{tot["female"]:,}',
         tg=f'{tot["tg"]:,}', gender_unread=f'{tot["gender_unread"]:,}', age_unread=f'{tot["age_unread"]:,}',
-        shifted=shifted, age_dropped=f'{dropped:,}', name=NAME, site_build=built_at,
+        shifted=shifted, age_dropped=f'{dropped:,}', not_entries=skipped, name=NAME, site_build=built_at,
         min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}')
     (pub / 'README.md').write_text(readme, 'utf8')
     (pub / 'LICENSE.txt').write_text(LICENCE, 'utf8')
