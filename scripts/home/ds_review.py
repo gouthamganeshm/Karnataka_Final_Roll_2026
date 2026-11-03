@@ -85,7 +85,7 @@ def eng_offset(ac: int, part: int, cache: dict) -> int:
     return cache[ac].get(part, 0)
 
 
-def strip(img, box):
+def strip(img, box, above: int = 0):
     """The card's last text line (age, gender), left of the photo: the
     lowest band of ink rows in the card's text block."""
     import numpy as np
@@ -105,12 +105,13 @@ def strip(img, box):
     # Only the last line, measured up from the bottom of the ink: on a struck-off
     # card the DELETED stamp joins every line into one band, and the lines
     # above hold names.
-    b = bands[-1][1]
+    # `above`: lines of ink to step over (a stamp's tail below the last line).
+    b = bands[-1 - above][1] if len(bands) > above else bands[-1][1]
     line = int(0.13 * t.height)
     return t.crop((0, max(0, b - line), t.width, min(t.height, b + 4)))
 
 
-def sheets(items: list[list], per_sheet: int = 24) -> list[Path]:
+def sheets(items: list[list], per_sheet: int = 24, above: int = 0) -> list[Path]:
     import fitz
     from PIL import Image, ImageDraw
     import crops as C
@@ -142,7 +143,7 @@ def sheets(items: list[list], per_sheet: int = 24) -> list[Path]:
             if img is None or it[3] >= len(boxes):
                 print(f'{it[:5]}: card not found on page {pg}', flush=True)
                 continue
-            strips.append((it, strip(img.convert('L'), boxes[it[3]])))
+            strips.append((it, strip(img.convert('L'), boxes[it[3]], above)))
     files = []
     for k in range(0, len(strips), per_sheet):
         chunk = strips[k:k + per_sheet]
