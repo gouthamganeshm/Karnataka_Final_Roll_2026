@@ -91,7 +91,10 @@ def strip(img, box, above: int = 0):
     import numpy as np
     import fields as F
     t = img.crop(F.text_box(box))
-    ink = (np.array(t) < 140).sum(axis=1) > 2
+    # Rows with ink at the left margin, where every line starts with its label
+    # (Age, House Number, ...): the DELETED stamp never reaches it.
+    a = np.array(t)
+    ink = (a[:, :max(8, int(0.12 * a.shape[1]))] < 140).sum(axis=1) > 1
     bands, start = [], None
     for y, on in enumerate(list(ink) + [False]):
         if on and start is None:
