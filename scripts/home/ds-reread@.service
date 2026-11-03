@@ -1,0 +1,21 @@
+# Runs scripts/home/ds_reread.py --vm K on VM K (eci-K): the open dataset v3
+# reread (cards with no age or gender), restarted after any crash or
+# reboot. Install (as ubuntu, repo at ~/verify, token in ~/.gh_token):
+#   sudo cp ~/verify/scripts/home/ds-reread@.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now ds-reread@K
+# Log: journalctl -u ds-reread@K -f
+[Unit]
+Description=Karnataka final roll: open dataset v3 reread, VM %i
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/verify
+ExecStartPre=/bin/bash -c 'git pull -q || true'
+ExecStart=/bin/bash -c 'GH_TOKEN=$(cat /home/ubuntu/.gh_token) exec nice -n 5 /home/ubuntu/venv/bin/python -u -W ignore scripts/home/ds_reread.py --vm %i'
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
