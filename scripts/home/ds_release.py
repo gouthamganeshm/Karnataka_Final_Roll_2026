@@ -66,7 +66,10 @@ PRIVATE_COLS = ('dc_age_compared', 'dc_age_agree', 'dc_gender_compared', 'dc_gen
 DC_MIN_AGREE = 0.9
 DC_MIN_N = 30
 GENDER_SLACK = 0.001      # misread genders allowed per AC, share of its electors (at least 5)
-REJOIN_IF_NO = {'booths_shifted', 'age_dropped', 'epic_unsettled', 'not_entries'}   # stats a join by the current ds_join.py writes
+REJOIN_IF_NO = {'booths_shifted', 'age_dropped', 'epic_unsettled', 'not_entries'}
+# ACs with a person's corrections (reference/dataset-corrections.json): joined
+# again unless the join that made them applied the corrections.
+CORRECTED_ACS = {c['ac'] for c in json.loads(ds_join.CORRECTIONS.read_text('utf8'))['corrections']}     if ds_join.CORRECTIONS.exists() else set()   # stats a join by the current ds_join.py writes
 
 PATTERNS = {
     'ac': r'^\d{1,3}$', 'part': r'^\d{1,4}$', 'page': r'^\d{1,3}$', 'card': r'^\d{1,2}$',
@@ -319,7 +322,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         csv_name, st_name = f'ds-{ac}.csv.gz', f'dsstats-{ac}.json'
         csv_p, st_p = ds_join.get(DS, [csv_name, st_name], str(tmp))
         stats = json.loads(st_p.read_text('utf8'))
-        if not REJOIN_IF_NO.issubset(stats['stats']):  # joined by older code: join again
+        if not REJOIN_IF_NO.issubset(stats['stats']) or                 (ac in CORRECTED_ACS and 'corrected' not in stats['stats']):  # joined by older code: join again
             log(f'AC {ac}: joined before {sorted(REJOIN_IF_NO - set(stats["stats"]))}; joining again')
             csv_p.unlink()
             st_p.unlink()
