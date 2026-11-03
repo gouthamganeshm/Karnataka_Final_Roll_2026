@@ -22,6 +22,18 @@ so and where.
 
 <p align="center"><img src="docs/images/site-home.png" alt="The site's home page" width="88%"></p>
 
+## Karnataka's history, on the home page
+
+While you search, the home page plays illustrated moments from Karnataka's
+past: its kingdoms, its queens who fought, and the state today (25 scenes, in
+Kannada and English, shuffled on every visit).
+
+<table>
+  <tr><td align="center" width="25%"><img src="docs/images/rulers/kadamba.png" alt="Kadambas · Mayurasharma" width="100%"><br><sub>Kadambas · Mayurasharma</sub></td><td align="center" width="25%"><img src="docs/images/rulers/chalukya.png" alt="Chalukyas · Pulakeshi II" width="100%"><br><sub>Chalukyas · Pulakeshi II</sub></td><td align="center" width="25%"><img src="docs/images/rulers/rashtrakuta.png" alt="Rashtrakutas · Amoghavarsha" width="100%"><br><sub>Rashtrakutas · Amoghavarsha</sub></td><td align="center" width="25%"><img src="docs/images/rulers/kalyani.png" alt="Kalyani Chalukyas · Vikramaditya VI" width="100%"><br><sub>Kalyani Chalukyas · Vikramaditya VI</sub></td></tr>
+  <tr><td align="center" width="25%"><img src="docs/images/rulers/hoysala.png" alt="Hoysalas · the founding legend" width="100%"><br><sub>Hoysalas · the founding legend</sub></td><td align="center" width="25%"><img src="docs/images/rulers/vijayanagara.png" alt="Vijayanagara · Harihara and Bukka" width="100%"><br><sub>Vijayanagara · Harihara and Bukka</sub></td><td align="center" width="25%"><img src="docs/images/rulers/krishnadevaraya.png" alt="Vijayanagara · Krishnadevaraya" width="100%"><br><sub>Vijayanagara · Krishnadevaraya</sub></td><td align="center" width="25%"><img src="docs/images/rulers/abbakka.png" alt="Ullal · Rani Abbakka" width="100%"><br><sub>Ullal · Rani Abbakka</sub></td></tr>
+  <tr><td align="center" width="25%"><img src="docs/images/rulers/wodeyar.png" alt="Wodeyars of Mysuru · the Dasara" width="100%"><br><sub>Wodeyars of Mysuru · the Dasara</sub></td><td align="center" width="25%"><img src="docs/images/rulers/keladi.png" alt="Keladi · Rani Chennamma" width="100%"><br><sub>Keladi · Rani Chennamma</sub></td><td align="center" width="25%"><img src="docs/images/rulers/tipu.png" alt="Mysore · Tipu Sultan" width="100%"><br><sub>Mysore · Tipu Sultan</sub></td><td align="center" width="25%"><img src="docs/images/rulers/kittur.png" alt="Kittur · Rani Chennamma" width="100%"><br><sub>Kittur · Rani Chennamma</sub></td></tr>
+</table>
+
 ## At a glance (2 Nov 2026)
 
 | | |
