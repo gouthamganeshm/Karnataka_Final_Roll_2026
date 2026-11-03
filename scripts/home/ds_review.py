@@ -86,10 +86,25 @@ def eng_offset(ac: int, part: int, cache: dict) -> int:
 
 
 def strip(img, box):
-    """The card's last text line (age, gender), left of the photo."""
-    left, top, right, bottom = box
-    w, h = right - left, bottom - top
-    return img.crop((left + int(0.01 * w), top + int(0.80 * h), left + int(0.70 * w), bottom - 2))
+    """The card's last text line (age, gender), left of the photo: the
+    lowest band of ink rows in the card's text block."""
+    import numpy as np
+    import fields as F
+    t = img.crop(F.text_box(box))
+    ink = (np.array(t) < 140).sum(axis=1) > 2
+    bands, start = [], None
+    for y, on in enumerate(list(ink) + [False]):
+        if on and start is None:
+            start = y
+        elif not on and start is not None:
+            if y - start >= 4:
+                bands.append((start, y))
+            start = None
+    if not bands:
+        return t
+    a, b = bands[-1]
+    pad = max(4, (b - a) // 2)
+    return t.crop((0, max(0, a - pad), t.width, min(t.height, b + pad)))
 
 
 def sheets(items: list[list], per_sheet: int = 24) -> list[Path]:
@@ -107,11 +122,15 @@ def sheets(items: list[list], per_sheet: int = 24) -> list[Path]:
             continue
         d = eng_offset(ac, part, offs)
         doc = fitz.open(stream=data, filetype='pdf')
-        pages, imgs = {}, [im for im, _ in C.page_images(doc)]
+        pages = {}
         for it in its:
             pg = it[2] + d
             if pg not in pages:
-                img = imgs[pg] if pg < len(imgs) else None
+                img = None
+                if pg < doc.page_count:   # render just this page
+                    one = fitz.open()
+                    one.insert_pdf(doc, from_page=pg, to_page=pg)
+                    img = next(C.page_images(one))[0]
                 boxes = []
                 if img is not None:
                     C.cut_page(img, boxes)
