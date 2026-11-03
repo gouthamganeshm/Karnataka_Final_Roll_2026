@@ -102,9 +102,12 @@ def strip(img, box):
             start = None
     if not bands:
         return t
-    a, b = bands[-1]
-    pad = max(4, (b - a) // 2)
-    return t.crop((0, max(0, a - pad), t.width, min(t.height, b + pad)))
+    # Only the last line, measured up from the bottom of the ink: on a struck-off
+    # card the DELETED stamp joins every line into one band, and the lines
+    # above hold names.
+    b = bands[-1][1]
+    line = int(0.13 * t.height)
+    return t.crop((0, max(0, b - line), t.width, min(t.height, b + 4)))
 
 
 def sheets(items: list[list], per_sheet: int = 24) -> list[Path]:
