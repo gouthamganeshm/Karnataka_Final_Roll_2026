@@ -405,7 +405,13 @@ def publish(pub: Path) -> None:
         release.gh('release', 'create', PUBLIC, '-R', release.repo(), '--draft', '--target', 'main',
                    '--title', 'Karnataka final roll 2026: open dataset (no names, no EPICs)',
                    '--notes-file', str(pub / 'README.md'))
-        rel = public()
+        for wait in (2, 5, 10, 30, 60):   # a new draft can take a moment to be listed
+            rel = public()
+            if rel:
+                break
+            time.sleep(wait)
+        if rel is None:
+            raise RuntimeError(f'{PUBLIC} created but not listed')
     files = sorted(pub.iterdir())
     for attempt in range(6):
         have = {a['name']: a['size'] for a in json.loads(release.gh(
@@ -453,7 +459,12 @@ def main() -> int:
                 log(f'{len(acs) - len(left)}/{len(acs)} ACs joined; waiting')
                 time.sleep(WAIT_S)
                 continue
-            ok, pub = build(acs, dry)
+            done = OUT / 'dsrelease-checks.json'
+            if not dry and done.exists() and (OUT / 'pub' / 'SHA256SUMS').exists() and                     json.loads(done.read_text('utf8')).get('passed') and time.time() - done.stat().st_mtime < 6 * 3600:
+                ok, pub = True, OUT / 'pub'     # built and checked already; only the upload failed
+                log('publishing the build that passed its checks')
+            else:
+                ok, pub = build(acs, dry)
             if dry:
                 return 0 if ok else 1
             if not ok:
