@@ -1,0 +1,906 @@
+{
+ "about": "Entries of the open dataset where its reading and a second reading of the same roll disagreed, settled by a person reading the printed card (English roll, the card's age-and-gender line only). Applied by scripts/home/ds_join.py. 328 disagreements were looked at: the dataset's reading was right on 238, wrong on these 90 (almost all on struck-off cards, where the DELETED stamp crosses the age).",
+ "reviewed": "2026-11-03",
+ "corrections": [
+  {
+   "ac": 9,
+   "part": 86,
+   "page": 21,
+   "card": 15,
+   "serial": 534,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 11,
+   "part": 163,
+   "page": 21,
+   "card": 29,
+   "serial": 600,
+   "field": "age",
+   "value": 28,
+   "was": 23
+  },
+  {
+   "ac": 12,
+   "part": 59,
+   "page": 23,
+   "card": 15,
+   "serial": 646,
+   "field": "age",
+   "value": 62,
+   "was": 60
+  },
+  {
+   "ac": 22,
+   "part": 124,
+   "page": 8,
+   "card": 13,
+   "serial": 194,
+   "field": "age",
+   "value": 26,
+   "was": 76
+  },
+  {
+   "ac": 26,
+   "part": 146,
+   "page": 16,
+   "card": 1,
+   "serial": 422,
+   "field": "age",
+   "value": 26,
+   "was": 20
+  },
+  {
+   "ac": 28,
+   "part": 203,
+   "page": 7,
+   "card": 10,
+   "serial": 161,
+   "field": "age",
+   "value": 24,
+   "was": 22
+  },
+  {
+   "ac": 30,
+   "part": 203,
+   "page": 8,
+   "card": 25,
+   "serial": 206,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 31,
+   "part": 280,
+   "page": 3,
+   "card": 15,
+   "serial": 46,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 38,
+   "part": 63,
+   "page": 18,
+   "card": 29,
+   "serial": 510,
+   "field": "age",
+   "value": 62,
+   "was": 102
+  },
+  {
+   "ac": 45,
+   "part": 258,
+   "page": 26,
+   "card": 15,
+   "serial": 736,
+   "field": "age",
+   "value": 29,
+   "was": 39
+  },
+  {
+   "ac": 53,
+   "part": 176,
+   "page": 17,
+   "card": 13,
+   "serial": 464,
+   "field": "age",
+   "value": 29,
+   "was": 79
+  },
+  {
+   "ac": 54,
+   "part": 56,
+   "page": 2,
+   "card": 19,
+   "serial": 20,
+   "field": "age",
+   "value": 56,
+   "was": 105
+  },
+  {
+   "ac": 54,
+   "part": 66,
+   "page": 3,
+   "card": 1,
+   "serial": 32,
+   "field": "age",
+   "value": 26,
+   "was": 20
+  },
+  {
+   "ac": 64,
+   "part": 233,
+   "page": 30,
+   "card": 6,
+   "serial": 847,
+   "field": "age",
+   "value": 20,
+   "was": 90
+  },
+  {
+   "ac": 67,
+   "part": 40,
+   "page": 27,
+   "card": 13,
+   "serial": 764,
+   "field": "age",
+   "value": 26,
+   "was": 76
+  },
+  {
+   "ac": 68,
+   "part": 37,
+   "page": 5,
+   "card": 27,
+   "serial": 118,
+   "field": "age",
+   "value": 26,
+   "was": 20
+  },
+  {
+   "ac": 68,
+   "part": 42,
+   "page": 8,
+   "card": 27,
+   "serial": 208,
+   "field": "age",
+   "value": 26,
+   "was": 20
+  },
+  {
+   "ac": 72,
+   "part": 11,
+   "page": 36,
+   "card": 15,
+   "serial": 1019,
+   "field": "age",
+   "value": 36,
+   "was": 30
+  },
+  {
+   "ac": 72,
+   "part": 39,
+   "page": 35,
+   "card": 3,
+   "serial": 994,
+   "field": "age",
+   "value": 28,
+   "was": 73
+  },
+  {
+   "ac": 72,
+   "part": 58,
+   "page": 18,
+   "card": 16,
+   "serial": 476,
+   "field": "age",
+   "value": 25,
+   "was": 28
+  },
+  {
+   "ac": 73,
+   "part": 65,
+   "page": 18,
+   "card": 1,
+   "serial": 459,
+   "field": "age",
+   "value": 36,
+   "was": 30
+  },
+  {
+   "ac": 76,
+   "part": 103,
+   "page": 12,
+   "card": 10,
+   "serial": 311,
+   "field": "age",
+   "value": 46,
+   "was": 116
+  },
+  {
+   "ac": 79,
+   "part": 144,
+   "page": 23,
+   "card": 21,
+   "serial": 623,
+   "field": "age",
+   "value": 25,
+   "was": 75
+  },
+  {
+   "ac": 80,
+   "part": 121,
+   "page": 4,
+   "card": 3,
+   "serial": 64,
+   "field": "age",
+   "value": 28,
+   "was": 78
+  },
+  {
+   "ac": 80,
+   "part": 127,
+   "page": 4,
+   "card": 25,
+   "serial": 63,
+   "field": "age",
+   "value": 76,
+   "was": 70
+  },
+  {
+   "ac": 82,
+   "part": 17,
+   "page": 33,
+   "card": 1,
+   "serial": 932,
+   "field": "age",
+   "value": 26,
+   "was": 20
+  },
+  {
+   "ac": 82,
+   "part": 246,
+   "page": 5,
+   "card": 16,
+   "serial": 107,
+   "field": "age",
+   "value": 25,
+   "was": 28
+  },
+  {
+   "ac": 86,
+   "part": 156,
+   "page": 9,
+   "card": 22,
+   "serial": 233,
+   "field": "age",
+   "value": 25,
+   "was": 75
+  },
+  {
+   "ac": 94,
+   "part": 113,
+   "page": 19,
+   "card": 22,
+   "serial": 533,
+   "field": "age",
+   "value": 40,
+   "was": 20
+  },
+  {
+   "ac": 106,
+   "part": 75,
+   "page": 17,
+   "card": 21,
+   "serial": 472,
+   "field": "age",
+   "value": 26,
+   "was": 76
+  },
+  {
+   "ac": 113,
+   "part": 207,
+   "page": 11,
+   "card": 15,
+   "serial": 286,
+   "field": "age",
+   "value": 25,
+   "was": 105
+  },
+  {
+   "ac": 120,
+   "part": 201,
+   "page": 5,
+   "card": 28,
+   "serial": 119,
+   "field": "age",
+   "value": 54,
+   "was": 51
+  },
+  {
+   "ac": 120,
+   "part": 245,
+   "page": 14,
+   "card": 19,
+   "serial": 380,
+   "field": "age",
+   "value": 55,
+   "was": 105
+  },
+  {
+   "ac": 146,
+   "part": 125,
+   "page": 20,
+   "card": 3,
+   "serial": 478,
+   "field": "age",
+   "value": 28,
+   "was": 78
+  },
+  {
+   "ac": 150,
+   "part": 47,
+   "page": 17,
+   "card": 19,
+   "serial": 470,
+   "field": "age",
+   "value": 55,
+   "was": 105
+  },
+  {
+   "ac": 150,
+   "part": 65,
+   "page": 27,
+   "card": 26,
+   "serial": 777,
+   "field": "age",
+   "value": 35,
+   "was": 32
+  },
+  {
+   "ac": 150,
+   "part": 155,
+   "page": 17,
+   "card": 12,
+   "serial": 463,
+   "field": "age",
+   "value": 56,
+   "was": 50
+  },
+  {
+   "ac": 150,
+   "part": 155,
+   "page": 25,
+   "card": 1,
+   "serial": 692,
+   "field": "age",
+   "value": 46,
+   "was": 116
+  },
+  {
+   "ac": 150,
+   "part": 204,
+   "page": 19,
+   "card": 3,
+   "serial": 486,
+   "field": "age",
+   "value": 43,
+   "was": 73
+  },
+  {
+   "ac": 150,
+   "part": 225,
+   "page": 32,
+   "card": 10,
+   "serial": 911,
+   "field": "age",
+   "value": 55,
+   "was": 105
+  },
+  {
+   "ac": 151,
+   "part": 449,
+   "page": 16,
+   "card": 25,
+   "serial": 446,
+   "field": "age",
+   "value": 45,
+   "was": 18
+  },
+  {
+   "ac": 152,
+   "part": 129,
+   "page": 8,
+   "card": 4,
+   "serial": 133,
+   "field": "age",
+   "value": 36,
+   "was": 30
+  },
+  {
+   "ac": 152,
+   "part": 158,
+   "page": 28,
+   "card": 10,
+   "serial": 619,
+   "field": "age",
+   "value": 43,
+   "was": 73
+  },
+  {
+   "ac": 152,
+   "part": 278,
+   "page": 15,
+   "card": 6,
+   "serial": 397,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 152,
+   "part": 418,
+   "page": 24,
+   "card": 9,
+   "serial": 649,
+   "field": "age",
+   "value": 27,
+   "was": 37
+  },
+  {
+   "ac": 153,
+   "part": 532,
+   "page": 19,
+   "card": 25,
+   "serial": 536,
+   "field": "age",
+   "value": 45,
+   "was": 28
+  },
+  {
+   "ac": 154,
+   "part": 102,
+   "page": 2,
+   "card": 27,
+   "serial": 28,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 154,
+   "part": 414,
+   "page": 9,
+   "card": 10,
+   "serial": 221,
+   "field": "age",
+   "value": 46,
+   "was": 76
+  },
+  {
+   "ac": 155,
+   "part": 245,
+   "page": 19,
+   "card": 1,
+   "serial": 454,
+   "field": "age",
+   "value": 38,
+   "was": 33
+  },
+  {
+   "ac": 157,
+   "part": 64,
+   "page": 14,
+   "card": 4,
+   "serial": 308,
+   "field": "age",
+   "value": 22,
+   "was": 20
+  },
+  {
+   "ac": 157,
+   "part": 84,
+   "page": 18,
+   "card": 4,
+   "serial": 373,
+   "field": "age",
+   "value": 32,
+   "was": 30
+  },
+  {
+   "ac": 157,
+   "part": 91,
+   "page": 16,
+   "card": 27,
+   "serial": 429,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 160,
+   "part": 132,
+   "page": 25,
+   "card": 26,
+   "serial": 662,
+   "field": "age",
+   "value": 78,
+   "was": 73
+  },
+  {
+   "ac": 160,
+   "part": 310,
+   "page": 12,
+   "card": 0,
+   "serial": 251,
+   "field": "age",
+   "value": 56,
+   "was": 66
+  },
+  {
+   "ac": 161,
+   "part": 90,
+   "page": 24,
+   "card": 4,
+   "serial": 597,
+   "field": "age",
+   "value": 56,
+   "was": 50
+  },
+  {
+   "ac": 161,
+   "part": 148,
+   "page": 7,
+   "card": 4,
+   "serial": 133,
+   "field": "age",
+   "value": 36,
+   "was": 30
+  },
+  {
+   "ac": 163,
+   "part": 130,
+   "page": 16,
+   "card": 1,
+   "serial": 422,
+   "field": "age",
+   "value": 30,
+   "was": 20
+  },
+  {
+   "ac": 168,
+   "part": 161,
+   "page": 23,
+   "card": 8,
+   "serial": 625,
+   "field": "age",
+   "value": 29,
+   "was": 109
+  },
+  {
+   "ac": 172,
+   "part": 212,
+   "page": 26,
+   "card": 28,
+   "serial": 606,
+   "field": "age",
+   "value": 55,
+   "was": 105
+  },
+  {
+   "ac": 173,
+   "part": 155,
+   "page": 10,
+   "card": 15,
+   "serial": 206,
+   "field": "age",
+   "value": 24,
+   "was": 21
+  },
+  {
+   "ac": 174,
+   "part": 222,
+   "page": 4,
+   "card": 19,
+   "serial": 80,
+   "field": "age",
+   "value": 54,
+   "was": 51
+  },
+  {
+   "ac": 174,
+   "part": 257,
+   "page": 11,
+   "card": 15,
+   "serial": 286,
+   "field": "age",
+   "value": 80,
+   "was": 30
+  },
+  {
+   "ac": 174,
+   "part": 263,
+   "page": 42,
+   "card": 10,
+   "serial": 1021,
+   "field": "age",
+   "value": 48,
+   "was": 73
+  },
+  {
+   "ac": 174,
+   "part": 295,
+   "page": 28,
+   "card": 25,
+   "serial": 806,
+   "field": "age",
+   "value": 49,
+   "was": 119
+  },
+  {
+   "ac": 174,
+   "part": 322,
+   "page": 24,
+   "card": 10,
+   "serial": 599,
+   "field": "age",
+   "value": 55,
+   "was": 105
+  },
+  {
+   "ac": 174,
+   "part": 416,
+   "page": 4,
+   "card": 15,
+   "serial": 76,
+   "field": "age",
+   "value": 52,
+   "was": 62
+  },
+  {
+   "ac": 174,
+   "part": 441,
+   "page": 4,
+   "card": 19,
+   "serial": 80,
+   "field": "age",
+   "value": 43,
+   "was": 73
+  },
+  {
+   "ac": 174,
+   "part": 483,
+   "page": 19,
+   "card": 4,
+   "serial": 515,
+   "field": "age",
+   "value": 55,
+   "was": 35
+  },
+  {
+   "ac": 175,
+   "part": 24,
+   "page": 11,
+   "card": 21,
+   "serial": 292,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 175,
+   "part": 54,
+   "page": 19,
+   "card": 13,
+   "serial": 524,
+   "field": "age",
+   "value": 56,
+   "was": 36
+  },
+  {
+   "ac": 175,
+   "part": 56,
+   "page": 12,
+   "card": 21,
+   "serial": 322,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 175,
+   "part": 61,
+   "page": 7,
+   "card": 15,
+   "serial": 166,
+   "field": "age",
+   "value": 20,
+   "was": 120
+  },
+  {
+   "ac": 175,
+   "part": 124,
+   "page": 19,
+   "card": 27,
+   "serial": 538,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 175,
+   "part": 267,
+   "page": 12,
+   "card": 3,
+   "serial": 304,
+   "field": "age",
+   "value": 49,
+   "was": 19
+  },
+  {
+   "ac": 176,
+   "part": 273,
+   "page": 9,
+   "card": 17,
+   "serial": 228,
+   "field": "age",
+   "value": 42,
+   "was": 22
+  },
+  {
+   "ac": 176,
+   "part": 304,
+   "page": 6,
+   "card": 0,
+   "serial": 121,
+   "field": "age",
+   "value": 56,
+   "was": 66
+  },
+  {
+   "ac": 176,
+   "part": 387,
+   "page": 17,
+   "card": 10,
+   "serial": 461,
+   "field": "age",
+   "value": 34,
+   "was": 73
+  },
+  {
+   "ac": 176,
+   "part": 390,
+   "page": 18,
+   "card": 10,
+   "serial": 491,
+   "field": "age",
+   "value": 43,
+   "was": 73
+  },
+  {
+   "ac": 176,
+   "part": 515,
+   "page": 7,
+   "card": 10,
+   "serial": 161,
+   "field": "age",
+   "value": 46,
+   "was": 116
+  },
+  {
+   "ac": 177,
+   "part": 74,
+   "page": 33,
+   "card": 28,
+   "serial": 959,
+   "field": "age",
+   "value": 65,
+   "was": 105
+  },
+  {
+   "ac": 177,
+   "part": 256,
+   "page": 13,
+   "card": 1,
+   "serial": 312,
+   "field": "age",
+   "value": 36,
+   "was": 30
+  },
+  {
+   "ac": 178,
+   "part": 170,
+   "page": 13,
+   "card": 10,
+   "serial": 341,
+   "field": "age",
+   "value": 46,
+   "was": 116
+  },
+  {
+   "ac": 202,
+   "part": 61,
+   "page": 2,
+   "card": 1,
+   "serial": 2,
+   "field": "age",
+   "value": 89,
+   "was": 39
+  },
+  {
+   "ac": 202,
+   "part": 225,
+   "page": 11,
+   "card": 12,
+   "serial": 283,
+   "field": "age",
+   "value": 36,
+   "was": 30
+  },
+  {
+   "ac": 203,
+   "part": 146,
+   "page": 9,
+   "card": 29,
+   "serial": 240,
+   "field": "age",
+   "value": 26,
+   "was": 25
+  },
+  {
+   "ac": 203,
+   "part": 149,
+   "page": 14,
+   "card": 29,
+   "serial": 390,
+   "field": "age",
+   "value": 28,
+   "was": 23
+  },
+  {
+   "ac": 203,
+   "part": 175,
+   "page": 34,
+   "card": 0,
+   "serial": 887,
+   "field": "age",
+   "value": 20,
+   "was": 120
+  },
+  {
+   "ac": 215,
+   "part": 226,
+   "page": 25,
+   "card": 27,
+   "serial": 718,
+   "field": "age",
+   "value": 59,
+   "was": 39
+  },
+  {
+   "ac": 218,
+   "part": 2,
+   "page": 35,
+   "card": 10,
+   "serial": 988,
+   "field": "age",
+   "value": 55,
+   "was": 105
+  },
+  {
+   "ac": 218,
+   "part": 181,
+   "page": 39,
+   "card": 13,
+   "serial": 1123,
+   "field": "age",
+   "value": 29,
+   "was": 26
+  }
+ ]
+}

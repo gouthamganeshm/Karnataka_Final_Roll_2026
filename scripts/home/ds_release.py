@@ -48,7 +48,7 @@ from ds_join import EPIC_RE  # noqa: E402
 
 TAG = release.TAG
 DS = f'{TAG}-ds'
-PUBLIC = 'dataset-final-roll-2026-v1'
+PUBLIC = 'dataset-final-roll-2026-v2'
 NAME = 'karnataka-final-roll-2026'
 OUT = ROOT / 'cache' / 'ds' / 'release'
 CEO = ROOT / 'reference' / 'ceo-final-2026.json'
@@ -308,7 +308,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     kid = ds_join.key_id(k)
     ceo = json.loads(CEO.read_text('utf8'))['acs']
     writer = pq.ParquetWriter(pub / f'{NAME}.parquet', schema(), compression='zstd')
-    checks, booth_rows, ac_rows, dropped, dc_missing, conflicts, skipped = {}, [], [], 0, [], [], 0
+    checks, booth_rows, ac_rows, dropped, dc_missing, conflicts, skipped, corrected = {}, [], [], 0, [], [], 0, 0
     ds_join.listing(TAG, fresh=True)
     ds_join.listing(DS, fresh=True)
     import sv_site
@@ -345,6 +345,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         st_p.unlink()
         dropped += stats['stats']['age_dropped']
         skipped += stats['stats']['not_entries']
+        corrected += stats['stats'].get('corrected', 0)
         log(f'AC {ac}: {"ok" if not res["fails"] else res["fails"]}')
     writer.close()
     public_ac = [{k: v for k, v in r.items() if k not in PRIVATE_COLS} for r in ac_rows]
@@ -360,6 +361,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
                                                     'gender_unread', 'age_unread', 'ceo_electors')}
     tot['age_dropped'] = dropped
     tot['not_entries'] = skipped
+    tot['corrected_by_person'] = corrected
     for c in ('dc_age', 'dc_gender'):
         n = sum(r[f'{c}_compared'] or 0 for r in ac_rows)
         k = sum(round((r[f'{c}_agree'] or 0) * (r[f'{c}_compared'] or 0)) for r in ac_rows)
@@ -381,7 +383,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         entries=f'{tot["entries"]:,}', electors=f'{tot["electors"]:,}', deleted=f'{tot["deleted"]:,}',
         ceo_electors=f'{tot["ceo_electors"]:,}', male=f'{tot["male"]:,}', female=f'{tot["female"]:,}',
         tg=f'{tot["tg"]:,}', gender_unread=f'{tot["gender_unread"]:,}', age_unread=f'{tot["age_unread"]:,}',
-        shifted=shifted, age_dropped=f'{dropped:,}', not_entries=skipped, name=NAME, site_build=built_at,
+        shifted=shifted, age_dropped=f'{dropped:,}', not_entries=skipped, corrected=corrected, name=NAME, site_build=built_at,
         min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}')
     (pub / 'README.md').write_text(readme, 'utf8')
     (pub / 'LICENSE.txt').write_text(LICENCE, 'utf8')

@@ -41,6 +41,7 @@ TAG = release.TAG
 DS = f'{TAG}-ds'
 DIR = ROOT / 'cache' / 'ds' / 'join'
 KEY = Path.home() / '.dataset_key'
+CORRECTIONS = ROOT / 'reference' / 'dataset-corrections.json'
 COLUMNS = ['ac', 'part', 'page', 'card', 'serial', 'serial_sure', 'status', 'age', 'gender', 'relation',
            'epic_hash', 'household_hash']
 FIELDS = ('age', 'gender', 'relation')
@@ -209,6 +210,17 @@ def join(ac: int, k: bytes) -> dict:
             'epic_hash': mac(k, epic, 24) if epic else None,
             'household_hash': mac(k, f'{ac}|{part}|{house}', 16) if house else None,
         })
+    # A person's reading of the card image wins (reference/dataset-corrections.json:
+    # entries where two readings disagreed, settled on the printed card).
+    fixes = {(c['part'], c['page'], c['card'], c['field']): c['value']
+             for c in json.loads(CORRECTIONS.read_text('utf8'))['corrections'] if c['ac'] == ac}         if CORRECTIONS.exists() else {}
+    stats['corrected'] = 0
+    for o in out:
+        for f in ('age', 'gender'):
+            v = fixes.get((o['part'], o['page'], o['card'], f))
+            if v is not None and o[f] != v:
+                o[f] = v
+                stats['corrected'] += 1
     # An age no elector can have (under 18, over 120: e.g. 123 for 23) is a
     # misreading, so it is left empty rather than published.
     stats['age_dropped'] = 0

@@ -84,6 +84,12 @@ the page and card.
    was left empty: {age_dropped} entries.
 5. Marks on a booth's cover and map pages that the card cutter took for cards
    ({not_entries}, none with an EPIC, none counted by the CEO) are left out.
+6. Where this reading and a second reading of the same roll disagreed on an
+   age or a gender (328 entries in all), a person read the printed card. This
+   reading was right on 238; the other {corrected} are corrected
+   ([the list](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/blob/main/reference/dataset-corrections.json)).
+   All were ages on struck-off cards, where the DELETED stamp crosses the age:
+   treat ages of struck-off entries with more care than the rest.
 
 ## Checks before release (all passed)
 
@@ -102,9 +108,8 @@ the page and card.
 
 The results per constituency are in `checks.json` and `{name}-summary-ac.csv`.
 
-**Still to come:** a person looks at the card images of the entries flagged by
-the checks, the few pages left empty are read again, and the gender of
-struck-off entries is read under the stamp. Any correction will come as a new
+**Still to come:** the gender of struck-off entries, read under the stamp,
+and the few pages left empty, read again. Any change will come as a new
 release; this one will stay as it is.
 
 ## Licence
