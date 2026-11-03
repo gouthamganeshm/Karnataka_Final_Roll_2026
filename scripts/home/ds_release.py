@@ -66,10 +66,10 @@ PRIVATE_COLS = ('dc_age_compared', 'dc_age_agree', 'dc_gender_compared', 'dc_gen
 DC_MIN_AGREE = 0.9
 DC_MIN_N = 30
 GENDER_SLACK = 0.001      # misread genders allowed per AC, share of its electors (at least 5)
-REJOIN_IF_NO = {'booths_shifted', 'age_dropped', 'epic_unsettled', 'not_entries'}
+REJOIN_IF_NO = {'booths_shifted', 'age_dropped', 'epic_unsettled', 'not_entries'}   # stats a join by the current ds_join.py writes
 # ACs with a person's corrections (reference/dataset-corrections.json): joined
 # again unless the join that made them applied the corrections.
-CORRECTED_ACS = {c['ac'] for c in json.loads(ds_join.CORRECTIONS.read_text('utf8'))['corrections']}     if ds_join.CORRECTIONS.exists() else set()   # stats a join by the current ds_join.py writes
+CORRECTED_ACS = {c['ac'] for c in json.loads(ds_join.CORRECTIONS.read_text('utf8'))['corrections']}     if ds_join.CORRECTIONS.exists() else set()
 
 PATTERNS = {
     'ac': r'^\d{1,3}$', 'part': r'^\d{1,4}$', 'page': r'^\d{1,3}$', 'card': r'^\d{1,2}$',
