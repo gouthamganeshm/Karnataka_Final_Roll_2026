@@ -71,9 +71,14 @@ stay on private draft releases and are deleted once the dataset is built.
    review), builds CSV per constituency, one Parquet file, summaries,
    `checks.json`, README ([dataset-release.md](dataset-release.md)), licence
    (ODbL 1.0) and checksums, and publishes the public release
-   `dataset-final-roll-2026-v1`. A failed check holds the release. The
-   look at the card images follows;
-   a correction comes as a new release.
+   `dataset-final-roll-2026-v2`. A failed check holds the release.
+6. **Review and correct**: the 328 disagreements with the second reading
+   (263 ages, 65 genders) were read by a person off the printed card. Ours
+   was right on 238, every gender among them; the other reading was right
+   on 90 ages, all on cards stamped DELETED. Those 90 are fixed in
+   `reference/dataset-corrections.json` and were applied by joining those
+   constituencies again; v2 (3 Nov 2026) is that release, v1 stays as it
+   was. A later correction comes as a new release.
 
 Outages are waited out: a booth PDF that does not come is fetched again for
 up to two hours before the AC is cut again later; a failed upload or

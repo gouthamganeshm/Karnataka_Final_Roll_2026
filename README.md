@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://gouthamganeshm.github.io/Karnataka_Final_Roll_2026/"><b>Search your EPIC</b></a> ·
-  <a href="https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v1"><b>Download the open dataset</b></a> ·
+  <a href="https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2"><b>Download the open dataset</b></a> ·
   <a href="docs/accuracy-and-proof.md"><b>How it is checked</b></a> ·
   <a href="docs/proof/official-match.md"><b>Proof: 224 / 224</b></a>
 </p>
@@ -45,7 +45,7 @@ Kannada and English, shuffled on every visit).
 | Deleted entries (searchable, not counted) | 1,88,331 |
 | Every card cross-checked against the English roll | yes ([how](docs/english-crosscheck-runbook.md)) |
 | 25% sample check, PDF to live site | done for all 60,923 booths: 1,22,97,124 cards; 67 wrong serials found and corrected ([results](docs/proof/sample-verification.md)) |
-| Open dataset (age, gender, relation per entry; no names, no EPICs) | all 224 constituencies read; checked against the CEO booklet, a second reading and this site, then published as the release [`dataset-final-roll-2026-v1`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v1) ([how](docs/dataset.md)) |
+| Open dataset (age, gender, relation per entry; no names, no EPICs) | all 224 constituencies read; checked against the CEO booklet, a second reading and this site, then published as the release [`dataset-final-roll-2026-v2`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2) ([how](docs/dataset.md)) |
 
 Sources, linked at the bottom of every page of the site:
 [ECI electoral roll PDFs](https://voters.eci.gov.in/download-eroll) (one PDF
@@ -101,7 +101,7 @@ constituency, under the [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0
 Before release it is checked against the CEO booklet, row by row against
 this site, and every column is scanned so nothing identifying can slip in.
 
-* Download: [`dataset-final-roll-2026-v1`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v1)
+* Download: [`dataset-final-roll-2026-v2`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2)
 * Column guide and checks: [docs/dataset-release.md](docs/dataset-release.md)
 * How it is made: [docs/dataset.md](docs/dataset.md)
 
