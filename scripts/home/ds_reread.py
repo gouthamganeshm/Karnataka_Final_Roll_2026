@@ -23,8 +23,8 @@ Per AC, from ds-<ac>.csv.gz on <tag>-ds:
             ds_read.py does (house number hashed at once, as ds_join.py).
 Writes dsfix-<ac>.json to <tag>-ds:
   fills     a value where the dataset has none;
-  differs   a value read here unlike the dataset's: not applied; settled by
-            a vote with the second reading and a person (ds_release.py);
+  differs   a value read here unlike the dataset's: not applied; a person
+            reads the card (reference/dataset-corrections.json);
   pages     age, gender, relation, household_hash of the pages read whole.
 No name, EPIC or house number is in it.
 """

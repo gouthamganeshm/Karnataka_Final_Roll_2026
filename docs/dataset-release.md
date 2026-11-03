@@ -15,7 +15,7 @@ It is separate from that project's search site and does not feed it.
 |---|---|
 | Entries | {entries} |
 | Electors (not struck off) | {electors} (the CEO booklet: {ceo_electors}) |
-| Struck off (DELETED stamp) | {deleted} |
+| Struck off (DELETED stamp) | {deleted} (gender read on {deleted_gender}) |
 | Male / female / third gender read | {male} / {female} / {tg} |
 | Gender not read | {gender_unread} |
 | Age not read | {age_unread} |
@@ -50,10 +50,10 @@ It is separate from that project's search site and does not feed it.
 
 An empty field is one the reader could not read with certainty; nothing is guessed.
 
-**Struck-off entries:** the DELETED stamp is printed over the gender and the
-house number of a struck-off card, so for those entries `gender` and
-`household_hash` are almost always empty; age and relation are read on about
-98% of them.
+**Struck-off entries:** the DELETED stamp is printed across the card. Their
+gender and age were read a second time from the card's last line alone (step
+7); `household_hash` is mostly empty for them, as the stamp crosses the house
+number.
 
 Anyone can check a row by opening the booth's PDF on the ECI site and going to
 the page and card.
@@ -88,8 +88,17 @@ the page and card.
    age or a gender (328 entries in all), a person read the printed card. This
    reading was right on 238; the other {corrected} are corrected
    ([the list](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/blob/main/reference/dataset-corrections.json)).
-   All were ages on struck-off cards, where the DELETED stamp crosses the age:
-   treat ages of struck-off entries with more care than the rest.
+   All were ages on struck-off cards, where the DELETED stamp crosses the age.
+7. Every card with no age or no gender, and every struck-off card, was read
+   again from its last line only (Age, Gender: no name and no house number
+   are on it), the word taken wherever it stands, as the stamp garbles the
+   label before it. Each page's reading was checked on up to two cards of the
+   same page whose age and gender were already known: {reread_controls_agree} of
+   {reread_controls} ({control_share}) read alike. This filled {reread_gender_filled}
+   genders and {reread_age_filled} ages; {reread_page_cards} cards of pages that had
+   nothing read were read whole. A value read unlike the one already there was
+   not taken; a person read each such card and {reread_corrected} were corrected
+   (in the same list).
 
 ## Checks before release (all passed)
 
@@ -108,9 +117,7 @@ the page and card.
 
 The results per constituency are in `checks.json` and `{name}-summary-ac.csv`.
 
-**Still to come:** the gender of struck-off entries, read under the stamp,
-and the few pages left empty, read again. Any change will come as a new
-release; this one will stay as it is.
+Any later change will come as a new release; this one will stay as it is.
 
 ## Licence
 

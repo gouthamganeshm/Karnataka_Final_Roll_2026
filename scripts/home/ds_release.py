@@ -48,7 +48,7 @@ from ds_join import EPIC_RE  # noqa: E402
 
 TAG = release.TAG
 DS = f'{TAG}-ds'
-PUBLIC = 'dataset-final-roll-2026-v2'
+PUBLIC = 'dataset-final-roll-2026-v3'
 NAME = 'karnataka-final-roll-2026'
 OUT = ROOT / 'cache' / 'ds' / 'release'
 CEO = ROOT / 'reference' / 'ceo-final-2026.json'
@@ -67,9 +67,6 @@ DC_MIN_AGREE = 0.9
 DC_MIN_N = 30
 GENDER_SLACK = 0.001      # misread genders allowed per AC, share of its electors (at least 5)
 REJOIN_IF_NO = {'booths_shifted', 'age_dropped', 'epic_unsettled', 'not_entries'}   # stats a join by the current ds_join.py writes
-# ACs with a person's corrections (reference/dataset-corrections.json): joined
-# again unless the join that made them applied the corrections.
-CORRECTED_ACS = {c['ac'] for c in json.loads(ds_join.CORRECTIONS.read_text('utf8'))['corrections']}     if ds_join.CORRECTIONS.exists() else set()
 
 PATTERNS = {
     'ac': r'^\d{1,3}$', 'part': r'^\d{1,4}$', 'page': r'^\d{1,3}$', 'card': r'^\d{1,2}$',
@@ -80,7 +77,7 @@ PATTERNS = {
 }
 BANDS = [('18_19', 18, 19), ('20_29', 20, 29), ('30_39', 30, 39), ('40_49', 40, 49), ('50_59', 50, 59),
          ('60_69', 60, 69), ('70_79', 70, 79), ('80_plus', 80, 200)]
-SUMMARY = ['entries', 'deleted', 'epic_unsettled', 'electors', 'male', 'female', 'tg', 'gender_unread',
+SUMMARY = ['entries', 'deleted', 'deleted_gender_read', 'epic_unsettled', 'electors', 'male', 'female', 'tg', 'gender_unread',
            *[f'age_{b}' for b, _, _ in BANDS], 'age_unread', 'relation_unread']
 
 
@@ -205,6 +202,7 @@ def check_ac(ac: int, csv_p: Path, stats: dict, kid: str, ceo: dict, writer, dc:
         b['entries'] += 1
         if s == 'deleted':
             b['deleted'] += 1
+            b['deleted_gender_read'] += g != ''
             continue
         b['epic_unsettled'] += h == ''
         b['electors'] += 1
@@ -300,6 +298,54 @@ def site_check(ac: int, csv_p: Path, tmp: Path, site, k: bytes) -> tuple[list[st
     return fails, conflicts, {'site_electors': s.get('electors'), 'site_deleted': s.get('deleted')}
 
 
+def reread(ac: int, csv_p: Path, stats: dict, tmp: Path, kid: str) -> dict:
+    """dsfix-<ac>.json (ds_reread.py) applied to the joined rows, in place:
+    a value read again goes only where the row has none; a page read whole
+    fills its rows the same way; a value read unlike the row's is changed only
+    by a person's correction (reference/dataset-corrections.json, as
+    ds_join.py applies them; applied here too, as the readings to join again
+    from are gone). stats['read'] counts the cards a page read whole adds."""
+    fp, = ds_join.get(DS, [f'dsfix-{ac}.json'], str(tmp))
+    fix = json.loads(fp.read_text('utf8'))
+    fp.unlink()
+    if fix['key_id'] != kid:
+        raise RuntimeError(f'AC {ac}: dsfix key_id {fix["key_id"]}, want {kid}')
+    with gzip.open(csv_p, 'rt', encoding='utf8') as f:
+        rows = list(csv.DictReader(f))
+    at = {(int(r['part']), int(r['page']), int(r['card'])): r for r in rows}
+    out = dict.fromkeys(('reread_cards', 'reread_age_filled', 'reread_gender_filled', 'reread_page_cards',
+                         'reread_controls', 'reread_controls_agree', 'reread_corrected'), 0)
+    out['reread_cards'] = fix['stats']['targets']
+    out['reread_controls'] = fix['stats']['controls']
+    out['reread_controls_agree'] = min(fix['stats']['control_age_agree'], fix['stats']['control_gender_agree'])
+    for part, page, card, field, value in fix['fills']:
+        r = at[(part, page, card)]
+        if r[field] == '':
+            r[field] = str(value)
+            out[f'reread_{field}_filled'] += 1
+    for part, page, card, age, gender, relation, hh in fix['pages']:
+        r = at[(part, page, card)]
+        was = any(r[c] for c in ('age', 'gender', 'relation'))
+        for c, v in (('age', age), ('gender', gender), ('relation', relation), ('household_hash', hh)):
+            if v is not None and r[c] == '':
+                r[c] = str(v)
+        if not was and any(r[c] for c in ('age', 'gender', 'relation')):
+            out['reread_page_cards'] += 1
+    for c in (json.loads(ds_join.CORRECTIONS.read_text('utf8'))['corrections'] if ds_join.CORRECTIONS.exists() else []):
+        r = at.get((c['part'], c['page'], c['card'])) if c['ac'] == ac else None
+        if r is not None and r[c['field']] != str(c['value']):
+            r[c['field']] = str(c['value'])
+            out['reread_corrected'] += 1
+    stats['stats']['read'] += out['reread_page_cards']
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, ds_join.COLUMNS)
+    w.writeheader()
+    w.writerows(rows)
+    with gzip.open(csv_p, 'wt', encoding='utf8') as f:
+        f.write(buf.getvalue())
+    return out
+
+
 def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     import pyarrow.parquet as pq
     if OUT.exists():
@@ -312,6 +358,8 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
     ceo = json.loads(CEO.read_text('utf8'))['acs']
     writer = pq.ParquetWriter(pub / f'{NAME}.parquet', schema(), compression='zstd')
     checks, booth_rows, ac_rows, dropped, dc_missing, conflicts, skipped, corrected = {}, [], [], 0, [], [], 0, 0
+    reread_tot = dict.fromkeys(('reread_cards', 'reread_age_filled', 'reread_gender_filled', 'reread_page_cards',
+                                'reread_controls', 'reread_controls_agree', 'reread_corrected'), 0)
     ds_join.listing(TAG, fresh=True)
     ds_join.listing(DS, fresh=True)
     import sv_site
@@ -322,7 +370,7 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         csv_name, st_name = f'ds-{ac}.csv.gz', f'dsstats-{ac}.json'
         csv_p, st_p = ds_join.get(DS, [csv_name, st_name], str(tmp))
         stats = json.loads(st_p.read_text('utf8'))
-        if not REJOIN_IF_NO.issubset(stats['stats']) or                 (ac in CORRECTED_ACS and 'corrected' not in stats['stats']):  # joined by older code: join again
+        if not REJOIN_IF_NO.issubset(stats['stats']):  # joined by older code: join again
             log(f'AC {ac}: joined before {sorted(REJOIN_IF_NO - set(stats["stats"]))}; joining again')
             csv_p.unlink()
             st_p.unlink()
@@ -330,6 +378,9 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
             ds_join.listing(DS, fresh=True)
             csv_p, st_p = ds_join.get(DS, [csv_name, st_name], str(tmp))
             stats = json.loads(st_p.read_text('utf8'))
+        rr = reread(ac, csv_p, stats, tmp, kid)
+        for x in reread_tot:
+            reread_tot[x] += rr[x]
         dc = dc_rows(ac, tmp)
         if dc is None:
             dc_missing.append(ac)
@@ -360,11 +411,12 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
                 w.writerows(rows)
     failed = {ac: f for ac, f in checks.items() if f}
     commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    tot = {c: sum(r[c] for r in ac_rows) for c in ('entries', 'electors', 'deleted', 'male', 'female', 'tg',
+    tot = {c: sum(r[c] for r in ac_rows) for c in ('entries', 'electors', 'deleted', 'deleted_gender_read', 'male', 'female', 'tg',
                                                     'gender_unread', 'age_unread', 'ceo_electors')}
     tot['age_dropped'] = dropped
     tot['not_entries'] = skipped
-    tot['corrected_by_person'] = corrected
+    tot['corrected_by_person'] = corrected + reread_tot['reread_corrected']
+    tot.update(reread_tot)
     for c in ('dc_age', 'dc_gender'):
         n = sum(r[f'{c}_compared'] or 0 for r in ac_rows)
         k = sum(round((r[f'{c}_agree'] or 0) * (r[f'{c}_compared'] or 0)) for r in ac_rows)
@@ -387,7 +439,10 @@ def build(acs: list[int], dry: bool) -> tuple[bool, Path]:
         ceo_electors=f'{tot["ceo_electors"]:,}', male=f'{tot["male"]:,}', female=f'{tot["female"]:,}',
         tg=f'{tot["tg"]:,}', gender_unread=f'{tot["gender_unread"]:,}', age_unread=f'{tot["age_unread"]:,}',
         shifted=shifted, age_dropped=f'{dropped:,}', not_entries=skipped, corrected=corrected, name=NAME, site_build=built_at,
-        min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}')
+        min_read=f'{MIN_READ:.1%}', gender_slack=f'{GENDER_SLACK:.1%}',
+        **{x: f'{v:,}' for x, v in reread_tot.items()},
+        deleted_gender=f'{tot["deleted_gender_read"]:,}',
+        control_share=f'{reread_tot["reread_controls_agree"] / max(1, reread_tot["reread_controls"]):.2%}')
     (pub / 'README.md').write_text(readme, 'utf8')
     (pub / 'LICENSE.txt').write_text(LICENCE, 'utf8')
     sums = ''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in sorted(pub.iterdir()))
@@ -454,9 +509,10 @@ def main() -> int:
                 log(f'{PUBLIC} is published')
                 return 0
             have = on_ds(release.assets)
-            left = [a for a in acs if f'ds-{a}.csv.gz' not in have or f'dsstats-{a}.json' not in have]
+            left = [a for a in acs if any(f'{x}-{a}.{e}' not in have
+                                          for x, e in (('ds', 'csv.gz'), ('dsstats', 'json'), ('dsfix', 'json')))]
             if left:
-                log(f'{len(acs) - len(left)}/{len(acs)} ACs joined; waiting')
+                log(f'{len(acs) - len(left)}/{len(acs)} ACs joined and read again; waiting')
                 time.sleep(WAIT_S)
                 continue
             done = OUT / 'dsrelease-checks.json'
