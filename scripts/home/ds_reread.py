@@ -55,7 +55,6 @@ SHIFTS = (0, 1, -1, 2, -2)
 CONTROLS = 2
 RETRY_WAITS = (60, 300, 900, 1800, 3600)
 AGE = re.compile(r'A\s*[gq9]\s*[e3c]\s*\W{0,3}\s*(\d{1,3})\b', re.I)
-NUM = re.compile(r'\b(\d{2,3})\b')
 
 
 def log(msg: str) -> None:
@@ -63,10 +62,14 @@ def log(msg: str) -> None:
 
 
 def parse_line(text: str) -> tuple[int | None, str | None]:
-    """(age, gender) from the card's last line, the label optional."""
-    m = AGE.search(text) or NUM.search(text)
-    age = int(m.group(1)) if m and 18 <= int(m.group(1)) <= 120 else None
-    low = [w.lower() for w in re.findall(r'[A-Za-z]{3,}', text)]
+    """(age, gender) from the card's last line. Nothing unless the line has
+    the Age label: on some cards the line cut is not the age line (it is the
+    house number's, or an address), and a number there is no age."""
+    m = AGE.search(text)
+    if not m:
+        return None, None
+    age = int(m.group(1)) if 18 <= int(m.group(1)) <= 120 else None
+    low = [w.lower() for w in re.findall(r'[A-Za-z]{3,}', text[m.end():])]
     if any(w in ('third', 'transgender', 'others', 'other') for w in low):
         return age, 'TG'
     if not low:
