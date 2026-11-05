@@ -282,8 +282,16 @@ def reread(ac: int, k: bytes, dry: bool) -> dict:
         stats['booths'] += 1
 
     missing = []
+    # A window of PDFs in flight: pool.map fetched every booth of a big AC at
+    # once and held them all (OOM on a 5 GB VM in the Bengaluru ACs).
     with ThreadPoolExecutor(4) as pool:
-        for i, (part, data) in enumerate(pool.map(get, parts)):
+        window = 8
+        futs = [pool.submit(get, pt) for pt in parts[:window]]
+        for i in range(len(parts)):
+            part, data = futs[i].result()
+            futs[i] = None
+            if i + window < len(parts):
+                futs.append(pool.submit(get, parts[i + window]))
             if data is None:
                 missing.append(part)
             else:
