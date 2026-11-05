@@ -78,7 +78,10 @@ stay on private draft releases and are deleted once the dataset is built.
    on 90 ages, all on cards stamped DELETED. Those 90 are fixed in
    `reference/dataset-corrections.json` and were applied by joining those
    constituencies again; v2 (3 Nov 2026) is that release, v1 stays as it
-   was. A later correction comes as a new release.
+   was. v2 is the final release. Three more ages on struck-off cards,
+   found wrong afterwards, are in the corrections list but not in a
+   release; a re-read of struck-off cards (gender under the stamp) was
+   started and stopped, and is not published.
 
 Outages are waited out: a booth PDF that does not come is fetched again for
 up to two hours before the AC is cut again later; a failed upload or

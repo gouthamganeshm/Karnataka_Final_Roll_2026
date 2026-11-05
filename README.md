@@ -20,7 +20,11 @@ so and where.
 > **Unofficial.** The site only re-arranges data the Election Commission of
 > India has published. Always confirm with the official PDF it links to.
 
-<p align="center"><img src="docs/images/site-home.png" alt="The site's home page" width="88%"></p>
+> **Status: complete (5 Nov 2026).** The site is final and stays online on
+> GitHub Pages; it needs no server. The open dataset's final release is
+> [`dataset-final-roll-2026-v2`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2).
+> The cloud VMs that did the work are stopped: nothing runs on them and
+> their tokens and working files are deleted.
 
 ## Karnataka's history, on the home page
 
@@ -34,7 +38,7 @@ Kannada and English, shuffled on every visit).
   <tr><td align="center" width="25%"><img src="docs/images/rulers/wodeyar.png" alt="Wodeyars of Mysuru · the Dasara" width="100%"><br><sub>Wodeyars of Mysuru · the Dasara</sub></td><td align="center" width="25%"><img src="docs/images/rulers/keladi.png" alt="Keladi · Rani Chennamma" width="100%"><br><sub>Keladi · Rani Chennamma</sub></td><td align="center" width="25%"><img src="docs/images/rulers/tipu.png" alt="Mysore · Tipu Sultan" width="100%"><br><sub>Mysore · Tipu Sultan</sub></td><td align="center" width="25%"><img src="docs/images/rulers/kittur.png" alt="Kittur · Rani Chennamma" width="100%"><br><sub>Kittur · Rani Chennamma</sub></td></tr>
 </table>
 
-## At a glance (2 Nov 2026)
+## At a glance (final)
 
 | | |
 |---|---|
@@ -45,7 +49,7 @@ Kannada and English, shuffled on every visit).
 | Deleted entries (searchable, not counted) | 1,88,331 |
 | Every card cross-checked against the English roll | yes ([how](docs/english-crosscheck-runbook.md)) |
 | 25% sample check, PDF to live site | done for all 60,923 booths: 1,22,97,124 cards; 67 wrong serials found and corrected ([results](docs/proof/sample-verification.md)) |
-| Open dataset (age, gender, relation per entry; no names, no EPICs) | all 224 constituencies read; checked against the CEO booklet, a second reading and this site, then published as the release [`dataset-final-roll-2026-v2`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2) ([how](docs/dataset.md)) |
+| Open dataset (age, gender, relation per entry; no names, no EPICs) | 4,56,44,020 entries, all 224 constituencies; electors = the CEO count, 0 conflicts with this site, 90 ages corrected by a person; final release [`dataset-final-roll-2026-v2`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2) ([how](docs/dataset.md)) |
 
 Sources, linked at the bottom of every page of the site:
 [ECI electoral roll PDFs](https://voters.eci.gov.in/download-eroll) (one PDF
@@ -58,7 +62,8 @@ per booth, Kannada and English) and the
 <p align="center"><img src="docs/images/pipeline.svg" alt="ECI PDFs, downloaded by 4 cloud VMs, kept on a private release, read on GitHub Actions, checked 3 ways, published as the search site and the open dataset" width="100%"></p>
 
 1. **Download.** ECI's servers refuse GitHub's own machines, so four free
-   Oracle Cloud VMs download the booth PDFs ([how](docs/vm-process.md)).
+   Oracle Cloud VMs downloaded the booth PDFs ([how](docs/vm-process.md);
+   the VMs were stopped once the work was done).
 2. **Read.** Each PDF page is a picture of 30 voter cards. The cards are cut
    out and the EPIC on each is read by four different readers; a character
    is accepted only when independent readers agree.
@@ -101,7 +106,13 @@ constituency, under the [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0
 Before release it is checked against the CEO booklet, row by row against
 this site, and every column is scanned so nothing identifying can slip in.
 
-* Download: [`dataset-final-roll-2026-v2`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2)
+* Download: [`dataset-final-roll-2026-v2`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2) (final)
+* Known limits: the gender of struck-off entries is empty (the DELETED stamp
+  crosses its label); ages on struck-off cards are less sure than the rest;
+  3 more ages on struck-off cards found wrong after release are listed in
+  [`reference/dataset-corrections.json`](reference/dataset-corrections.json)
+  but not in the release. A planned re-read of struck-off cards (v3) was
+  stopped and will not be published.
 * Column guide and checks: [docs/dataset-release.md](docs/dataset-release.md)
 * How it is made: [docs/dataset.md](docs/dataset.md)
 
@@ -111,7 +122,7 @@ this site, and every column is scanned so nothing identifying can slip in.
 |---|---|
 | [Accuracy and proof](docs/accuracy-and-proof.md) | Every check the data went through, with numbers |
 | [Official match](docs/proof/official-match.md) | All 224 constituencies: site count vs the CEO booklet |
-| [Cloud VMs](docs/vm-process.md) | The four free VMs: why, how they were made, what runs on them, cost |
+| [Cloud VMs](docs/vm-process.md) | The four free VMs: why, how they were made, what ran on them, cost (stopped at the end) |
 | [English cross-check](docs/english-crosscheck-runbook.md) | The full English-roll cross-check and manual review |
 | [25% sample check](docs/sample-verification.md) · [results](docs/proof/sample-verification.md) | A quarter of every booth, from PDF to live site |
 | [Open dataset](docs/dataset.md) · [release README](docs/dataset-release.md) | How the dataset is made and checked; its column guide |

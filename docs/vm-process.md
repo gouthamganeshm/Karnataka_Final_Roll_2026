@@ -1,5 +1,9 @@
 # The cloud VMs: why, how, and what runs on them
 
+> **Stopped (5 Nov 2026).** The work is done: every service on the four VMs
+> is stopped and disabled, and their GitHub token and working files are
+> deleted. This page records how they were used.
+
 <p align="center"><img src="images/pipeline.svg" alt="Where the VMs sit in the pipeline" width="100%"></p>
 
 ## Why VMs at all
