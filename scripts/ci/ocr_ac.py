@@ -14,7 +14,7 @@ Reads every part bundle in the tar, OCRs it with one process per core
 (`crops.ocr_pages`: the readers must settle every character of each EPIC), and
 writes one JSON row per elector card:
 
-    {"ac": 177, "part": 3, "page": 2, "cell": 0, "serial": 1, "epic": "AAH4480430",
+    {"ac": 177, "part": 3, "page": 2, "cell": 0, "serial": 1, "epic": "ABC1234567",
      "ok": true, "epicOk": true, "how": "direct", "rd": [sheet, glyph, alone]}
 
 `epicOk`: the EPIC readers agreed (see `crops.ocr_page`); only such rows can

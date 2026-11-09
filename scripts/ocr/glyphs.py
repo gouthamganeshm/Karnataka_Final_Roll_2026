@@ -6,7 +6,7 @@ fails in completely different ways from Tesseract — no language model, and it
 must place exactly ten glyphs — which is what makes it useful next to it.
 
 Measured 2026-10-10: on four parts, two Tesseract readings *agreed* on wrong
-EPICs (`WZU1594811` read as `WZZ…`, `TDB5006309` as `TDB0…`, `TDB4370342` as
+EPICs (`WZU1234567` read as `WZZ…`, `TDB5123456` as `TDB0…`, `TDB4123456` as
 `ITD…`); the template reader had all of them right.
 
 Two readers live here:

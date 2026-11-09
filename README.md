@@ -25,6 +25,9 @@ so and where.
 > [`dataset-final-roll-2026-v2`](https://github.com/gouthamganeshm/Karnataka_Final_Roll_2026/releases/tag/dataset-final-roll-2026-v2).
 > The cloud VMs that did the work are stopped: nothing runs on them and
 > their tokens and working files are deleted.
+>
+> **Archived (9 Nov 2026).** This repository is read-only: clone it, fork it
+> or use the dataset freely, but it no longer takes issues or pull requests.
 
 ## Karnataka's history, on the home page
 

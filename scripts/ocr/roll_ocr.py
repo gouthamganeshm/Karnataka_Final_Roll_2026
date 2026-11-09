@@ -327,7 +327,7 @@ def coerce_epic(raw: str) -> str:
     """Force an OCR reading onto the EPIC grammar, or return it unchanged.
 
     An 11-character reading is almost always a spurious glyph inserted at the
-    letter/digit boundary ('TDB0917013' read as 'TDBO0917013'), so the first
+    letter/digit boundary ('TDB0123456' read as 'TDBO0123456'), so the first
     three and last seven characters are the reliable parts.
     """
     s = re.sub(r'[^A-Za-z0-9]', '', raw).upper()

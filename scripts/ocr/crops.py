@@ -240,8 +240,8 @@ def bundle_image(data: bytes, name: str) -> Image.Image | None:
 # Tesseract. Measured 2026-10-10 against 224 sample parts (one per AC) that is
 # not good enough: Tesseract misreads EPIC *letters* even when two independent
 # Tesseract passes agree (IOP -> LIO, AOH -> AQH, WZU -> WZZ, IUO -> IWO,
-# FZT -> FZI, YCX -> YYC), and occasionally a leading digit (XRR0514265 ->
-# XRR5514265). Those are valid-looking EPICs; nothing downstream can catch them.
+# FZT -> FZI, YCX -> YYC), and occasionally a leading digit (XRR0123456 ->
+# XRR5123456). Those are valid-looking EPICs; nothing downstream can catch them.
 #
 # So three readers now look at every EPIC, and `fuse` decides per character:
 #
